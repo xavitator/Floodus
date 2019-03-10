@@ -126,26 +126,44 @@ int make_demand(int s, struct addrinfo *p)
     struct iovec *iov = malloc(iovlen * (sizeof(struct iovec)));
     struct iovec magic = {0};
     magic.iov_len = sizeof(u_int8_t);
-    magic.iov_base = (u_int8_t *)(&el->magic);
+    magic.iov_base = &el->magic;
     struct iovec version = {0};
     version.iov_len = sizeof(u_int8_t);
-    version.iov_base = (u_int8_t *)(&el->version);
+    version.iov_base = &el->version;
     struct iovec body_length = {0};
     body_length.iov_len = sizeof(u_int16_t);
-    body_length.iov_base = (u_int16_t *)(&el->body_length);
+    u_int16_t tmp = htons(el->body_length);
+    body_length.iov_base = &tmp;
     iov[0] = magic;
     iov[1] = version;
     iov[2] = body_length;
     for (int i = 0; i < el->body_length; i++)
     {
+        el->body[i].iov_len = el->body[i].iov_len;
         iov[i + 3] = el->body[i];
     }
+    int rc = 0;
+
+    // envoie avec sendmsg
     struct msghdr msg = {0};
     msg.msg_name = p->ai_addr;
     msg.msg_namelen = p->ai_addrlen;
     msg.msg_iov = iov;
     msg.msg_iovlen = iovlen;
-    int rc = sendmsg(s, &msg, 0);
+    rc = sendmsg(s, &msg, 0);
+
+    // envoie avec sendto
+    // char res[4096];
+    // size_t size = 0;
+    // for (unsigned int i = 0; i < iovlen; i++)
+    // {
+    //     memcpy(res + size, iov[i].iov_base, iov[i].iov_len);
+    //     size += iov[i].iov_len;
+    // }
+    // rc = sendto(s, res, size, 0, p->ai_addr, p->ai_addrlen);
+
+    if (rc < 0)
+        perror("error : ");
     printf("%d\n", rc);
 
     unsigned char req[4096];
@@ -156,8 +174,8 @@ int make_demand(int s, struct addrinfo *p)
     msg.msg_iovlen = 1;
     msg.msg_iov = &io;
     printf("before recvfrom\n");
-    //rc = read(s, req, 4096);
-    rc = recvmsg(s, &msg, 0);
+    rc = read(s, req, 4096);
+    //rc = recvmsg(s, &msg, 0);
     printf("test reussi : %d\n", rc);
     return 0;
 }
