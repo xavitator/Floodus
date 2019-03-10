@@ -12,6 +12,8 @@
 #include <netinet/in.h>
 #include <arpa/inet.h>
 #include <time.h>
+#include <sys/stat.h>
+#include <fcntl.h>
 
 typedef struct datagram
 {
@@ -29,7 +31,9 @@ u_int64_t id = 0;
  */
 void create_user()
 {
-    id = (rand() << 31) + rand();
+    id = rand();
+    id <<= 31;
+    id += rand();
 }
 
 /**
@@ -43,7 +47,7 @@ struct iovec *helloc_tlv()
     char *tab = malloc(len);
     memset(tab, 2, 1);
     memset(tab + sizeof(u_int8_t), sizeof(u_int64_t), 1);
-    memset(tab + sizeof(u_int8_t) * 2, id, sizeof(u_int64_t));
+    memcpy(tab + sizeof(u_int8_t) * 2, &id, sizeof(u_int64_t));
     struct iovec *blk = malloc(sizeof(struct iovec));
     blk->iov_base = tab;
     blk->iov_len = len;
@@ -153,18 +157,21 @@ int make_demand(int s, struct addrinfo *p)
     rc = sendmsg(s, &msg, 0);
 
     // envoie avec sendto
-    // char res[4096];
-    // size_t size = 0;
-    // for (unsigned int i = 0; i < iovlen; i++)
-    // {
-    //     memcpy(res + size, iov[i].iov_base, iov[i].iov_len);
-    //     size += iov[i].iov_len;
-    // }
-    // rc = sendto(s, res, size, 0, p->ai_addr, p->ai_addrlen);
-
+    char res[4096];
+    size_t size = 0;
+    for (unsigned int i = 0; i < iovlen; i++)
+    {
+        memcpy(res + size, iov[i].iov_base, iov[i].iov_len);
+        size += iov[i].iov_len;
+    }
+    for (size_t i = 0; i < size; i++)
+    {
+        printf("%.2x ", res[i]);
+    }
+    //rc = sendto(s, res, size, 0, p->ai_addr, p->ai_addrlen);
     if (rc < 0)
         perror("error : ");
-    printf("%d\n", rc);
+    printf("\n%d\n", rc);
 
     unsigned char req[4096];
     struct iovec io;
@@ -174,8 +181,8 @@ int make_demand(int s, struct addrinfo *p)
     msg.msg_iovlen = 1;
     msg.msg_iov = &io;
     printf("before recvfrom\n");
-    rc = read(s, req, 4096);
-    //rc = recvmsg(s, &msg, 0);
+    //rc = read(s, req, 4096);
+    rc = recvmsg(s, &msg, 0);
     printf("test reussi : %d\n", rc);
     return 0;
 }
@@ -187,6 +194,7 @@ int send_hello()
     int rc = 0;
     h.ai_family = AF_INET6;
     h.ai_socktype = SOCK_DGRAM;
+    h.ai_flags = AI_V4MAPPED | AI_ALL;
     rc = getaddrinfo("jch.irif.fr", "1212", &h, &r);
     if (rc < 0)
     {
@@ -199,6 +207,8 @@ int send_hello()
     while (p != NULL)
     {
         s = socket(p->ai_family, p->ai_socktype, p->ai_protocol);
+        int val;
+        setsockopt(s, IPPROTO_IPV6, IPV6_V6ONLY, &val, sizeof(val));
         if (s >= 0)
         {
             rc = connect(s, p->ai_addr, p->ai_addrlen);
@@ -213,6 +223,9 @@ int send_hello()
         printf("Connexion impossible\n");
         exit(1);
     }
+    char ip[INET6_ADDRSTRLEN];
+    inet_ntop(p->ai_family, p->ai_addr, ip, INET6_ADDRSTRLEN);
+    printf("%s\n", ip);
     create_user();
     make_demand(s, p);
     printf("demande effectuée\n");
