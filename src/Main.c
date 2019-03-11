@@ -126,6 +126,7 @@ int make_demand(int s, struct addrinfo *p)
     {
         bodylen += (el->body + i)->iov_len;
     }
+    printf("%d\n",bodylen);
     size_t iovlen = 3 + el->body_length;
     struct iovec *iov = malloc(iovlen * (sizeof(struct iovec)));
     struct iovec magic = {0};
@@ -136,8 +137,8 @@ int make_demand(int s, struct addrinfo *p)
     version.iov_base = &el->version;
     struct iovec body_length = {0};
     body_length.iov_len = sizeof(u_int16_t);
-    u_int16_t tmp = htons(el->body_length);
-    body_length.iov_base = &tmp;
+    u_int16_t tmp = htons(bodylen);
+   body_length.iov_base = &tmp;
     iov[0] = magic;
     iov[1] = version;
     iov[2] = body_length;
