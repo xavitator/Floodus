@@ -211,18 +211,13 @@ int send_hello()
         int val;
         setsockopt(s, IPPROTO_IPV6, IPV6_V6ONLY, &val, sizeof(val));
         if (s >= 0)
-        {
-            rc = connect(s, p->ai_addr, p->ai_addrlen);
-            if (rc >= 0)
-                break;
-            close(s);
-        }
+          break;
         p = p->ai_next;
     }
-    if (rc < 0)
+    if (p == NULL)
     {
-        printf("Connexion impossible\n");
-        exit(1);
+       printf("Connexion impossible\n");
+       exit(1);
     }
     char ip[INET6_ADDRSTRLEN];
     inet_ntop(p->ai_family, p->ai_addr, ip, INET6_ADDRSTRLEN);
