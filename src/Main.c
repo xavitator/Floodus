@@ -32,7 +32,7 @@ u_int64_t id = 0;
 void create_user()
 {
     id = rand();
-    id <<= 31;
+    id <<= 32;
     id += rand();
 }
 
@@ -126,7 +126,7 @@ int make_demand(int s, struct addrinfo *p)
     {
         bodylen += (el->body + i)->iov_len;
     }
-    printf("%d\n",bodylen);
+    printf("%d\n", bodylen);
     size_t iovlen = 3 + el->body_length;
     struct iovec *iov = malloc(iovlen * (sizeof(struct iovec)));
     struct iovec magic = {0};
@@ -138,7 +138,7 @@ int make_demand(int s, struct addrinfo *p)
     struct iovec body_length = {0};
     body_length.iov_len = sizeof(u_int16_t);
     u_int16_t tmp = htons(bodylen);
-   body_length.iov_base = &tmp;
+    body_length.iov_base = &tmp;
     iov[0] = magic;
     iov[1] = version;
     iov[2] = body_length;
@@ -165,7 +165,7 @@ int make_demand(int s, struct addrinfo *p)
         memcpy(res + size, iov[i].iov_base, iov[i].iov_len);
         size += iov[i].iov_len;
     }
-    for (size_t i = 0; i < size; i++)
+    for (unsigned int i = 0; i < size; i++)
     {
         printf("%.2x ", res[i]);
     }
@@ -181,10 +181,18 @@ int make_demand(int s, struct addrinfo *p)
 
     msg.msg_iovlen = 1;
     msg.msg_iov = &io;
+    struct sockaddr test = {0};
+    socklen_t testlen = sizeof(test);
     printf("before recvfrom\n");
     //rc = read(s, req, 4096);
-    rc = recvmsg(s, &msg, 0);
+    rc = recvfrom(s, req, 4096, 0, &test, &testlen);
+    //rc = recvmsg(s, &msg, 0);
     printf("test reussi : %d\n", rc);
+    for (int i = 0; i < rc; i++)
+    {
+        printf("%.2x ", req[i]);
+    }
+    printf("%ld\n", msg.msg_iovlen);
     return 0;
 }
 
@@ -204,20 +212,20 @@ int send_hello()
     }
     struct addrinfo *p = r;
     int s = -1;
-    rc = -1;
     while (p != NULL)
     {
         s = socket(p->ai_family, p->ai_socktype, p->ai_protocol);
         int val;
         setsockopt(s, IPPROTO_IPV6, IPV6_V6ONLY, &val, sizeof(val));
         if (s >= 0)
-          break;
+            break;
         p = p->ai_next;
     }
-    if (p == NULL)
+    if (s < 0 || p == NULL)
     {
-       printf("Connexion impossible\n");
-       exit(1);
+        freeaddrinfo(r);
+        printf("Connexion impossible\n");
+        exit(1);
     }
     char ip[INET6_ADDRSTRLEN];
     inet_ntop(p->ai_family, p->ai_addr, ip, INET6_ADDRSTRLEN);

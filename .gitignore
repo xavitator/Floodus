@@ -21,6 +21,11 @@
 *.a
 *.la
 *.lo
+# dossier auxiliaire personnel
+tmp/
+
+# executable
+floodus
 
 # Shared objects (inc. Windows DLLs)
 *.dll
