@@ -23,6 +23,7 @@
 *.lo
 # dossier auxiliaire personnel
 tmp/
+.vscode/
 
 # executable
 floodus
