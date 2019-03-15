@@ -23,10 +23,6 @@ typedef struct hashmap_t
     node_t *content[HASHMAP_SIZE];
 } hashmap_t;
 
-void freeiovec(struct iovec *data);
-struct iovec *copy_iovec(struct iovec *data);
-void print_iovec(struct iovec *data);
-
 hashmap_t *init_map(void);
 data_t *get_map(data_t *key, hashmap_t *map);
 bool_t insert_map(data_t *key, data_t *value, hashmap_t *map);

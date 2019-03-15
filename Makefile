@@ -20,11 +20,10 @@ all:
 $(NAME): $(OBJ)
 	@echo "[\e[1;34mEn cours\e[0m] Assemblement"
 	$(CC) -o $(NAME) $(FLAGS) -I $(INCL) $(LDLIBS) $(OBJ)
-	@$(CC) -o $(NAME) $(FLAGS) -I $(INCL) $(LDLIBS) $(OBJ)
 	@echo "[\e[1;32mOK\e[0m] Assemblement finie"
 
 $(BIN)%.o: $(SRCDIR)%.c
-	mkdir -p $(dir $@)
+	@mkdir -p $(dir $@)
 	$(CC) -c $(FLAGS) $(LDLIBS) -I $(INCL) -o $@ $<
  
 .PHONY: clean
