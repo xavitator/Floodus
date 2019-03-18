@@ -33,7 +33,7 @@ struct iovec *pad1() {
 /**
  * @brief Créer une struct iovec pour PDAN
  *
- * @param La taille du N
+ * @param La taille du N, en cas de dépassement 253
  */
 struct iovec *pad_n(uint8_t N) {
   struct iovec *pad = malloc(sizeof(struct iovec));
@@ -41,7 +41,7 @@ struct iovec *pad_n(uint8_t N) {
     error("iovec pad_n");
     return NULL;
   }
-  uint8_t size = ((N < 253) ? N : N%253) +2;
+  uint8_t size = ((253-N > 0)?N:253) + 2;
   uint8_t *content = malloc(sizeof(uint8_t) * size);
   if (content == NULL) {
     error("content pad_n");
@@ -59,7 +59,7 @@ struct iovec *pad_n(uint8_t N) {
 /**
  * @brief Construit un TLV Hello Court
  *
- * @param source_id l'id de 64 bits de l'émetteur
+ * @param source_id l'id de 64 bits de l'émetteur 
  */
 struct iovec *hello_short(uint64_t sender_id) {
   struct iovec *hello = malloc(sizeof(struct iovec));
@@ -149,16 +149,16 @@ struct iovec *neighbour(uint8_t source_ip[16], uint16_t port) {
  * @param sender_id l'id de  l'émetteur
  * @param nonce l'apax pour l'identification
  * @param type le type de message (0)
- * @param msg_length la taille du message
+ * @param msg_length la taille du message, prend le min avec 240
  * @param msg le message à envoyer
  */
-struct iovec *data(uint64_t sender_id, uint32_t nonce, uint8_t type, uint32_t msg_length, uint8_t *msg) {
+struct iovec *data(uint64_t sender_id, uint32_t nonce, uint8_t type, uint8_t msg_length, uint8_t *msg) {
   struct iovec *data_i = malloc(sizeof(struct iovec));
   if (data_i == NULL) {
     error("iovec ack");
     return NULL;
   }
-  uint8_t size =  (15 + msg_length);
+  uint8_t size =  15 + ((240-msg_length >0)?msg_length:240);
   uint8_t *content = malloc(sizeof(uint8_t) * size);
   if (content == NULL) {
     error("content neighbour");
@@ -213,16 +213,16 @@ struct iovec *ack(uint64_t sender_id, uint32_t nonce) {
  * @brief Construit un TLV go away
  *
  * @param code la raison du go away
- * @param msg_length la taille du message
+ * @param msg_length la taille du message, prend le min entre msg_length et 252
  * @param msg le message à joindre
  */
-struct iovec *go_away(uint8_t code, uint32_t msg_length, uint8_t *msg) {
+struct iovec *go_away(uint8_t code, uint8_t msg_length, uint8_t *msg) {
   struct iovec *go_away_i = malloc(sizeof(struct iovec));
   if (go_away_i == NULL) {
     error("iovec go_away");
     return NULL;
   }
-  uint8_t size = 3 + msg_length;
+  uint8_t size = 3 + ((252-msg_length >0)?msg_length:252);
   uint8_t *content = malloc(sizeof(uint8_t) * size);
   if (content == NULL) {
     error("content go_away");
@@ -243,16 +243,16 @@ struct iovec *go_away(uint8_t code, uint32_t msg_length, uint8_t *msg) {
 /**
  * @brief Construit un TLV de warning
  *
- * @param msg_length la taille du message
+ * @param msg_length la taille du message, prend le min entre msg_length et 253
  * @param msg le message
  */
-struct iovec *warning(uint32_t msg_length, uint8_t *msg) {
+struct iovec *warning(uint8_t msg_length, uint8_t *msg) {
   struct iovec *warning_i = malloc(sizeof(struct iovec));
   if (warning_i == NULL) {
     error("iovec warning");
     return NULL;
   }
-  uint8_t size = 2 + msg_length;
+  uint8_t size =  2 + ((253-msg_length >0)?msg_length:253);
   uint8_t *content = malloc(sizeof(uint8_t) * size);
   if (content == NULL) {
     error("content warning");
