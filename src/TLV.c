@@ -1,14 +1,30 @@
 #include "TLV.h"
 
+
+/* Fonction affichage erreur */
+static void error(char * obj) {
+  fprintf (stderr,"Erreur TLV => can't allocate %s\n", obj);
+} 
+
+
 /**
  * @brief Créer une struct iovec pour PDA1
  */
 struct iovec *pda1() {
   struct iovec *pad = malloc(sizeof(struct iovec));
-  uint8_t content [1] = {0};
-  memset(&content,0,sizeof(content));
+  if (pad == NULL) {
+    error("iovec pad");
+    return NULL;
+  }
+  uint32_t size = 1;
+  uint8_t *content = malloc(sizeof(uint8_t) * size);
+  if (content == NULL) {
+    error("content pad");
+    return NULL;
+  }
+  memset(content, 0, sizeof(uint8_t) * size);
   pad->iov_base = content;
-  pad->iov_len = sizeof(content);
+  pad->iov_len = size;
   return pad;
 }
 
@@ -20,12 +36,21 @@ struct iovec *pda1() {
  */
 struct iovec *pda_n(int N) {
   struct iovec *pad = malloc(sizeof(struct iovec));
-  uint8_t content [N+2];
-  memset(&content,0,sizeof(content));
+  if (pad == NULL) {
+    error("iovec pad_n");
+    return NULL;
+  }
+  uint32_t size = N+2;
+  uint8_t *content = malloc(sizeof(uint8_t) * size);
+  if (content == NULL) {
+    error("content pad_n");
+    return NULL;
+  }
+  memset(content, 0, sizeof(uint8_t) * size);
   content[0] = 1;
   content[1] = N;
   pad->iov_base = content;
-  pad->iov_len = sizeof(content);
+  pad->iov_len = size;
   return pad;
 }
 
@@ -34,15 +59,24 @@ struct iovec *pda_n(int N) {
  *
  * @param source_id l'id de 64 bits de l'émetteur
  */
-struct iovec *hello_short(uint8_t source_id[8]) {
+struct iovec *hello_short(uint64_t sender_id) {
   struct iovec *hello = malloc(sizeof(struct iovec));
-  uint8_t content [8+2];
-  memset(&content,0,sizeof(content));
+  if (hello == NULL) {
+    error("iovec hello");
+    return NULL;
+  }
+  uint32_t size = 10;
+  uint8_t *content = malloc(sizeof(uint8_t) * size);
+  if (content == NULL) {
+    error("content hello short");
+    return NULL;
+  }
+  memset(content, 0, sizeof(uint8_t) * size);
   content[0] = 2;
   content[1] = 8;
-  memcpy(content+2,source_id,8);
+  memmove(content+2, &sender_id, sizeof(uint64_t));
   hello->iov_base = content;
-  hello->iov_len = sizeof(content);
+  hello->iov_len = size;
   return hello;
 }
 
@@ -52,15 +86,177 @@ struct iovec *hello_short(uint8_t source_id[8]) {
  * @param source_id l'id de 64 bits de l'émetteur
  * @param id l'id de 64 bits du destinataire
  */
-struct iovec *hello_long(uint8_t source_id[8], uint8_t id[8]) {
+struct iovec *hello_long(uint64_t sender_id, uint64_t id) {
   struct iovec *hello = malloc(sizeof(struct iovec));
-  uint8_t content [16+2];
-  memset(&content,0,sizeof(content));
+  if (hello == NULL) {
+    error("iovec hello_long");
+    return NULL;
+  }
+  uint32_t size = 18;
+  uint8_t *content = malloc(sizeof(uint8_t) * size);
+  if (content == NULL) {
+    error("content hello long");
+    return NULL;
+  }
+  memset(content, 0, sizeof(uint8_t) * size);
   content[0] = 2;
   content[1] = 16;
-  memcpy(content+2,source_id,8);
-  memcpy(content+10,id, 8);
+  memmove(content+2, &sender_id, sizeof(uint64_t));
+  memmove(content+10, &id, sizeof(uint64_t));
   hello->iov_base = content;
-  hello->iov_len = sizeof(content);
+  hello->iov_len = size;
   return hello;
+}
+
+
+/**
+ * @brief Construit un Neighbour
+ *
+ * @param ip l'ip à partager
+ * @param port le port de l'ip
+ */
+struct iovec *neighbour(uint16_t source_ip[8], uint16_t port) {
+  struct iovec *neighbour = malloc(sizeof(struct iovec));
+  if (neighbour == NULL) {
+    error("iovec neighbour");
+    return NULL;
+  }
+  uint32_t size = 20;
+  uint8_t *content = malloc(sizeof(uint8_t) * size);
+  if (content == NULL) {
+    error("content neighbour");
+    return NULL;
+  }
+  memset(content, 0, 20 * sizeof(uint8_t));
+  content[0] = 3;
+  content[1] = 18;
+  memmove(content+2, source_ip, sizeof(uint16_t)* 8);
+  memmove(content+16, &port, sizeof(uint16_t));
+  neighbour->iov_base = content;
+  neighbour->iov_len = size;
+  return neighbour;
+}
+
+
+/**
+ * @brief Construit un acquitement pour une data
+ *
+ * @param sender_id l'id de  l'émetteur
+ * @param nonce l'apax pour l'identification
+ * @param type le type de message (0)
+ * @param msg_length la taille du message
+ * @param msg le message à envoyer
+ */
+struct iovec *data(uint64_t sender_id, uint32_t nonce, uint8_t type, uint32_t msg_length, uint8_t *msg) {
+  struct iovec *data = malloc(sizeof(struct iovec));
+  if (data == NULL) {
+    error("iovec ack");
+    return NULL;
+  }
+  uint32_t size =  (15 + msg_length);
+  uint8_t *content = malloc(sizeof(uint8_t) * size);
+  if (content == NULL) {
+    error("content neighbour");
+    return NULL;
+  }
+  memset(content, 0, sizeof(uint8_t) * size);
+  content[0] = 5;
+  content[1] = 12;
+  memmove(content+2, &sender_id, sizeof(uint64_t));
+  memmove(content+10, &nonce, sizeof(uint32_t));
+  content [15] = type;
+  memmove(content+10, msg, msg_length);
+  data->iov_base = content;
+  data->iov_len = size;
+  return data;
+}
+
+
+
+/**
+ * @brief Construit un acquitement pour une data
+ *
+ * @param sender_id l'id de l'envoyeur (copie)
+ * @param nonce l'apax pour l'acquitement (copie)
+ */
+struct iovec *ack(uint64_t sender_id, uint32_t nonce) {
+  struct iovec *ack_i = malloc(sizeof(struct iovec));
+  if (ack_i == NULL) {
+    error("iovec ack");
+    return NULL;
+  }
+  uint32_t size = 14;
+  uint8_t *content  = malloc(sizeof(uint8_t) * size);
+  if (content == NULL) {
+    error("content ack");
+    return NULL;
+  }
+  memset(content, 0, sizeof(uint8_t) * size);
+  content[0] = 5;
+  content[1] = 12;
+  memmove(content+2, &sender_id, sizeof(uint64_t));
+  memmove(content+10, &nonce, sizeof(uint32_t));
+  ack_i->iov_base = content;
+  ack_i->iov_len = size;
+  return ack_i;
+}
+
+
+/**
+ * @brief Construit un TLV go away
+ *
+ * @param code la raison du go away
+ * @param msg_length la taille du message
+ * @param msg le message à joindre
+ */
+struct iovec *go_away(uint8_t code, uint32_t msg_length, uint8_t *msg) {
+  struct iovec *go_away_i = malloc(sizeof(struct iovec));
+  if (go_away_i == NULL) {
+    error("iovec go_away");
+    return NULL;
+  }
+  uint32_t size = 3 + msg_length;
+  uint8_t *content = malloc(sizeof(uint8_t) * size);
+  if (content == NULL) {
+    error("content go_away");
+    free(go_away_i);
+    return NULL;
+  }
+  memset(&content, 0, sizeof(uint8_t) * size);
+  content[0] = 6;
+  content[1] = msg_length+1;
+  content[2] = code;
+  memmove(content+3, msg, msg_length);
+  go_away_i->iov_base = content;
+  go_away_i->iov_len = size;
+  return go_away_i;
+}
+
+
+/**
+ * @brief Construit un TLV de warning
+ *
+ * @param msg_length la taille du message
+ * @param msg le message
+ */
+struct iovec *warning(uint32_t msg_length, uint8_t *msg) {
+  struct iovec *warning_i = malloc(sizeof(struct iovec));
+  if (warning_i == NULL) {
+    error("iovec warning");
+    return NULL;
+  }
+  uint32_t size = 2 + msg_length;
+  uint8_t *content = malloc(sizeof(uint8_t) * size);
+  if (content == NULL) {
+    error("content warning");
+    free(warning_i);
+    return NULL;
+  }
+  memset(content, 0, sizeof(uint8_t) * size);
+  content[0] = 7;
+  content[1] = msg_length+1;
+  memmove(content+2, msg, msg_length);
+  warning_i->iov_base = content;
+  warning_i->iov_len = size;
+  return warning_i;
 }
