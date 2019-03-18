@@ -116,8 +116,8 @@ struct iovec *hello_long(uint64_t sender_id, uint64_t id) {
  * @param port le port de l'ip
  */
 struct iovec *neighbour(uint16_t source_ip[8], uint16_t port) {
-  struct iovec *neighbour = malloc(sizeof(struct iovec));
-  if (neighbour == NULL) {
+  struct iovec *neighbour_i = malloc(sizeof(struct iovec));
+  if (neighbour_i == NULL) {
     error("iovec neighbour");
     return NULL;
   }
@@ -132,9 +132,9 @@ struct iovec *neighbour(uint16_t source_ip[8], uint16_t port) {
   content[1] = 18;
   memmove(content+2, source_ip, sizeof(uint16_t)* 8);
   memmove(content+16, &port, sizeof(uint16_t));
-  neighbour->iov_base = content;
-  neighbour->iov_len = size;
-  return neighbour;
+  neighbour_i->iov_base = content;
+  neighbour_i->iov_len = size;
+  return neighbour_i;
 }
 
 
@@ -148,8 +148,8 @@ struct iovec *neighbour(uint16_t source_ip[8], uint16_t port) {
  * @param msg le message à envoyer
  */
 struct iovec *data(uint64_t sender_id, uint32_t nonce, uint8_t type, uint32_t msg_length, uint8_t *msg) {
-  struct iovec *data = malloc(sizeof(struct iovec));
-  if (data == NULL) {
+  struct iovec *data_i = malloc(sizeof(struct iovec));
+  if (data_i == NULL) {
     error("iovec ack");
     return NULL;
   }
@@ -166,9 +166,9 @@ struct iovec *data(uint64_t sender_id, uint32_t nonce, uint8_t type, uint32_t ms
   memmove(content+10, &nonce, sizeof(uint32_t));
   content [15] = type;
   memmove(content+10, msg, msg_length);
-  data->iov_base = content;
-  data->iov_len = size;
-  return data;
+  data_i->iov_base = content;
+  data_i->iov_len = size;
+  return data_i;
 }
 
 
