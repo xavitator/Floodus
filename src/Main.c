@@ -14,6 +14,7 @@
 #include <time.h>
 #include <sys/stat.h>
 #include <fcntl.h>
+#include "TLV.h"
 
 typedef struct datagram
 {
@@ -37,71 +38,6 @@ void create_user()
 }
 
 /**
- * @brief Construction tlv hello court
- * 
- * @return struct iovec* contenant un tlv hello court
- */
-struct iovec *helloc_tlv()
-{
-    u_int32_t len = sizeof(u_int8_t) * 2 + sizeof(u_int64_t);
-    char *tab = malloc(len);
-    memset(tab, 2, 1);
-    memset(tab + sizeof(u_int8_t), sizeof(u_int64_t), 1);
-    memcpy(tab + sizeof(u_int8_t) * 2, &id, sizeof(u_int64_t));
-    struct iovec *blk = malloc(sizeof(struct iovec));
-    blk->iov_base = tab;
-    blk->iov_len = len;
-    return blk;
-}
-
-/**
- * @brief Construction tlv hello long
- * 
- * @return struct iovec* contenant un tlv hello long
- */
-struct iovec *hellol_tlv(u_int64_t dest)
-{
-    u_int32_t len = sizeof(u_int8_t) * 2 + sizeof(u_int64_t) + sizeof(u_int64_t);
-    char *tab = malloc(len);
-    memset(tab, 2, 1);
-    memset(tab + sizeof(u_int8_t), sizeof(u_int64_t) * 2, 1);
-    memset(tab + sizeof(u_int8_t) * 2, id, sizeof(u_int64_t));
-    memset(tab + len - sizeof(u_int64_t), dest, sizeof(u_int64_t));
-    struct iovec *blk = malloc(sizeof(struct iovec));
-    blk->iov_base = tab;
-    blk->iov_len = len;
-    return blk;
-}
-
-/**
- * @brief Construction d'un tlv data
- * 
- * @param disc contenu du string à envoyer
- * @return struct iovec* contenant un tlv data contenant 'disc'
- */
-struct iovec *data_tlv(char *disc)
-{
-    u_int32_t len = sizeof(u_int8_t) * 2 + sizeof(u_int64_t) + sizeof(u_int32_t) + sizeof(u_int8_t) + strlen(disc);
-    char *tab = malloc(len);
-    char *type = tab;
-    char *length = tab + sizeof(u_int8_t);
-    char *sender_id = length + sizeof(u_int8_t);
-    char *nounce = sender_id + sizeof(u_int64_t);
-    char *type_data = nounce + sizeof(u_int32_t);
-    char *data = type_data + sizeof(u_int8_t);
-    memset(type, 4, sizeof(u_int8_t));
-    memset(length, len - sizeof(u_int8_t) * 2, 1);
-    memset(sender_id, id, sizeof(u_int64_t));
-    memset(nounce, rand(), sizeof(u_int32_t));
-    memset(type_data, 0, sizeof(u_int8_t));
-    memcpy(data, disc, strlen(disc));
-    struct iovec *blk = malloc(sizeof(struct iovec));
-    blk->iov_base = tab;
-    blk->iov_len = len;
-    return blk;
-}
-
-/**
  * @brief Construction datagram avec les tlv en argument
  * 
  * @param tlvs tlvs à ajouter au datagram
@@ -120,7 +56,7 @@ datagram *make_datagram(struct iovec *tlvs, u_int16_t len)
 
 int make_demand(int s, struct addrinfo *p)
 {
-    datagram *el = make_datagram(helloc_tlv(), 1);
+    datagram *el = make_datagram(hello_short(id), 1);
     u_int16_t bodylen = 0;
     for (int i = 0; i < el->body_length; i++)
     {
