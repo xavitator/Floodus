@@ -10,13 +10,13 @@ static void error(char * obj) {
 /**
  * @brief Créer une struct iovec pour PDA1
  */
-struct iovec *pda1() {
+struct iovec *pad1() {
   struct iovec *pad = malloc(sizeof(struct iovec));
   if (pad == NULL) {
     error("iovec pad");
     return NULL;
   }
-  uint32_t size = 1;
+  uint8_t size = 1;
   uint8_t *content = malloc(sizeof(uint8_t) * size);
   if (content == NULL) {
     error("content pad");
@@ -35,13 +35,13 @@ struct iovec *pda1() {
  *
  * @param La taille du N
  */
-struct iovec *pda_n(int N) {
+struct iovec *pad_n(uint8_t N) {
   struct iovec *pad = malloc(sizeof(struct iovec));
   if (pad == NULL) {
     error("iovec pad_n");
     return NULL;
   }
-  uint32_t size = N+2;
+  uint8_t size = ((N < 253) ? N : N%253) +2;
   uint8_t *content = malloc(sizeof(uint8_t) * size);
   if (content == NULL) {
     error("content pad_n");
@@ -67,7 +67,7 @@ struct iovec *hello_short(uint64_t sender_id) {
     error("iovec hello");
     return NULL;
   }
-  uint32_t size = 10;
+  uint8_t size = 10;
   uint8_t *content = malloc(sizeof(uint8_t) * size);
   if (content == NULL) {
     error("content hello short");
@@ -95,7 +95,7 @@ struct iovec *hello_long(uint64_t sender_id, uint64_t id) {
     error("iovec hello_long");
     return NULL;
   }
-  uint32_t size = 18;
+  uint8_t size = 18;
   uint8_t *content = malloc(sizeof(uint8_t) * size);
   if (content == NULL) {
     error("content hello long");
@@ -119,13 +119,13 @@ struct iovec *hello_long(uint64_t sender_id, uint64_t id) {
  * @param ip l'ip à partager
  * @param port le port de l'ip
  */
-struct iovec *neighbour(uint16_t source_ip[8], uint16_t port) {
+struct iovec *neighbour(uint8_t source_ip[16], uint16_t port) {
   struct iovec *neighbour_i = malloc(sizeof(struct iovec));
   if (neighbour_i == NULL) {
     error("iovec neighbour");
     return NULL;
   }
-  uint32_t size = 20;
+  uint8_t size = 20;
   uint8_t *content = malloc(sizeof(uint8_t) * size);
   if (content == NULL) {
     error("content neighbour");
@@ -135,7 +135,7 @@ struct iovec *neighbour(uint16_t source_ip[8], uint16_t port) {
   memset(content, 0, 20 * sizeof(uint8_t));
   content[0] = 3;
   content[1] = 18;
-  memmove(content+2, source_ip, sizeof(uint16_t)* 8);
+  memmove(content+2, source_ip, sizeof(uint8_t)* 16);
   memmove(content+16, &port, sizeof(uint16_t));
   neighbour_i->iov_base = content;
   neighbour_i->iov_len = size;
@@ -158,7 +158,7 @@ struct iovec *data(uint64_t sender_id, uint32_t nonce, uint8_t type, uint32_t ms
     error("iovec ack");
     return NULL;
   }
-  uint32_t size =  (15 + msg_length);
+  uint8_t size =  (15 + msg_length);
   uint8_t *content = malloc(sizeof(uint8_t) * size);
   if (content == NULL) {
     error("content neighbour");
@@ -222,7 +222,7 @@ struct iovec *go_away(uint8_t code, uint32_t msg_length, uint8_t *msg) {
     error("iovec go_away");
     return NULL;
   }
-  uint32_t size = 3 + msg_length;
+  uint8_t size = 3 + msg_length;
   uint8_t *content = malloc(sizeof(uint8_t) * size);
   if (content == NULL) {
     error("content go_away");
@@ -252,7 +252,7 @@ struct iovec *warning(uint32_t msg_length, uint8_t *msg) {
     error("iovec warning");
     return NULL;
   }
-  uint32_t size = 2 + msg_length;
+  uint8_t size = 2 + msg_length;
   uint8_t *content = malloc(sizeof(uint8_t) * size);
   if (content == NULL) {
     error("content warning");
