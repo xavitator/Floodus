@@ -20,6 +20,7 @@ struct iovec *pda1() {
   uint8_t *content = malloc(sizeof(uint8_t) * size);
   if (content == NULL) {
     error("content pad");
+    free(pad);
     return NULL;
   }
   memset(content, 0, sizeof(uint8_t) * size);
@@ -44,6 +45,7 @@ struct iovec *pda_n(int N) {
   uint8_t *content = malloc(sizeof(uint8_t) * size);
   if (content == NULL) {
     error("content pad_n");
+    free(pad);
     return NULL;
   }
   memset(content, 0, sizeof(uint8_t) * size);
@@ -69,6 +71,7 @@ struct iovec *hello_short(uint64_t sender_id) {
   uint8_t *content = malloc(sizeof(uint8_t) * size);
   if (content == NULL) {
     error("content hello short");
+    free(hello);
     return NULL;
   }
   memset(content, 0, sizeof(uint8_t) * size);
@@ -96,6 +99,7 @@ struct iovec *hello_long(uint64_t sender_id, uint64_t id) {
   uint8_t *content = malloc(sizeof(uint8_t) * size);
   if (content == NULL) {
     error("content hello long");
+    free(hello);
     return NULL;
   }
   memset(content, 0, sizeof(uint8_t) * size);
@@ -125,6 +129,7 @@ struct iovec *neighbour(uint16_t source_ip[8], uint16_t port) {
   uint8_t *content = malloc(sizeof(uint8_t) * size);
   if (content == NULL) {
     error("content neighbour");
+    free(neighbour_i);
     return NULL;
   }
   memset(content, 0, 20 * sizeof(uint8_t));
@@ -157,6 +162,7 @@ struct iovec *data(uint64_t sender_id, uint32_t nonce, uint8_t type, uint32_t ms
   uint8_t *content = malloc(sizeof(uint8_t) * size);
   if (content == NULL) {
     error("content neighbour");
+    free(data_i);
     return NULL;
   }
   memset(content, 0, sizeof(uint8_t) * size);
@@ -189,6 +195,7 @@ struct iovec *ack(uint64_t sender_id, uint32_t nonce) {
   uint8_t *content  = malloc(sizeof(uint8_t) * size);
   if (content == NULL) {
     error("content ack");
+    free(ack_i);
     return NULL;
   }
   memset(content, 0, sizeof(uint8_t) * size);
