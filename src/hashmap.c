@@ -162,6 +162,93 @@ bool_t insert_map(data_t *key, data_t *value, hashmap_t *map)
 }
 
 /**
+ * @brief On fait une copie en profondeur de la node donnée en paramètre (copie du next récursivement)
+ * 
+ * @param node node à copier
+ * @return node_t* copie de la node donnée en argument
+ */
+node_t *deep_copy_node(node_t *node)
+{
+    node_t *res = NULL;
+    node_t *tmp = res;
+    while (node != NULL)
+    {
+        node_t *copy = malloc(sizeof(node_t));
+        if (copy == NULL)
+        {
+            freedeepnode(res);
+            return NULL;
+        }
+        data_t *key = copy_iovec(node->key);
+        if (key == NULL)
+        {
+            free(copy);
+            freedeepnode(res);
+            return NULL;
+        }
+        data_t *val = copy_iovec(node->value);
+        if (val == NULL)
+        {
+            free(copy);
+            freeiovec(key);
+            freedeepnode(res);
+            return NULL;
+        }
+        copy->key = key;
+        copy->value = val;
+        copy->next = NULL;
+        if (res == NULL)
+            res = copy;
+        else
+            tmp->next = copy;
+        tmp = copy;
+        node = node->next;
+    }
+    return res;
+}
+
+/**
+ * @brief On renvoie une liste sous forme de liste chainée de node de tous les éléments
+ * de la hashmap. Se référer à la structure de node pour les différents champs.
+ * 
+ * @param map Hashmap dont on veut la liste des éléments.
+ * @return node_t* Liste simplement chainée des éléments de la hashmap.
+ */
+node_t *map_to_list(hashmap_t *map)
+{
+    node_t *res = NULL;
+    node_t *tmp = res;
+    for (size_t i = 0; i < HASHMAP_SIZE; i++)
+    {
+        node_t *el = map->content[i];
+        if (el != NULL)
+        {
+            node_t *copy = deep_copy_node(el);
+            if (copy == NULL)
+            {
+                freedeepnode(res);
+                return NULL;
+            }
+            else
+            {
+                if (res == NULL)
+                {
+                    res = copy;
+                    tmp = res;
+                }
+                else
+                {
+                    while (tmp->next != NULL)
+                        tmp = tmp->next;
+                    tmp->next = copy;
+                }
+            }
+        }
+    }
+    return res;
+}
+
+/**
  * @brief On cherche l'existance de la clé dans le hashmap.
  * 
  * @param key clé
@@ -255,16 +342,7 @@ void clear_map(hashmap_t *map)
     node_t **content = map->content;
     for (size_t i = 0; i < HASHMAP_SIZE; i++)
     {
-        node_t *r = content[i];
-        node_t *p = r;
-        while (p != NULL)
-        {
-            r = p;
-            p = p->next;
-            freeiovec(r->key);
-            freeiovec(r->value);
-            free(r);
-        }
+        freedeepnode(content[i]);
         content[i] = NULL;
     }
 }
@@ -278,6 +356,25 @@ void freehashmap(hashmap_t *map)
 {
     clear_map(map);
     free(map);
+}
+
+/**
+ * @brief On libère en profondeur la mémoire d'une node, 
+ * c'est à dire qu'on free aussi les nodes que la suive (champs next)
+ * 
+ * @param node node à free
+ */
+void freedeepnode(node_t *node)
+{
+    node_t *p = node;
+    while (p != NULL)
+    {
+        node = p;
+        p = p->next;
+        freeiovec(node->key);
+        freeiovec(node->value);
+        free(node);
+    }
 }
 
 /**

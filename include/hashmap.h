@@ -10,6 +10,12 @@ typedef struct iovec data_t;
 
 typedef char bool_t;
 
+/**
+ * @brief Structure correspondant à une node la hashmap.
+ * Le champs 'key' correspond à l'identifiant de la node.
+ * Le champs 'value' correspond à la valeur de la node.
+ * Le champs 'next' correspond à la node qui suit (liste simplement chainée de node)
+ */
 typedef struct node_t
 {
     data_t *key;
@@ -17,6 +23,11 @@ typedef struct node_t
     struct node_t *next;
 } node_t;
 
+/**
+ * @brief Structure correspondant à une hashmap.
+ * Le champs 'size' correspond au nombre d'éléments contenus dans la hashmap.
+ * Le champs 'content' correspond au contenu de la hashmap.
+ */
 typedef struct hashmap_t
 {
     size_t size;
@@ -26,12 +37,15 @@ typedef struct hashmap_t
 hashmap_t *init_map(void);
 data_t *get_map(data_t *key, hashmap_t *map);
 bool_t insert_map(data_t *key, data_t *value, hashmap_t *map);
+node_t *deep_copy_node(node_t *node);
+node_t *map_to_list(hashmap_t *map);
 bool_t contains_map(data_t *key, hashmap_t *map);
 bool_t remove_map(data_t *key, hashmap_t *map);
 size_t get_size_map(hashmap_t *map);
 bool_t empty_map(hashmap_t *map);
 void clear_map(hashmap_t *map);
 void freehashmap(hashmap_t *map);
+void freedeepnode(node_t *node);
 void print_hashmap(hashmap_t *map);
 
 #endif
