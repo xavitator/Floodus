@@ -46,6 +46,33 @@ struct iovec *copy_iovec(struct iovec *data)
 }
 
 /**
+ * @brief Creer une structure iovec contenant une copie de ses arguments.
+ * 
+ * @param data contenu de la struct iovec
+ * @param len taille du contenu
+ * @return struct iovec* renvoie NULL si on a un problème de malloc, une struct iovec contenant les arguments sinon.
+ */
+struct iovec *create_iovec(void *data, size_t len)
+{
+    struct iovec *create = malloc(sizeof(struct iovec));
+    memset(create, 0, sizeof(struct iovec));
+    if (create == NULL)
+    {
+        return NULL;
+    }
+    void *content = malloc(len);
+    if (content == NULL)
+    {
+        free(create);
+        return NULL;
+    }
+    memmove(content, data, len);
+    create->iov_base = content;
+    create->iov_len = len;
+    return create;
+}
+
+/**
  * @brief Fonction de comparaison du contenu de deux struct iovec.
  * 
  * @param data1 donnée 1

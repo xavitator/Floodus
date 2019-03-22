@@ -14,7 +14,9 @@
 #include <time.h>
 #include <sys/stat.h>
 #include <fcntl.h>
+
 #include "TLV.h"
+#include "voisin.h"
 
 typedef struct datagram
 {
@@ -23,19 +25,6 @@ typedef struct datagram
     u_int16_t body_length;
     struct iovec *body;
 } datagram;
-
-u_int64_t id = 0;
-
-/**
- * @brief Instancie l'id du user
- * 
- */
-void create_user()
-{
-    id = rand();
-    id <<= 32;
-    id += rand();
-}
 
 /**
  * @brief Construction datagram avec les tlv en argument
@@ -56,7 +45,7 @@ datagram *make_datagram(struct iovec *tlvs, u_int16_t len)
 
 int make_demand(int s, struct addrinfo *p)
 {
-    datagram *el = make_datagram(hello_short(id), 1);
+    datagram *el = make_datagram(hello_short(myid), 1);
     u_int16_t bodylen = 0;
     for (int i = 0; i < el->body_length; i++)
     {
@@ -175,6 +164,8 @@ int send_hello()
 
 int main()
 {
+    init_neighbors();
+    printf("myid : %ld\n", myid);
     send_hello();
     return 0;
 }

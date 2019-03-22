@@ -3,6 +3,7 @@
 
 #include <sys/uio.h>
 
+struct iovec *create_iovec(void *data, size_t len);
 void freeiovec(struct iovec *data);
 struct iovec *copy_iovec(struct iovec *data);
 int compare_iovec(struct iovec *data1, struct iovec *data2);

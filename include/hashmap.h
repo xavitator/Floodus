@@ -6,9 +6,12 @@
 #define BIT_MAPSIZE 12
 #define HASHMAP_SIZE 4096
 
+#define false 0
+#define true 1
+
 typedef struct iovec data_t;
 
-typedef char bool_t;
+typedef u_int8_t bool_t;
 
 /**
  * @brief Structure correspondant à une node la hashmap.

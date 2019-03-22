@@ -16,11 +16,6 @@
 #include "hashmap.h"
 #include "iovec.h"
 
-#define false 0
-#define true 1
-
-typedef char bool_t;
-
 /**
  * @brief Fonction de Hachage
  * 
