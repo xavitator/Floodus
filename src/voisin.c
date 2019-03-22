@@ -2,18 +2,26 @@
 
 /**
  * @brief Id de l'utilisateur
+ * Son type est u_int64_t
+ * Il sera envoyé et reçu sans se soucier du endianess
  * 
  */
 u_int64_t myid = 0;
 
 /**
  * @brief Voisoins actuels
+ * Hashmap dont :
+ * - la key correspond à un ip_port_t
+ * - la value correspond à un neighbor_t
  * 
  */
 hashmap_t *neighbors = NULL;
 
 /**
  * @brief Voisins possibles
+ * Hashmap dont :
+ * - la key correspond à un ip_port_t
+ * - la value correspond à un ip_port_t qui est à priori le meme que la key
  * 
  */
 hashmap_t *environs = NULL;
