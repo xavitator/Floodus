@@ -39,22 +39,8 @@ typedef struct neighbor_t
     struct timespec long_hello;
 } neighbor_t;
 
-/**
- * @brief Id de l'utilisateur
- * 
- */
 extern u_int64_t myid;
-
-/**
- * @brief Voisoins actuels
- * 
- */
 extern hashmap_t *neighbors;
-
-/**
- * @brief Voisins possibles
- * 
- */
 extern hashmap_t *environs;
 
 void create_user();
