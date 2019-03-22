@@ -140,8 +140,6 @@ int send_hello()
     while (p != NULL)
     {
         s = socket(p->ai_family, p->ai_socktype, p->ai_protocol);
-        int val;
-        setsockopt(s, IPPROTO_IPV6, IPV6_V6ONLY, &val, sizeof(val));
         if (s >= 0)
             break;
         p = p->ai_next;
@@ -155,7 +153,6 @@ int send_hello()
     char ip[INET6_ADDRSTRLEN];
     inet_ntop(p->ai_family, p->ai_addr, ip, INET6_ADDRSTRLEN);
     printf("%s\n", ip);
-    create_user();
     make_demand(s, p);
     printf("demande effectuée\n");
     //recv_demand(s, p);
@@ -165,12 +162,7 @@ int send_hello()
 int main()
 {
     init_neighbors();
-    // problème d'envoi lorsque la ligne suivante est commentée
-    // on remarque que si on commente init_neighbour, tout se passe bien
-    // et si on commente les init_map dans init_neighbour, tout se passe bien aussi
-    // Le problème a l'air de venir du malloc...
-    // En fait, si tu ne commentes que l'un des deux entre le init et le printf, ca plante...
-    printf("myid : %ld\n", myid);
     send_hello();
+    free_neighbors();
     return 0;
 }

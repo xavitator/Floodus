@@ -43,19 +43,19 @@ typedef struct neighbor_t
  * @brief Id de l'utilisateur
  * 
  */
-extern u_int64_t myid;
+extern u_int64_t myid = 0;
 
 /**
  * @brief Voisoins actuels
  * 
  */
-extern hashmap_t *neighbors;
+extern hashmap_t *neighbors = NULL;
 
 /**
  * @brief Voisins possibles
  * 
  */
-extern hashmap_t *environs;
+extern hashmap_t *environs = NULL;
 
 void create_user();
 bool_t init_neighbors();
