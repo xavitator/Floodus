@@ -24,13 +24,9 @@ hashmap_t *environs = NULL;
  */
 void create_user()
 {
-    //printf("myid2 : %ld\n", myid);
     myid = rand();
-    //printf("myid3 : %ld\n", myid);
     myid <<= 32;
-    //printf("myid4 : %ld\n", myid);
     myid += rand();
-    //printf("myid5 : %ld\n", myid);
 }
 
 /**
