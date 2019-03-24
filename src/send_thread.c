@@ -1,5 +1,11 @@
 #include "send_thread.h"
 
+/**
+ * @brief
+ * Remplit le msg avec un paquet Hello long
+ * @param msg le message dont l'entête est rempli
+ * @param id l'id de l'utilisateur
+ */
 static void make_package_hello(struct msghdr *msg, uint64_t id, uint16_t size) {
   uint8_t *header = malloc(sizeof(uint8_t)*4); 
   header[0] = 93;
@@ -12,6 +18,13 @@ static void make_package_hello(struct msghdr *msg, uint64_t id, uint16_t size) {
   msg->msg_iov[1] = *(hello_long(myid, id));
 }
 
+/**
+ * @brief
+ * Envoie à tous les voisins un TLV Hello Long
+ * via la socket
+ * @param sock la socket sur laquelle écrire
+ * @param list liste des voisins
+ */
 static short send_hello_to(int sock, node_t *list) {
   struct msghdr msg = {0};
   struct sockaddr_in6 sin6 = {0};
@@ -38,7 +51,13 @@ static short send_hello_to(int sock, node_t *list) {
   return 0;
 }
 
-// Thread sender
+
+/**
+ * @brief
+ * Boucle d'itération du thread, envoie un Hello toutes les
+ * 30 secondes
+ * @param sock la socket sur laquelle écrire
+ */
 void *hello_sender(void *sock) {
   while(1) {
     sleep(5);
@@ -53,8 +72,11 @@ void *hello_sender(void *sock) {
   }
 }
 
-// Thread init give s
-// Partage des descripteurs de fichiers
+/**
+ * @brief
+ * Declenche un nouveau thread d'envoi de Hello
+ * @param s la socket sur laquelle écrire
+ */
 short init_sender(int *s) {
   pthread_t th;
   if(pthread_create(&th, NULL, hello_sender, s)) {
