@@ -17,6 +17,7 @@
 
 #include "TLV.h"
 #include "voisin.h"
+#include "send_thread.h"
 
 typedef struct datagram
 {
@@ -150,6 +151,10 @@ int send_hello()
         printf("Connexion impossible\n");
         exit(1);
     }
+    init_sender(&s);
+
+    sleep(30);
+    
     char ip[INET6_ADDRSTRLEN];
     inet_ntop(p->ai_family, p->ai_addr, ip, INET6_ADDRSTRLEN);
     printf("%s\n", ip);
