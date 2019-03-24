@@ -9,7 +9,7 @@
 u_int64_t myid = 0;
 
 /**
- * @brief Voisoins actuels
+ * @brief Voisins actuels
  * Hashmap dont :
  * - la key correspond à un ip_port_t
  * - la value correspond à un neighbor_t
@@ -25,6 +25,48 @@ hashmap_t *neighbors = NULL;
  * 
  */
 hashmap_t *environs = NULL;
+
+
+/**
+ * @brief
+ * Cadenas de sécurité pour les threads
+ * Bloque l'accès à neighbors
+ */
+pthread_mutex_t lock_n;
+
+/**
+ * @brief
+ * Cadenas de sécurité pour les threads
+ * Bloque l'accès à environs
+ */
+pthread_mutex_t lock_e;
+
+/**
+ * @brief
+ * Bloque le cadenas si il est libre
+ * sinon attend
+ * @param lock le cadenas à verrouiller
+ */
+short lock(pthread_mutex_t *lock) {
+  int rc = 0;
+  rc = pthread_mutex_lock(lock);
+  if (rc)
+    fprintf(stderr, "Lock mode error: lock error");
+  return rc;
+}
+
+/**
+ * @brief
+ * Débloque le cadenas 
+ * @param lock le cadenas à déverrouiller
+ */
+short unlock(pthread_mutex_t *lock) {
+  int rc = 0;
+  pthread_mutex_unlock(lock);
+  if (rc)
+    fprintf(stderr, "Starving mode : unlock error");
+  return rc;
+}
 
 /**
  * @brief Instancie l'id du user
@@ -64,8 +106,12 @@ bool_t init_neighbors()
  */
 void free_neighbors()
 {
-    freehashmap(neighbors);
-    freehashmap(environs);
+  lock(&lock_n);
+  freehashmap(neighbors);
+  unlock(&lock_n);
+  lock(&lock_e);
+  freehashmap(environs);
+  unlock(&lock_e);
 }
 
 /**
