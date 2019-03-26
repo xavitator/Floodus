@@ -15,6 +15,7 @@
 #include <sys/stat.h>
 #include <fcntl.h>
 #include "TLV.h"
+#include "debug.h"
 
 typedef struct datagram
 {
@@ -62,7 +63,7 @@ int make_demand(int s, struct addrinfo *p)
     {
         bodylen += (el->body + i)->iov_len;
     }
-    printf("%d\n", bodylen);
+    debug_int("bodylen", bodylen);
     size_t iovlen = 3 + el->body_length;
     struct iovec *iov = malloc(iovlen * (sizeof(struct iovec)));
     struct iovec magic = {0};
@@ -94,21 +95,18 @@ int make_demand(int s, struct addrinfo *p)
     rc = sendmsg(s, &msg, 0);
 
     // envoie avec sendto
-    char res[4096];
+    uint8_t res[4096];
     size_t size = 0;
     for (unsigned int i = 0; i < iovlen; i++)
     {
         memcpy(res + size, iov[i].iov_base, iov[i].iov_len);
         size += iov[i].iov_len;
     }
-    for (unsigned int i = 0; i < size; i++)
-    {
-        printf("%.2x ", res[i]);
-    }
     //rc = sendto(s, res, size, 0, p->ai_addr, p->ai_addrlen);
+    debug_hex("res", res, size);
     if (rc < 0)
         perror("error : ");
-    printf("\n%d\n", rc);
+    debug_int("rc", rc);
 
     unsigned char req[4096];
     struct iovec io;
@@ -123,12 +121,9 @@ int make_demand(int s, struct addrinfo *p)
     //rc = read(s, req, 4096);
     rc = recvfrom(s, req, 4096, 0, &test, &testlen);
     //rc = recvmsg(s, &msg, 0);
-    printf("test reussi : %d\n", rc);
-    for (int i = 0; i < rc; i++)
-    {
-        printf("%.2x ", req[i]);
-    }
-    printf("%ld\n", msg.msg_iovlen);
+    debug_int("rc after test", rc);
+    debug_hex("requete",req, rc);
+    debug_int("msg length", msg.msg_iovlen);
     return 0;
 }
 
@@ -142,10 +137,7 @@ int send_hello()
     h.ai_flags = AI_V4MAPPED | AI_ALL;
     rc = getaddrinfo("jch.irif.fr", "1212", &h, &r);
     if (rc < 0)
-    {
-        fprintf(stderr, "Error : %s\n", gai_strerror(rc));
-        exit(1);
-    }
+        debug_and_exit("rc", gai_strerror(rc), 1);
     struct addrinfo *p = r;
     int s = -1;
     while (p != NULL)
@@ -160,12 +152,11 @@ int send_hello()
     if (s < 0 || p == NULL)
     {
         freeaddrinfo(r);
-        printf("Connexion impossible\n");
-        exit(1);
+        debug_and_exit("p", "Connexion impossible", 1);
     }
     char ip[INET6_ADDRSTRLEN];
     inet_ntop(p->ai_family, p->ai_addr, ip, INET6_ADDRSTRLEN);
-    printf("%s\n", ip);
+    debug("ip", ip);
     create_user();
     make_demand(s, p);
     printf("demande effectuée\n");
