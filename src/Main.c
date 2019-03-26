@@ -17,6 +17,8 @@
 #include "TLV.h"
 #include "debug.h"
 
+#define D_MAIN 1
+
 typedef struct datagram
 {
     u_int8_t magic;
@@ -63,7 +65,7 @@ int make_demand(int s, struct addrinfo *p)
     {
         bodylen += (el->body + i)->iov_len;
     }
-    debug_int("bodylen", bodylen);
+    debug_int(D_MAIN, "bodylen", bodylen);
     size_t iovlen = 3 + el->body_length;
     struct iovec *iov = malloc(iovlen * (sizeof(struct iovec)));
     struct iovec magic = {0};
@@ -103,10 +105,10 @@ int make_demand(int s, struct addrinfo *p)
         size += iov[i].iov_len;
     }
     //rc = sendto(s, res, size, 0, p->ai_addr, p->ai_addrlen);
-    debug_hex("res", res, size);
+    debug_hex(D_MAIN, "res", res, size);
     if (rc < 0)
         perror("error : ");
-    debug_int("rc", rc);
+    debug_int(D_MAIN, "rc", rc);
 
     unsigned char req[4096];
     struct iovec io;
@@ -121,9 +123,9 @@ int make_demand(int s, struct addrinfo *p)
     //rc = read(s, req, 4096);
     rc = recvfrom(s, req, 4096, 0, &test, &testlen);
     //rc = recvmsg(s, &msg, 0);
-    debug_int("rc after test", rc);
-    debug_hex("requete",req, rc);
-    debug_int("msg length", msg.msg_iovlen);
+    debug_int(D_MAIN, "rc after test", rc);
+    debug_hex(D_MAIN, "requete", req, rc);
+    debug_int(D_MAIN, "msg length", msg.msg_iovlen);
     return 0;
 }
 
@@ -137,7 +139,7 @@ int send_hello()
     h.ai_flags = AI_V4MAPPED | AI_ALL;
     rc = getaddrinfo("jch.irif.fr", "1212", &h, &r);
     if (rc < 0)
-        debug_and_exit("rc", gai_strerror(rc), 1);
+        debug_and_exit(D_MAIN, "rc", gai_strerror(rc), 1);
     struct addrinfo *p = r;
     int s = -1;
     while (p != NULL)
@@ -152,11 +154,11 @@ int send_hello()
     if (s < 0 || p == NULL)
     {
         freeaddrinfo(r);
-        debug_and_exit("p", "Connexion impossible", 1);
+        debug_and_exit(D_MAIN, "p", "Connexion impossible", 1);
     }
     char ip[INET6_ADDRSTRLEN];
     inet_ntop(p->ai_family, p->ai_addr, ip, INET6_ADDRSTRLEN);
-    debug("ip", ip);
+    debug(D_MAIN, "ip", ip);
     create_user();
     make_demand(s, p);
     printf("demande effectuée\n");
