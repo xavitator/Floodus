@@ -3,7 +3,7 @@
 /* Fonction affichage erreur */
 static void error(char *obj)
 {
-  debug(D_TLV, obj, "Erreur TLV => can't allocate memory");
+  debug(D_TLV, 1, obj, "Erreur TLV => can't allocate memory");
 }
 
 /**
@@ -28,7 +28,7 @@ struct iovec *pad1()
   memset(content, 0, sizeof(uint8_t) * size);
   pad->iov_base = content;
   pad->iov_len = size;
-  debug_hex(D_TLV, "pad1 contruction TLV", pad->iov_base, pad->iov_len);
+  debug_hex(D_TLV,0,"pad1 contruction TLV", pad->iov_base, pad->iov_len);
   return pad;
 }
 
@@ -58,7 +58,7 @@ struct iovec *pad_n(uint8_t N)
   content[1] = N;
   pad->iov_base = content;
   pad->iov_len = size;
-  debug_hex(D_TLV, "pad_n contruction TLV", pad->iov_base, pad->iov_len);
+  debug_hex(D_TLV, 0, "pad_n contruction TLV", pad->iov_base, pad->iov_len);
   return pad;
 }
 
@@ -89,7 +89,7 @@ struct iovec *hello_short(uint64_t sender_id)
   memmove(content + 2, &sender_id, sizeof(uint64_t));
   hello->iov_base = content;
   hello->iov_len = size;
-  debug_hex(D_TLV, "hello_short contruction TLV", hello->iov_base, hello->iov_len);
+  debug_hex(D_TLV, 0, "hello_short contruction TLV", hello->iov_base, hello->iov_len);
   return hello;
 }
 
@@ -122,7 +122,7 @@ struct iovec *hello_long(uint64_t sender_id, uint64_t id)
   memmove(content + 10, &id, sizeof(uint64_t));
   hello->iov_base = content;
   hello->iov_len = size;
-  debug_hex(D_TLV, "hello_long contruction TLV", hello->iov_base, hello->iov_len);
+  debug_hex(D_TLV,0, "hello_long contruction TLV", hello->iov_base, hello->iov_len);
   return hello;
 }
 
@@ -155,7 +155,7 @@ struct iovec *neighbour(uint8_t source_ip[16], uint16_t port)
   memmove(content + 16, &port, sizeof(uint16_t));
   neighbour_i->iov_base = content;
   neighbour_i->iov_len = size;
-  debug_hex(D_TLV, "neighbour contruction TLV", neighbour_i->iov_base, neighbour_i->iov_len);
+  debug_hex(D_TLV, 0, "neighbour contruction TLV", neighbour_i->iov_base, neighbour_i->iov_len);
   return neighbour_i;
 }
 
@@ -193,7 +193,7 @@ struct iovec *data(uint64_t sender_id, uint32_t nonce, uint8_t type, uint8_t msg
   memmove(content + 10, msg, msg_length);
   data_i->iov_base = content;
   data_i->iov_len = size;
-  debug_hex(D_TLV, "data contruction TLV", data_i->iov_base, data_i->iov_len);
+  debug_hex(D_TLV,0, "data contruction TLV", data_i->iov_base, data_i->iov_len);
   return data_i;
 }
 
@@ -226,7 +226,7 @@ struct iovec *ack(uint64_t sender_id, uint32_t nonce)
   memmove(content + 10, &nonce, sizeof(uint32_t));
   ack_i->iov_base = content;
   ack_i->iov_len = size;
-  debug_hex(D_TLV, "ack contruction TLV", ack_i->iov_base, ack_i->iov_len);
+  debug_hex(D_TLV, 0, "ack contruction TLV", ack_i->iov_base, ack_i->iov_len);
   return ack_i;
 }
 
@@ -260,7 +260,7 @@ struct iovec *go_away(uint8_t code, uint8_t msg_length, uint8_t *msg)
   memmove(content + 3, msg, msg_length);
   go_away_i->iov_base = content;
   go_away_i->iov_len = size;
-  debug_hex(D_TLV, "go_away contruction TLV", go_away_i->iov_base, go_away_i->iov_len);
+  debug_hex(D_TLV, 0, "go_away contruction TLV", go_away_i->iov_base, go_away_i->iov_len);
   return go_away_i;
 }
 
@@ -292,6 +292,6 @@ struct iovec *warning(uint8_t msg_length, uint8_t *msg)
   memmove(content + 2, msg, msg_length);
   warning_i->iov_base = content;
   warning_i->iov_len = size;
-  debug_hex(D_TLV, "warning contruction TLV", warning_i->iov_base, warning_i->iov_len);
+  debug_hex(D_TLV, 0, "warning contruction TLV", warning_i->iov_base, warning_i->iov_len);
   return warning_i;
 }
