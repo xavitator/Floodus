@@ -22,8 +22,6 @@ typedef unsigned char bool_t;
 
 typedef struct iovec data_t;
 
-typedef char bool_t;
-
 /**
  * @brief Structure correspondant à une node la hashmap.
  * Le champs 'key' correspond à l'identifiant de la node.

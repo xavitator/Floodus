@@ -54,11 +54,11 @@ hashmap_t *init_map(void)
     hashmap_t *map = malloc(sizeof(hashmap_t));
     if (map == NULL)
     {
-        debug(D_HASHMAP, "init-map", "malloc renvoie un NULL");
+        debug(D_HASHMAP, 1, "init-map", "malloc renvoie un NULL");
         return NULL;
     }
     memset(map, 0, sizeof(hashmap_t));
-    debug(D_HASHMAP, "init-map", "création d'une hashmap");
+    debug(D_HASHMAP, 0, "init-map", "création d'une hashmap");
     return map;
 }
 
@@ -74,15 +74,15 @@ data_t *get_map(data_t *key, hashmap_t *map)
     if (key == NULL || map == NULL)
     {
         if (key == NULL)
-            debug(D_HASHMAP, "get_map", "key est NULL");
+            debug(D_HASHMAP, 1, "get_map", "key est NULL");
         if (map == NULL)
-            debug(D_HASHMAP, "get_map", "map est NULL");
+            debug(D_HASHMAP, 1, "get_map", "map est NULL");
         return NULL;
     }
     ssize_t ind = hash(key);
     if (ind < 0)
     {
-        debug(D_HASHMAP, "get_map", "problème de hash");
+        debug(D_HASHMAP, 1, "get_map", "problème de hash");
         return NULL;
     }
     node_t *p = map->content[ind];
@@ -90,16 +90,16 @@ data_t *get_map(data_t *key, hashmap_t *map)
         p = p->next;
     if (p == NULL)
     {
-        debug(D_HASHMAP, "get_map", "node inexistante");
+        debug(D_HASHMAP, 1, "get_map", "node inexistante");
         return NULL;
     }
     data_t *value = copy_iovec(p->value);
     if (value == NULL)
     {
-        debug(D_HASHMAP, "get_map", "copie de la valeur impossible");
+        debug(D_HASHMAP, 1, "get_map", "copie de la valeur impossible");
         return NULL;
     }
-    debug(D_HASHMAP, "get_map", "renvoie de la valeur");
+    debug(D_HASHMAP, 0, "get_map", "renvoie de la valeur");
     return value;
 }
 
@@ -116,9 +116,9 @@ bool_t insert_map(data_t *key, data_t *value, hashmap_t *map)
     if (key == NULL || map == NULL)
     {
         if (key == NULL)
-            debug(D_HASHMAP, "insert_map", "key est NULL");
+            debug(D_HASHMAP, 1, "insert_map", "key est NULL");
         if (map == NULL)
-            debug(D_HASHMAP, "insert_map", "map est NULL");
+            debug(D_HASHMAP, 1, "insert_map", "map est NULL");
         return false;
     }
     // fin verification des arguments
@@ -126,14 +126,14 @@ bool_t insert_map(data_t *key, data_t *value, hashmap_t *map)
     data_t *new_key = copy_iovec(key);
     if (new_key == NULL)
     {
-        debug(D_HASHMAP, "insert_map", "copie de la key impossible");
+        debug(D_HASHMAP, 1, "insert_map", "copie de la key impossible");
         return false;
     }
     data_t *new_value = copy_iovec(value);
     if (new_value == NULL)
     {
         freeiovec(new_key);
-        debug(D_HASHMAP, "insert_map", "copie de la value impossible");
+        debug(D_HASHMAP, 1, "insert_map", "copie de la value impossible");
         return false;
     }
     // fin initialisation
@@ -141,7 +141,7 @@ bool_t insert_map(data_t *key, data_t *value, hashmap_t *map)
     ssize_t ind = hash(key);
     if (ind < 0)
     {
-        debug(D_HASHMAP, "insert_map", "problème de hash");
+        debug(D_HASHMAP, 1, "insert_map", "problème de hash");
         return false;
     }
     node_t *p = map->content[ind];
@@ -158,7 +158,7 @@ bool_t insert_map(data_t *key, data_t *value, hashmap_t *map)
         freeiovec(p->value);
         p->value = new_value;
         freeiovec(new_key);
-        debug(D_HASHMAP, "insert_map", "changement de la valeur de la node dans map");
+        debug(D_HASHMAP, 0, "insert_map", "changement de la valeur de la node dans map");
         return true;
     }
 
@@ -168,7 +168,7 @@ bool_t insert_map(data_t *key, data_t *value, hashmap_t *map)
     {
         freeiovec(new_key);
         freeiovec(new_value);
-        debug(D_HASHMAP, "insert_map", "problème dans la création de la node");
+        debug(D_HASHMAP, 1, "insert_map", "problème dans la création de la node");
         return false;
     }
     p->key = new_key;
@@ -179,7 +179,7 @@ bool_t insert_map(data_t *key, data_t *value, hashmap_t *map)
     else
         r->next = p;
     map->size++;
-    debug(D_HASHMAP, "insert_map", "création d'une node key/value dans map");
+    debug(D_HASHMAP, 0, "insert_map", "création d'une node key/value dans map");
     return true;
 }
 
@@ -198,14 +198,14 @@ node_t *deep_copy_node(node_t *node)
         node_t *copy = malloc(sizeof(node_t));
         if (copy == NULL)
         {
-            debug(D_HASHMAP, "deep_copy_node", "malloc de copy impossible");
+            debug(D_HASHMAP, 1, "deep_copy_node", "malloc de copy impossible");
             freedeepnode(res);
             return NULL;
         }
         data_t *key = copy_iovec(node->key);
         if (key == NULL)
         {
-            debug(D_HASHMAP, "deep_copy_node", "copy de key impossible");
+            debug(D_HASHMAP, 1, "deep_copy_node", "copy de key impossible");
             free(copy);
             freedeepnode(res);
             return NULL;
@@ -213,7 +213,7 @@ node_t *deep_copy_node(node_t *node)
         data_t *val = copy_iovec(node->value);
         if (val == NULL)
         {
-            debug(D_HASHMAP, "deep_copy_node", "copy de value impossible");
+            debug(D_HASHMAP, 1, "deep_copy_node", "copy de value impossible");
             free(copy);
             freeiovec(key);
             freedeepnode(res);
@@ -229,7 +229,7 @@ node_t *deep_copy_node(node_t *node)
         tmp = copy;
         node = node->next;
     }
-    debug(D_HASHMAP, "deep_copy_node", "renvoie de la copie");
+    debug(D_HASHMAP, 0, "deep_copy_node", "renvoie de la copie");
     return res;
 }
 
@@ -252,7 +252,7 @@ node_t *map_to_list(hashmap_t *map)
             node_t *copy = deep_copy_node(el);
             if (copy == NULL)
             {
-                debug(D_HASHMAP, "map_to_list", "echec de deep_copy_node");
+                debug(D_HASHMAP, 1, "map_to_list", "echec de deep_copy_node");
                 freedeepnode(res);
                 return NULL;
             }
@@ -274,9 +274,9 @@ node_t *map_to_list(hashmap_t *map)
     }
     if (res == NULL)
     {
-        debug(D_HASHMAP, "map_to_list", "map est vide");
+        debug(D_HASHMAP, 0, "map_to_list", "map est vide");
     }
-    debug(D_HASHMAP, "map_to_list", "renvoie de la liste de map");
+    debug(D_HASHMAP, 0, "map_to_list", "renvoie de la liste de map");
     return res;
 }
 
@@ -292,9 +292,9 @@ bool_t contains_map(data_t *key, hashmap_t *map)
     if (key == NULL || map == NULL)
     {
         if (key == NULL)
-            debug(D_HASHMAP, "contains_map", "key est NULL");
+            debug(D_HASHMAP, 1, "contains_map", "key est NULL");
         if (map == NULL)
-            debug(D_HASHMAP, "contains_map", "map est NULL");
+            debug(D_HASHMAP, 1, "contains_map", "map est NULL");
         return false;
     }
     // fin verification des arguments
@@ -302,13 +302,13 @@ bool_t contains_map(data_t *key, hashmap_t *map)
     ssize_t ind = hash(key);
     if (ind < 0)
     {
-        debug(D_HASHMAP, "contains_map", "problème de hash");
+        debug(D_HASHMAP, 1, "contains_map", "problème de hash");
         return false;
     }
     node_t *p = map->content[ind];
     while (p != NULL && compare_iovec(key, p->key) != 0)
         p = p->next;
-    debug_int(D_HASHMAP, "contains_map -> résultat", p != NULL);
+    debug_int(D_HASHMAP, 0, "contains_map -> résultat", p != NULL);
     return p != NULL;
 }
 
@@ -324,9 +324,9 @@ bool_t remove_map(data_t *key, hashmap_t *map)
     if (key == NULL || map == NULL)
     {
         if (key == NULL)
-            debug(D_HASHMAP, "remove_map", "key est NULL");
+            debug(D_HASHMAP, 1, "remove_map", "key est NULL");
         if (map == NULL)
-            debug(D_HASHMAP, "remove_map", "map est NULL");
+            debug(D_HASHMAP, 1, "remove_map", "map est NULL");
         return false;
     }
     // fin verification des arguments
@@ -334,7 +334,7 @@ bool_t remove_map(data_t *key, hashmap_t *map)
     ssize_t ind = hash(key);
     if (ind < 0)
     {
-        debug(D_HASHMAP, "remove_map", "problème de hash");
+        debug(D_HASHMAP, 1, "remove_map", "problème de hash");
         return false;
     }
     node_t *p = map->content[ind];
@@ -346,7 +346,7 @@ bool_t remove_map(data_t *key, hashmap_t *map)
     }
     if (p == NULL)
     {
-        debug(D_HASHMAP, "remove_map", "map ne contient pas la key");
+        debug(D_HASHMAP, 1, "remove_map", "map ne contient pas la key");
         return false;
     }
     if (p == r)
@@ -357,7 +357,7 @@ bool_t remove_map(data_t *key, hashmap_t *map)
     freeiovec(p->value);
     free(p);
     map->size--;
-    debug(D_HASHMAP, "remove_map", "node enlevée");
+    debug(D_HASHMAP, 0, "remove_map", "node enlevée");
     return true;
 }
 
@@ -371,10 +371,10 @@ size_t get_size_map(hashmap_t *map)
 {
     if (map == NULL)
     {
-        debug(D_HASHMAP, "get_size_map", "argument NULL");
+        debug(D_HASHMAP, 1, "get_size_map", "argument NULL");
         return 0;
     }
-    debug_int(D_HASHMAP, "get_size_map -> resultat", map->size);
+    debug_int(D_HASHMAP, 0, "get_size_map -> resultat", map->size);
     return map->size;
 }
 
@@ -387,7 +387,7 @@ size_t get_size_map(hashmap_t *map)
 bool_t empty_map(hashmap_t *map)
 {
     uint8_t res = 0 == get_size_map(map);
-    debug_int(D_HASHMAP, "empty_map -> resultat", res);
+    debug_int(D_HASHMAP, 0, "empty_map -> resultat", res);
     return res;
 }
 
@@ -400,7 +400,7 @@ void clear_map(hashmap_t *map)
 {
     if (map == NULL)
     {
-        debug(D_HASHMAP, "clear_map", "argument NULL");
+        debug(D_HASHMAP, 1, "clear_map", "argument NULL");
         return;
     }
     node_t **content = map->content;
@@ -409,7 +409,7 @@ void clear_map(hashmap_t *map)
         freedeepnode(content[i]);
         content[i] = NULL;
     }
-    debug(D_HASHMAP, "clear_map", "mémoire libérée du contenu du map");
+    debug(D_HASHMAP, 0, "clear_map", "mémoire libérée du contenu du map");
 }
 
 /**
@@ -421,7 +421,7 @@ void freehashmap(hashmap_t *map)
 {
     clear_map(map);
     free(map);
-    debug(D_HASHMAP, "freehashmap", "free map");
+    debug(D_HASHMAP, 0, "freehashmap", "free map");
 }
 
 /**
@@ -441,7 +441,7 @@ void freedeepnode(node_t *node)
         freeiovec(node->value);
         free(node);
     }
-    debug(D_HASHMAP, "freedeepnode", "free node");
+    debug(D_HASHMAP, 0, "freedeepnode", "free node");
 }
 
 /**
