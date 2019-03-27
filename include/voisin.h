@@ -23,7 +23,7 @@
 typedef struct ip_port_t
 {
     u_int8_t ipv6[16];
-    u_int8_t port;
+    u_int16_t port;
 } ip_port_t;
 
 /**
