@@ -2,13 +2,25 @@
 #define _HASHMAP_H
 
 #include <sys/uio.h>
+#include <stdio.h>
+#include <string.h>
+#include <stdlib.h>
+#include <unistd.h>
+#include <errno.h>
+#include <sys/types.h>
 
+#include "iovec.h"
+#include "debug.h"
+
+#define D_HASHMAP 0
 #define BIT_MAPSIZE 12
 #define HASHMAP_SIZE 4096
+#define false 0
+#define true 1
+
+typedef unsigned char bool_t;
 
 typedef struct iovec data_t;
-
-typedef char bool_t;
 
 /**
  * @brief Structure correspondant à une node la hashmap.

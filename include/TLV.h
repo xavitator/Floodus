@@ -7,6 +7,10 @@
 #include <sys/uio.h>
 #include <string.h>
 
+#include "debug.h"
+
+#define D_TLV 0
+
 struct iovec *pad1();
 struct iovec *pad_n(uint8_t N);
 struct iovec *hello_short(uint64_t source_id);
