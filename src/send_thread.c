@@ -1,85 +1,109 @@
+/**
+ * @file send_thread.c Fichier source de send_thread
+ * @author Floodus
+ * @brief PThread envoyant des Hello et neighbors
+ */
+
 #include "send_thread.h"
 
 /**
  * @brief
- * Remplit le msg avec un paquet Hello long
- * @param msg le message dont l'entête est rempli
- * @param id l'id de l'utilisateur
+ * Envoie à tous les voisins un TLV Hello Court
+ * @param list liste des voisins potentiels
+ * @param nb le nombre à qui envoyer
  */
-static void make_package_hello(struct msghdr *msg, uint64_t id, uint16_t size) {
-  uint8_t *header = malloc(sizeof(uint8_t)*4); 
-  header[0] = 93;
-  header[1] = 2;
-  *((uint16_t*)header+2) = size;
-  struct iovec h_iov = {0};
-  h_iov.iov_len = (sizeof(uint8_t) * 4);
-  h_iov.iov_base = header;
-  msg->msg_iov[0] = h_iov;
-  msg->msg_iov[1] = *(hello_long(myid, id));
+static short send_hello_short(node_t *list, int nb) {
+  int rc = 0, count = 0;
+  node_t *current = list;
+  while(current != NULL && count < nb) {
+    ip_port_t addr = {0};
+    memmove(&addr, current->value->iov_base, sizeof(ip_port_t));
+
+    struct iovec *tlv_hello = hello_short(myid);
+    if (tlv_hello == NULL)
+      return 0;
+
+    rc = send_tlv(&addr, tlv_hello, 1);
+    if(rc < 0)
+      return rc;
+
+    freeiovec(tlv_hello);
+    count++;
+    current = current->next;
+  }
+  return count;
 }
 
 /**
  * @brief
  * Envoie à tous les voisins un TLV Hello Long
- * via la socket
- * @param sock la socket sur laquelle écrire
- * @param list liste des voisins
+ * @param list liste des voisins courants
  */
-static short send_hello_to(int sock, node_t *list) {
-  struct msghdr msg = {0};
-  struct sockaddr_in6 sin6 = {0};
-  int rc = 0;
+static short send_hello_long(node_t *list) {
+  int rc = 0, c = 0;
   node_t *current = list;
   while(current != NULL) {
-    ip_port_t *addr_intel = (ip_port_t*)current->key;
-    neighbor_t *n_intel = (neighbor_t*)current->value;
-    memset(&msg, 0 ,sizeof(msg));
-    memset(&sin6, 0 ,sizeof(sin6));
-    sin6.sin6_family = AF_INET6;
-    inet_pton(AF_INET6, (char *)addr_intel->ipv6, &sin6.sin6_addr);
-    sin6.sin6_port = htons(addr_intel->port);
-    msg.msg_name = &sin6;
-    msg.msg_namelen = sizeof(sin6);
-    msg.msg_iov = malloc(sizeof(struct iovec)*2);
-    make_package_hello(&msg,n_intel->id,htons(18));
-    msg.msg_iovlen = 2;
-    rc = sendmsg(sock, &msg, 0);
+    ip_port_t addr = {0};
+    neighbor_t intel = {0};
+    memmove(&intel, current->value->iov_base, sizeof(neighbor_t));
+    memmove(&addr, current->key->iov_base, sizeof(ip_port_t));
+
+    struct iovec *tlv_hello = hello_long(myid, intel.id);
+    if (tlv_hello == NULL)
+      return c;
+
+    rc = send_tlv(&addr, tlv_hello, 1);
     if(rc < 0)
       return rc;
+
+    freeiovec(tlv_hello);
+    c++;
     current = current->next;
   }
-  return 0;
+  return c;
 }
-
 
 /**
  * @brief
  * Boucle d'itération du thread, envoie un Hello toutes les
  * 30 secondes
- * @param sock la socket sur laquelle écrire
  */
-void *hello_sender(void *sock) {
+static void *hello_sender(void *unused) {
+  (void) unused; // Enleve le warning unused
+
+  int count = 0;
   while(1) {
     sleep(5);
-    printf("READING => neighbors\n");
+    debug(D_SEND_THREAD,0,"pthread", "Read hashmaps and send");
+
     lock(&lock_n);
     node_t *n_list = map_to_list(neighbors);
+    node_t *e_list = map_to_list(environs);
     unlock(&lock_n);
-    send_hello_to(*((int*)sock), n_list);
+
+    count = send_hello_long(n_list);
+    debug_int(D_SEND_THREAD, 0, "count n", count);
+    if (count < MIN) {
+      count = send_hello_short(e_list, MIN-count);
+      debug_int(D_SEND_THREAD, 0, "count e", count);
+    }
+
     if (n_list != NULL)
       freedeepnode(n_list);
-    printf("READING Done => neighbors\n");
+    if (e_list != NULL)
+      freedeepnode(e_list);
+    debug(D_SEND_THREAD, 0, "pthread", "Sending Done");
   }
+  pthread_exit(NULL);
 }
 
 /**
  * @brief
  * Declenche un nouveau thread d'envoi de Hello
- * @param s la socket sur laquelle écrire
  */
-short init_sender(int *s) {
+short init_sender() {
   pthread_t th;
-  if(pthread_create(&th, NULL, hello_sender, s)) {
+  if(pthread_create(&th, NULL, hello_sender, NULL)) {
     fprintf(stderr, "Can't initialise thread sender\n");
     return 0;
   }
