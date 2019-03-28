@@ -19,9 +19,10 @@ static short send_hello_short(node_t *list, int nb) {
     ip_port_t addr = {0};
     memmove(&addr, current->value->iov_base, sizeof(ip_port_t));
 
-    struct iovec *tlv_hello = hello_short(myid);
+    struct iovec *tlv_hello = hello_short(myid); 
     if (tlv_hello == NULL)
       return 0;
+    debug_hex(D_SEND_THREAD, 0, "tlv_hello court", tlv_hello->iov_base, tlv_hello->iov_len);
 
     rc = send_tlv(&addr, tlv_hello, 1);
     if(rc < 0)
@@ -51,7 +52,7 @@ static short send_hello_long(node_t *list) {
     struct iovec *tlv_hello = hello_long(myid, intel.id);
     if (tlv_hello == NULL)
       return c;
-
+    debug_hex(D_SEND_THREAD, 0, "tlv_hello long", tlv_hello->iov_base, tlv_hello->iov_len);
     rc = send_tlv(&addr, tlv_hello, 1);
     if(rc < 0)
       return rc;
@@ -73,7 +74,7 @@ static void *hello_sender(void *unused) {
 
   int count = 0;
   while(1) {
-    sleep(5);
+    sleep(30);
     debug(D_SEND_THREAD,0,"pthread", "Read hashmaps and send");
 
     lock(&lock_n);
