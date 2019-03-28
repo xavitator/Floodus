@@ -18,9 +18,9 @@ all:
 	@printf "%s\n" $(OBJ)
 
 $(NAME): $(OBJ)
-	@echo "[\e[1;34mEn cours\e[0m] Assemblement"
+	@printf "[\e[1;34mEn cours\e[0m] Assemblement\n"
 	$(CC) -o $(NAME) $(FLAGS) -I $(INCL) $(LDLIBS) $(OBJ)
-	@echo "[\e[1;32mOK\e[0m] Assemblement finie"
+	@printf "[\e[1;32mOK\e[0m] Assemblement finie\n"
 
 $(BIN)%.o: $(SRCDIR)%.c
 	@mkdir -p $(dir $@)
@@ -28,15 +28,15 @@ $(BIN)%.o: $(SRCDIR)%.c
  
 .PHONY: clean
 clean:
-	@echo "[\e[1;34mEn cours\e[0m] Suppression des binaires"
+	@printf "[\e[1;34mEn cours\e[0m] Suppression des binaires\n"
 	@rm -rf $(BIN)
-	@echo "[\e[1;32mOK\e[0m] Suppression finie"
+	@printf "[\e[1;32mOK\e[0m] Suppression finie\n"
 
 .PHONY: cleandoc
 cleandoc:
-	@echo "[\e[1;34mEn cours\e[0m] Suppression de la documentation"
+	@printf "[\e[1;34mEn cours\e[0m] Suppression de la documentation\n"
 	@rm -rf $(DOCS)
-	@echo "[\e[1;32mOK\e[0m] Suppression finie"
+	@printf "[\e[1;32mOK\e[0m] Suppression finie\n"
 
 .PHONY: cleanall
 cleanall: clean cleandoc
@@ -47,12 +47,12 @@ re: cleanall $(NAME)
 
 .PHONY: doc
 doc: cleandoc
-	@echo "[\e[1;34mEn cours\e[0m] Création de la documentation"
+	@printf "[\e[1;34mEn cours\e[0m] Création de la documentation\n"
 	@doxygen documentation
-	@echo "[\e[1;32mOK\e[0m] Création finie"
+	@printf "[\e[1;32mOK\e[0m] Création finie\n"
 
 .PHONY: zip
 zip:
-	@echo "[\e[1;34mEn cours\e[0m] Début du zippage"
+	@printf "[\e[1;34mEn cours\e[0m] Début du zippage\n"
 	@zip -r $(NAME).zip README Makefile $(SRCDIR) documentation $(LIB) $(RES) $(INCL)
-	@echo "[\e[1;32mOK\e[0m] Zippage finie"
+	@printf "[\e[1;32mOK\e[0m] Zippage finie\n"
