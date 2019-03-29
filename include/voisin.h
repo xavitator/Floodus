@@ -17,8 +17,6 @@
 #include "iovec.h"
 #include "hashmap.h"
 
-#define D_VOISIN 1
-
 /**
  * @brief Structure contenant l'ip et le port d'un individu.
  * Le champs 'ipv6' correspond à l'ipv6 de l'individu.
@@ -43,11 +41,11 @@ typedef struct neighbor_t
     struct timespec long_hello;
 } neighbor_t;
 
-extern u_int64_t myid;
-extern hashmap_t *neighbors;
-extern hashmap_t *environs;
-extern pthread_mutex_t lock_n;
-extern pthread_mutex_t lock_e;
+extern u_int64_t g_myid;
+extern hashmap_t *g_neighbors;
+extern hashmap_t *g_environs;
+extern pthread_mutex_t g_lock_n;
+extern pthread_mutex_t g_lock_e;
 
 short lock(pthread_mutex_t*);
 short unlock(pthread_mutex_t*);

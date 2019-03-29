@@ -19,12 +19,12 @@ static short send_hello_short(node_t *list, int nb) {
     ip_port_t addr = {0};
     memmove(&addr, current->value->iov_base, sizeof(ip_port_t));
 
-    struct iovec *tlv_hello = hello_short(myid); 
+    struct iovec *tlv_hello = hello_short(g_myid); 
     if (tlv_hello == NULL)
       return 0;
     debug_hex(D_SEND_THREAD, 0, "tlv_hello court", tlv_hello->iov_base, tlv_hello->iov_len);
 
-    rc = send_tlv(&addr, tlv_hello, 1);
+    rc = add_tlv(addr, tlv_hello);
     if(rc < 0)
       return rc;
 
@@ -49,11 +49,11 @@ static short send_hello_long(node_t *list) {
     memmove(&intel, current->value->iov_base, sizeof(neighbor_t));
     memmove(&addr, current->key->iov_base, sizeof(ip_port_t));
 
-    struct iovec *tlv_hello = hello_long(myid, intel.id);
+    struct iovec *tlv_hello = hello_long(g_myid, intel.id);
     if (tlv_hello == NULL)
       return c;
     debug_hex(D_SEND_THREAD, 0, "tlv_hello long", tlv_hello->iov_base, tlv_hello->iov_len);
-    rc = send_tlv(&addr, tlv_hello, 1);
+    rc = add_tlv(addr, tlv_hello);
     if(rc < 0)
       return rc;
 
@@ -77,10 +77,12 @@ static void *hello_sender(void *unused) {
     sleep(30);
     debug(D_SEND_THREAD,0,"pthread", "Read hashmaps and send");
 
-    lock(&lock_n);
-    node_t *n_list = map_to_list(neighbors);
-    node_t *e_list = map_to_list(environs);
-    unlock(&lock_n);
+    lock(&g_lock_n);
+    node_t *n_list = map_to_list(g_neighbors);
+    unlock(&g_lock_n);
+    lock(&g_lock_e);
+    node_t *e_list = map_to_list(g_environs);
+    unlock(&g_lock_e);
 
     count = send_hello_long(n_list);
     debug_int(D_SEND_THREAD, 0, "count n", count);
