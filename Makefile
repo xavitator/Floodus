@@ -11,7 +11,7 @@ OBJ:= $(FILES:$(SRCDIR)%.c=$(BIN)%.o)
 
 CC = gcc
 FLAGS = -Wall -Wextra -Werror
-LDLIBS = -lpthread -D_REENTRANT
+LDLIBS = -pthread -D_REENTRANT
 
 .PHONY: all
 all:
