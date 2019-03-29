@@ -249,7 +249,7 @@ bool_t buffer_is_empty()
  */
 u_int32_t get_pmtu(ip_port_t dest)
 {
-    debug_hex(D_WRITER, 0, "get_pmtu -> dest", (uint8_t *)&dest, sizeof(dest));
+    debug_hex(D_WRITER, 0, "get_pmtu -> dest", &dest, sizeof(dest));
     return 1000;
 }
 

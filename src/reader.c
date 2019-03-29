@@ -4,7 +4,7 @@ typedef bool_t (*tlv_function_t)(ip_port_t, data_t *, size_t *);
 
 bool_t tlv_call_pad1(ip_port_t dest, data_t *data, size_t *head_read)
 {
-    debug_hex(D_READER, 0, "tlv_call_pad1", (u_int8_t *)&dest, sizeof(dest));
+    debug_hex(D_READER, 0, "tlv_call_pad1", &dest, sizeof(dest));
     if (((u_int8_t *)data->iov_base)[*head_read] != 0)
     {
         debug(D_READER, 1, "tlv_call_pad1", "mauvais type");
@@ -17,7 +17,7 @@ bool_t tlv_call_pad1(ip_port_t dest, data_t *data, size_t *head_read)
 
 bool_t tlv_call_padn(ip_port_t dest, data_t *data, size_t *head_read)
 {
-    debug_hex(D_READER, 0, "tlv_call_padn", (u_int8_t *)&dest, sizeof(dest));
+    debug_hex(D_READER, 0, "tlv_call_padn", &dest, sizeof(dest));
     if (((u_int8_t *)data->iov_base)[*head_read] != 1)
     {
         debug(D_READER, 1, "tlv_call_padn", "mauvais type");
@@ -37,7 +37,7 @@ bool_t tlv_call_padn(ip_port_t dest, data_t *data, size_t *head_read)
 
 bool_t tlv_call_hello(ip_port_t dest, data_t *data, size_t *head_read)
 {
-    debug_hex(D_READER, 0, "tlv_call_hello", (u_int8_t *)&dest, sizeof(dest));
+    debug_hex(D_READER, 0, "tlv_call_hello", &dest, sizeof(dest));
     if (((u_int8_t *)data->iov_base)[*head_read] != 2)
     {
         debug(D_READER, 1, "tlv_call_hello", "mauvais type");
@@ -62,7 +62,7 @@ bool_t tlv_call_hello(ip_port_t dest, data_t *data, size_t *head_read)
 
 bool_t tlv_call_neighbour(ip_port_t dest, data_t *data, size_t *head_read)
 {
-    debug_hex(D_READER, 0, "tlv_call_neighbour", (u_int8_t *)&dest, sizeof(dest));
+    debug_hex(D_READER, 0, "tlv_call_neighbour", &dest, sizeof(dest));
     if (((u_int8_t *)data->iov_base)[*head_read] != 3)
     {
         debug(D_READER, 1, "tlv_call_neighbour", "mauvais type");
@@ -87,7 +87,7 @@ bool_t tlv_call_neighbour(ip_port_t dest, data_t *data, size_t *head_read)
 
 bool_t tlv_call_data(ip_port_t dest, data_t *data, size_t *head_read)
 {
-    debug_hex(D_READER, 0, "tlv_call_data", (u_int8_t *)&dest, sizeof(dest));
+    debug_hex(D_READER, 0, "tlv_call_data", &dest, sizeof(dest));
     if (((u_int8_t *)data->iov_base)[*head_read] != 4)
     {
         debug(D_READER, 1, "tlv_call_data", "mauvais type");
@@ -100,14 +100,14 @@ bool_t tlv_call_data(ip_port_t dest, data_t *data, size_t *head_read)
         debug(D_READER, 1, "tlv_call_data", "taille du message non correspondante");
         return false;
     }
-    debug_hex(D_WRITER, 0, "tlv_call_data", (uint8_t *)data->iov_base + *head_read + 1, len);
+    debug_hex(D_WRITER, 0, "tlv_call_data", data->iov_base + *head_read + 1, len);
     debug(D_READER, 0, "tlv_call_data", "traitement du tlv data en cours");
     return true;
 }
 
 bool_t tlv_call_ack(ip_port_t dest, data_t *data, size_t *head_read)
 {
-    debug_hex(D_READER, 0, "tlv_call_ack", (u_int8_t *)&dest, sizeof(dest));
+    debug_hex(D_READER, 0, "tlv_call_ack", &dest, sizeof(dest));
     if (((u_int8_t *)data->iov_base)[*head_read] != 5)
     {
         debug(D_READER, 1, "tlv_call_ack", "mauvais type");
@@ -120,14 +120,14 @@ bool_t tlv_call_ack(ip_port_t dest, data_t *data, size_t *head_read)
         debug(D_READER, 1, "tlv_call_ack", "taille du message non correspondante");
         return false;
     }
-    debug_hex(D_WRITER, 0, "tlv_call_ack", (uint8_t *)data->iov_base + *head_read + 1, len);
+    debug_hex(D_WRITER, 0, "tlv_call_ack", data->iov_base + *head_read + 1, len);
     debug(D_READER, 0, "tlv_call_ack", "traitement du tlv ack en cours");
     return true;
 }
 
 bool_t tlv_call_goaway(ip_port_t dest, data_t *data, size_t *head_read)
 {
-    debug_hex(D_READER, 0, "tlv_call_goaway", (u_int8_t *)&dest, sizeof(dest));
+    debug_hex(D_READER, 0, "tlv_call_goaway", &dest, sizeof(dest));
     if (((u_int8_t *)data->iov_base)[*head_read] != 6)
     {
         debug(D_READER, 1, "tlv_call_goaway", "mauvais type");
@@ -140,14 +140,14 @@ bool_t tlv_call_goaway(ip_port_t dest, data_t *data, size_t *head_read)
         debug(D_READER, 1, "tlv_call_goaway", "taille du message non correspondante");
         return false;
     }
-    debug_hex(D_WRITER, 0, "tlv_call_goaway", (uint8_t *)data->iov_base + *head_read + 1, len);
+    debug_hex(D_WRITER, 0, "tlv_call_goaway", data->iov_base + *head_read + 1, len);
     debug(D_READER, 0, "tlv_call_goaway", "traitement du tlv goaway en cours");
     return true;
 }
 
 bool_t tlv_call_warning(ip_port_t dest, data_t *data, size_t *head_read)
 {
-    debug_hex(D_READER, 0, "tlv_call_warning", (u_int8_t *)&dest, sizeof(dest));
+    debug_hex(D_READER, 0, "tlv_call_warning", &dest, sizeof(dest));
     if (((u_int8_t *)data->iov_base)[*head_read] != 7)
     {
         debug(D_READER, 1, "tlv_call_warning", "mauvais type");
