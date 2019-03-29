@@ -25,7 +25,7 @@ bool_t tlv_call_padn(ip_port_t dest, data_t *data, size_t *head_read)
     }
     *head_read += 1;
     u_int8_t len = ((u_int8_t *)data->iov_base)[*head_read];
-    if (*head_read + len > data->iov_len)
+    if (*head_read + len >= data->iov_len)
     {
         debug(D_READER, 1, "tlv_call_padn", "taille du message non correspondante");
         return false;
@@ -45,7 +45,7 @@ bool_t tlv_call_hello(ip_port_t dest, data_t *data, size_t *head_read)
     }
     *head_read += 1;
     u_int8_t len = ((u_int8_t *)data->iov_base)[*head_read];
-    if (*head_read + len > data->iov_len)
+    if (*head_read + len >= data->iov_len)
     {
         debug(D_READER, 1, "tlv_call_hello", "taille du message non correspondante");
         return false;
@@ -70,7 +70,7 @@ bool_t tlv_call_neighbour(ip_port_t dest, data_t *data, size_t *head_read)
     }
     *head_read += 1;
     u_int8_t len = ((u_int8_t *)data->iov_base)[*head_read];
-    if (*head_read + len > data->iov_len)
+    if (*head_read + len >= data->iov_len)
     {
         debug(D_READER, 1, "tlv_call_neighbour", "taille du message non correspondante");
         return false;
@@ -95,7 +95,7 @@ bool_t tlv_call_data(ip_port_t dest, data_t *data, size_t *head_read)
     }
     *head_read += 1;
     u_int8_t len = ((u_int8_t *)data->iov_base)[*head_read];
-    if (*head_read + len > data->iov_len)
+    if (*head_read + len >= data->iov_len)
     {
         debug(D_READER, 1, "tlv_call_data", "taille du message non correspondante");
         return false;
@@ -115,7 +115,7 @@ bool_t tlv_call_ack(ip_port_t dest, data_t *data, size_t *head_read)
     }
     *head_read += 1;
     u_int8_t len = ((u_int8_t *)data->iov_base)[*head_read];
-    if (*head_read + len > data->iov_len)
+    if (*head_read + len >= data->iov_len)
     {
         debug(D_READER, 1, "tlv_call_ack", "taille du message non correspondante");
         return false;
@@ -135,7 +135,7 @@ bool_t tlv_call_goaway(ip_port_t dest, data_t *data, size_t *head_read)
     }
     *head_read += 1;
     u_int8_t len = ((u_int8_t *)data->iov_base)[*head_read];
-    if (*head_read + len > data->iov_len)
+    if (*head_read + len >= data->iov_len)
     {
         debug(D_READER, 1, "tlv_call_goaway", "taille du message non correspondante");
         return false;
@@ -155,7 +155,7 @@ bool_t tlv_call_warning(ip_port_t dest, data_t *data, size_t *head_read)
     }
     *head_read += 1;
     u_int8_t len = ((u_int8_t *)data->iov_base)[*head_read];
-    if (*head_read + len > data->iov_len)
+    if (*head_read + len >= data->iov_len)
     {
         debug(D_READER, 1, "tlv_call_warning", "taille du message non correspondante");
         return false;
