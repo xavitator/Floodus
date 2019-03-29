@@ -37,6 +37,7 @@ bool_t tlv_call_padn(ip_port_t dest, data_t *data, size_t *head_read)
 
 bool_t tlv_call_hello(ip_port_t dest, data_t *data, size_t *head_read)
 {
+    debug_hex(D_READER, 0, "tlv_call_hello -> données recues", (uint8_t *)data->iov_base, data->iov_len);
     debug_hex(D_READER, 0, "tlv_call_hello", (u_int8_t *)&dest, sizeof(dest));
     if (((u_int8_t *)data->iov_base)[*head_read] != 2)
     {

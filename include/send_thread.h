@@ -11,10 +11,9 @@
 #include "writer.h"
 #include "voisin.h"
 
-
-#define D_SEND_THREAD 0
+#define D_SEND_THREAD 1
 #define MIN 8
 
-short init_sender();
+short init_sender(void);
 
 #endif // H_SEND_THREAD

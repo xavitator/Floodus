@@ -26,7 +26,6 @@ hashmap_t *neighbors = NULL;
  */
 hashmap_t *environs = NULL;
 
-
 /**
  * @brief
  * Cadenas de sécurité pour les threads
@@ -47,12 +46,13 @@ pthread_mutex_t lock_e;
  * sinon attend
  * @param lock le cadenas à verrouiller
  */
-short lock(pthread_mutex_t *lock) {
-  int rc = 0;
-  rc = pthread_mutex_lock(lock);
-  if (rc)
-    fprintf(stderr, "Lock mode error: lock error");
-  return rc;
+short lock(pthread_mutex_t *lock)
+{
+    int rc = 0;
+    rc = pthread_mutex_lock(lock);
+    if (rc)
+        fprintf(stderr, "Lock mode error: lock error");
+    return rc;
 }
 
 /**
@@ -60,12 +60,13 @@ short lock(pthread_mutex_t *lock) {
  * Débloque le cadenas 
  * @param lock le cadenas à déverrouiller
  */
-short unlock(pthread_mutex_t *lock) {
-  int rc = 0;
-  pthread_mutex_unlock(lock);
-  if (rc)
-    fprintf(stderr, "Starving mode : unlock error");
-  return rc;
+short unlock(pthread_mutex_t *lock)
+{
+    int rc = 0;
+    pthread_mutex_unlock(lock);
+    if (rc)
+        fprintf(stderr, "Starving mode : unlock error");
+    return rc;
 }
 
 /**
@@ -106,12 +107,12 @@ bool_t init_neighbors()
  */
 void free_neighbors()
 {
-  lock(&lock_n);
-  freehashmap(neighbors);
-  unlock(&lock_n);
-  lock(&lock_e);
-  freehashmap(environs);
-  unlock(&lock_e);
+    lock(&lock_n);
+    freehashmap(neighbors);
+    unlock(&lock_n);
+    lock(&lock_e);
+    freehashmap(environs);
+    unlock(&lock_e);
 }
 
 /**
@@ -259,9 +260,10 @@ bool_t apply_tlv_neighbour(data_t *data, size_t *head_read)
     if (lenght == 18 /* taille tlv_neighbour */)
     {
         *head_read = *head_read + 1;
-        data_t ipport = {data + *head_read, 18};
+        data_t ipport = {data->iov_base + *head_read, 18};
         if (contains_map(&ipport, neighbors) == false)
             insert_map(&ipport, &ipport, environs);
+        *head_read += 18;
         return true;
     }
     else

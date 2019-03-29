@@ -21,13 +21,12 @@
 #include "writer.h"
 #include "reader.h"
 #include "send_thread.h"
-
+#include "controller.h"
 
 #define D_MAIN 1
 
-int make_demand(int s, struct addrinfo *p)
+int make_demand(struct addrinfo *p)
 {
-    init_writer(s);
     data_t *hs = hello_short(myid);
     ip_port_t ipport = {0};
     memmove(&ipport.port, &((struct sockaddr_in6 *)p->ai_addr)->sin6_port, sizeof(ipport.port));
@@ -52,33 +51,37 @@ int send_hello()
     if (rc < 0)
         debug_and_exit(D_MAIN, 1, "rc", gai_strerror(rc), 1);
     struct addrinfo *p = r;
-    int s = -1;
-    while (p != NULL)
-    {
-        s = socket(p->ai_family, p->ai_socktype, p->ai_protocol);
-        if (s >= 0)
-            break;
-        p = p->ai_next;
-    }
-    if (s < 0 || p == NULL)
+    if (p == NULL)
     {
         freeaddrinfo(r);
         debug_and_exit(D_MAIN, 1, "p", "Connexion impossible", 1);
     }
-    init_sender(&s);
+    init_sender();
     char ip[INET6_ADDRSTRLEN];
     inet_ntop(p->ai_family, p->ai_addr, ip, INET6_ADDRSTRLEN);
     debug(D_MAIN, 0, "ip", ip);
-    make_demand(s, p);
+    make_demand(p);
     printf("demande effectuée\n");
-    //recv_demand(s, p);
     return 0;
 }
 
-int main()
+int main(void)
 {
+    int rc = create_socket(0);
+    if (rc < 0)
+    {
+        if (rc == -1)
+            perror("Erreur de création de socket");
+        if (rc == -2)
+            perror("Erreur de bind");
+        if (rc == -3)
+            perror("Erreur de récupération des informations");
+        printf("Problème de connexion");
+        exit(1);
+    }
     init_neighbors();
     send_hello();
+    launch_program();
     free_neighbors();
     return 0;
 }
