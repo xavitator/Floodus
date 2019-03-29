@@ -32,15 +32,9 @@ int make_demand(int s, struct addrinfo *p)
     memmove(ipport.ipv6, &((struct sockaddr_in6 *)p->ai_addr)->sin6_addr, sizeof(ipport.ipv6));
     send_tlv(&ipport, hs, 1);
 
-    // struct sockaddr test = {0};
-    // socklen_t testlen = sizeof(test);
     printf("before recvfrom\n");
-    //rc = read(s, req, 4096);
-    // unsigned char req[4096];
     ssize_t rc = read_msg();
-    //rc = recvmsg(s, &msg, 0);
     debug_int(D_MAIN, 0, "rc after test", *(int *)&rc);
-    // debug_int(D_MAIN, 0, "msg length", msg.msg_iovlen);
     return 0;
 }
 
