@@ -205,23 +205,32 @@ void read_tlv(ip_port_t dest, data_t *tlvs)
 
 ssize_t read_msg()
 {
+    // sockaddr_in6 pour le destinataire
     struct sockaddr_in6 recv = {0};
     socklen_t recvlen = sizeof(recv);
+
+    // initialisation du premier struct iovec
     uint8_t header[RDHDRLEN] = {0};
     struct iovec header_iovec = {0};
     header_iovec.iov_base = header;
     header_iovec.iov_len = RDHDRLEN;
+
+    // initialisation du deuxième struct iovec
     uint8_t req[READBUF] = {0};
     struct iovec corpus = {0};
     corpus.iov_base = req;
     corpus.iov_len = READBUF;
+
+    // initialisation du struct msghdr
+    data_t content[2] = {header_iovec, corpus};
     struct msghdr reader = {0};
     reader.msg_name = &recv;
     reader.msg_namelen = recvlen;
-    data_t content[2] = {header_iovec, corpus};
     reader.msg_iov = content;
     reader.msg_iovlen = 2;
+
     ssize_t rc = 0;
+    // attente active si la socket est pas dispo meme après un select
     while (1)
     {
         rc = recvmsg(g_socket, &reader, 0);
@@ -234,6 +243,7 @@ ssize_t read_msg()
             return -1;
         }
     }
+    // verification des 4 premiers octets
     header_iovec = content[0];
     uint8_t expected[] = {93, 2};
     if (memcmp(header_iovec.iov_base, expected, 2) != 0)
@@ -249,6 +259,7 @@ ssize_t read_msg()
         debug(D_READER, 1, "read_msg", "taille lue et taille attendue différente");
         return 0;
     }
+    // traitement des données reçues
     ip_port_t ipport = {0};
     memmove(&ipport.port, &((struct sockaddr_in6 *)reader.msg_name)->sin6_port, sizeof(ipport.port));
     memmove(ipport.ipv6, &((struct sockaddr_in6 *)reader.msg_name)->sin6_addr, sizeof(ipport.ipv6));
