@@ -145,10 +145,17 @@ bool_t can_add_tlv(ip_port_t dest, data_t *tlv, buffer_node_t *node)
         debug(D_WRITER, 0, "can_add_tlv", "taille max de tlv atteint");
         return false;
     }
+    data_t *ntlv = copy_iovec(tlv);
+    if (ntlv == NULL)
+    {
+        debug(D_WRITER, 1, "can_add_tlv", "problème de malloc -> copy de tlv");
+        return false;
+    }
     size_t size = sizeof(data_t) * node->tlvlen;
     data_t *content = malloc(size + sizeof(data_t));
     if (content == NULL)
     {
+        freeiovec(ntlv);
         debug(D_WRITER, 1, "can_add_tlv", "cannot allow memory pour content");
         return false;
     }
@@ -156,7 +163,8 @@ bool_t can_add_tlv(ip_port_t dest, data_t *tlv, buffer_node_t *node)
     {
         content[i] = node->tlvs[i];
     }
-    content[node->tlvlen] = *tlv;
+    content[node->tlvlen] = *ntlv;
+    free(ntlv);
     free(node->tlvs);
     node->tlvs = content;
     node->tlvlen += 1;
@@ -283,6 +291,10 @@ bool_t send_buffer_tlv()
             debug(D_WRITER, 1, "send_buffer_tlv", "2eme envoi non effectué");
             return false;
         }
+    }
+    for (size_t i = 0; i < g_write_buf->tlvlen; i++)
+    {
+        free(g_write_buf->tlvs[i].iov_base);
     }
     free(g_write_buf->tlvs);
     buffer_node_t *tmp = g_write_buf;

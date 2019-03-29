@@ -6,7 +6,7 @@
 
 #define D_WRITER 1
 
-#define MAX_PER_TLV 2048
+#define MAX_PER_TLV 1000
 
 extern u_int32_t g_socket;
 
