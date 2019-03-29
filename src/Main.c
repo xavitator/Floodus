@@ -29,17 +29,13 @@ int make_demand(struct addrinfo *p)
 {
     data_t *hs = hello_short(myid);
     ip_port_t ipport = {0};
-    memmove(&ipport.port, &((struct sockaddr_in6 *)p->ai_addr)->sin6_port, sizeof(ipport.port));
+    ipport.port = ((struct sockaddr_in6 *)p->ai_addr)->sin6_port;
     memmove(ipport.ipv6, &((struct sockaddr_in6 *)p->ai_addr)->sin6_addr, sizeof(ipport.ipv6));
     send_tlv(&ipport, hs, 1);
-
-    printf("before recvfrom\n");
-    ssize_t rc = read_msg();
-    debug_int(D_MAIN, 0, "rc after test", *(int *)&rc);
     return 0;
 }
 
-int send_hello()
+int send_hello(char *port)
 {
     struct addrinfo h = {0};
     struct addrinfo *r = {0};
@@ -47,26 +43,28 @@ int send_hello()
     h.ai_family = AF_INET6;
     h.ai_socktype = SOCK_DGRAM;
     h.ai_flags = AI_V4MAPPED | AI_ALL;
-    rc = getaddrinfo("jch.irif.fr", "1212", &h, &r);
+    rc = getaddrinfo("localhost", port, &h, &r);
     if (rc < 0)
         debug_and_exit(D_MAIN, 1, "rc", gai_strerror(rc), 1);
     struct addrinfo *p = r;
-    if (p == NULL)
+    while (p != NULL)
     {
-        freeaddrinfo(r);
-        debug_and_exit(D_MAIN, 1, "p", "Connexion impossible", 1);
+        make_demand(p);
+        p = p->ai_next;
     }
-    init_sender();
-    char ip[INET6_ADDRSTRLEN];
-    inet_ntop(p->ai_family, p->ai_addr, ip, INET6_ADDRSTRLEN);
-    debug(D_MAIN, 0, "ip", ip);
-    make_demand(p);
-    printf("demande effectuée\n");
+    debug(D_MAIN, 0, "send_hello", "demande effectuée pour getaddrinfo");
     return 0;
 }
 
-int main(void)
+int main(int argc, char *argv[])
 {
+    char *port = "1212";
+    if (argc >= 2)
+        port = argv[1];
+    if (argc == 2)
+    {
+        printf("%s - %s\n", argv[0], argv[1]);
+    }
     int rc = create_socket(0);
     if (rc < 0)
     {
@@ -81,8 +79,9 @@ int main(void)
         printf("Problème de connexion");
         exit(1);
     }
+    init_sender();
     init_neighbors();
-    send_hello();
+    send_hello(port);
     launch_program();
     free_neighbors();
     return 0;

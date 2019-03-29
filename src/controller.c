@@ -78,13 +78,12 @@ void launch_program()
     int rc = 0;
     fd_set readfds;
     fd_set writefds;
-    FD_ZERO(&readfds);
-    FD_ZERO(&writefds);
-    FD_SET(g_socket, &readfds);
-    struct timespec tm = {0};
     while (1)
     {
-        FD_CLR(g_socket, &writefds);
+        FD_ZERO(&readfds);
+        FD_ZERO(&writefds);
+        FD_SET(g_socket, &readfds);
+        struct timespec tm = {0};
         if (buffer_is_empty() == false)
             FD_SET(g_socket, &writefds);
         get_nexttime(&tm);
