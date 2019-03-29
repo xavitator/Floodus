@@ -17,6 +17,8 @@
 #include "iovec.h"
 #include "hashmap.h"
 
+#define D_VOISIN 1
+
 /**
  * @brief Structure contenant l'ip et le port d'un individu.
  * Le champs 'ipv6' correspond à l'ipv6 de l'individu.
