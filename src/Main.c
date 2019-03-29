@@ -20,6 +20,8 @@
 #include "voisin.h"
 #include "writer.h"
 #include "reader.h"
+#include "send_thread.h"
+
 
 #define D_MAIN 1
 
@@ -63,6 +65,7 @@ int send_hello()
         freeaddrinfo(r);
         debug_and_exit(D_MAIN, 1, "p", "Connexion impossible", 1);
     }
+    init_sender(&s);
     char ip[INET6_ADDRSTRLEN];
     inet_ntop(p->ai_family, p->ai_addr, ip, INET6_ADDRSTRLEN);
     debug(D_MAIN, 0, "ip", ip);

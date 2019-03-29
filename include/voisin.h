@@ -11,6 +11,8 @@
 #include <sys/types.h>
 #include <time.h>
 #include <arpa/inet.h>
+#include <pthread.h>
+
 
 #include "iovec.h"
 #include "hashmap.h"
@@ -42,7 +44,11 @@ typedef struct neighbor_t
 extern u_int64_t myid;
 extern hashmap_t *neighbors;
 extern hashmap_t *environs;
+extern pthread_mutex_t lock_n;
+extern pthread_mutex_t lock_e;
 
+short lock(pthread_mutex_t*);
+short unlock(pthread_mutex_t*);
 void create_user();
 bool_t init_neighbors();
 void free_neighbors();
