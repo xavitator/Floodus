@@ -19,6 +19,7 @@
 #include "debug.h"
 #include "voisin.h"
 #include "writer.h"
+#include "reader.h"
 
 #define D_MAIN 1
 
@@ -31,16 +32,9 @@ int make_demand(int s, struct addrinfo *p)
     memmove(ipport.ipv6, &((struct sockaddr_in6 *)p->ai_addr)->sin6_addr, sizeof(ipport.ipv6));
     send_tlv(&ipport, hs, 1);
 
-    struct sockaddr test = {0};
-    socklen_t testlen = sizeof(test);
     printf("before recvfrom\n");
-    //rc = read(s, req, 4096);
-    unsigned char req[4096];
-    int rc = recvfrom(s, req, 4096, 0, &test, &testlen);
-    //rc = recvmsg(s, &msg, 0);
-    debug_int(D_MAIN, 0, "rc after test", rc);
-    debug_hex(D_MAIN, 0, "requete", req, rc);
-    // debug_int(D_MAIN, 0, "msg length", msg.msg_iovlen);
+    ssize_t rc = read_msg();
+    debug_int(D_MAIN, 0, "rc after test", *(int *)&rc);
     return 0;
 }
 
