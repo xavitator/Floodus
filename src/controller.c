@@ -44,6 +44,18 @@ int create_socket(uint16_t port)
         return -3;
     }
     debug_int(D_CONTROL, 0, "create_socket -> port", ntohs(server.sin6_port));
+    rc = fcntl(s, F_GETFL);
+    if (rc < 0)
+    {
+        debug(D_CONTROL, 1, "create_socket", "recupération des modes de la socket impossible");
+        return -4;
+    }
+    rc = fcntl(s, F_SETFL, rc | O_NONBLOCK);
+    if (rc < 0)
+    {
+        debug(D_CONTROL, 1, "create_socket", "changement des modes de la socket impossible");
+        return -4;
+    }
     g_socket = s;
     return 0;
 }

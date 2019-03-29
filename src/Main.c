@@ -76,6 +76,8 @@ int main(void)
             perror("Erreur de bind");
         if (rc == -3)
             perror("Erreur de récupération des informations");
+        if (rc == -4)
+            perror("Modification des modes de la socket impossible");
         printf("Problème de connexion");
         exit(1);
     }
