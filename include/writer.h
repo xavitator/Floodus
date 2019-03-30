@@ -9,6 +9,7 @@
 #define MAX_PER_TLV 1000
 
 extern u_int32_t g_socket;
+extern pthread_mutex_t g_lock_buff;
 
 void clear_all();
 void init_writer(u_int32_t socket);

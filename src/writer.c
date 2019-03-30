@@ -29,6 +29,13 @@ u_int32_t g_socket = 1;
 buffer_node_t *g_write_buf = NULL;
 
 /**
+ *  @brief 
+ * Cadenas bloquant l'accès concurrent au buffer
+ * de messages
+ */
+pthread_mutex_t g_lock_buff = PTHREAD_MUTEX_INITIALIZER;
+
+/**
  * @brief On nettoie le buffer (on le free)
  * 
  */
@@ -186,6 +193,7 @@ bool_t add_tlv(ip_port_t dest, data_t *tlv)
         debug(D_WRITER, 1, "add_tlv", "tlv = (null)");
         return false;
     }
+    lock(&g_lock_buff);
     buffer_node_t *father = g_write_buf;
     buffer_node_t *child = g_write_buf;
     while (child != NULL && can_add_tlv(dest, tlv, child) != true)
@@ -227,6 +235,7 @@ bool_t add_tlv(ip_port_t dest, data_t *tlv)
     father->next = node;
     debug(D_WRITER, 0, "add_tlv", "ajout d'une node au buffer");
     return true;
+    unlock(&g_lock_buff);
 }
 
 /**
@@ -266,6 +275,7 @@ bool_t send_buffer_tlv()
         debug(D_WRITER, 1, "send_buffer_tlv", "le buffer est null");
         return false;
     }
+    lock(&g_lock_buff);
     size_t pmtu = get_pmtu(g_write_buf->dest);
     size_t sendlen = 0;
     size_t ind = 0;
@@ -300,6 +310,7 @@ bool_t send_buffer_tlv()
     buffer_node_t *tmp = g_write_buf;
     g_write_buf = g_write_buf->next;
     free(tmp);
+    unlock(&g_lock_buff);
     debug_int(D_WRITER, 0, "send_buffer_tlv -> envoi tlv", res);
     return res;
 }

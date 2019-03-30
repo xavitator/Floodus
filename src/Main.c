@@ -28,7 +28,7 @@
 int make_demand(int s, struct addrinfo *p)
 {
     init_writer(s);
-    data_t *hs = hello_short(myid);
+    data_t *hs = hello_short(g_myid);
     ip_port_t ipport = {0};
     memmove(&ipport.port, &((struct sockaddr_in6 *)p->ai_addr)->sin6_port, sizeof(ipport.port));
     memmove(ipport.ipv6, &((struct sockaddr_in6 *)p->ai_addr)->sin6_addr, sizeof(ipport.ipv6));
