@@ -13,9 +13,9 @@
 #include <arpa/inet.h>
 #include <pthread.h>
 
-
 #include "iovec.h"
 #include "hashmap.h"
+#include "TLV.h"
 
 /**
  * @brief Structure contenant l'ip et le port d'un individu.
@@ -41,14 +41,16 @@ typedef struct neighbor_t
     struct timespec long_hello;
 } neighbor_t;
 
+#include "writer.h"
+
 extern u_int64_t myid;
 extern hashmap_t *neighbors;
 extern hashmap_t *environs;
 extern pthread_mutex_t lock_n;
 extern pthread_mutex_t lock_e;
 
-short lock(pthread_mutex_t*);
-short unlock(pthread_mutex_t*);
+short lock(pthread_mutex_t *);
+short unlock(pthread_mutex_t *);
 void create_user();
 bool_t init_neighbors();
 void free_neighbors();

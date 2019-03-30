@@ -80,7 +80,7 @@ static void *hello_sender(void *unused)
   int count = 0;
   while (1)
   {
-    sleep(5);
+    sleep(30);
     debug(D_SEND_THREAD, 0, "pthread", "Read hashmaps and send");
 
     lock(&lock_n);
