@@ -15,7 +15,8 @@
 u_int32_t g_socket = 1;
 
 /**
- * @brief Create a socket object
+ * @brief Création de la socket d'écriture et de lecture.
+ * On s'occupe de rendre la socket non-bloquante.
  * 
  * @param port port pour le bind
  * @return int '0' si l'opération réussie, un nombre négatif sinon (dépend du type d'erreur).
