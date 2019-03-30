@@ -27,7 +27,7 @@ static short send_hello_short(node_t *list, int nb) {
     debug_hex(D_SEND_THREAD, 0, "send_hello short", tlv_hello->iov_base, tlv_hello->iov_len);
 
     rc = add_tlv(addr, tlv_hello);
-    if(rc < 0) {
+    if(rc == false) {
       debug_int(D_SEND_THREAD, 1, "send_hello_short -> rc", rc);
       return rc;
     }
@@ -60,7 +60,7 @@ static short send_hello_long(node_t *list) {
     }
     debug_hex(D_SEND_THREAD, 0, "send_hello long", tlv_hello->iov_base, tlv_hello->iov_len);
     rc = add_tlv(addr, tlv_hello);
-    if(rc < 0) {
+    if(rc == false) {
       debug_int(D_SEND_THREAD, 1, "send_hello_long -> rc", rc);
       return rc;
     }

@@ -181,7 +181,7 @@ bool_t apply_hello_long(ip_port_t ipport, u_int64_t id_source, u_int64_t id_dest
 {
     debug_hex(D_VOISIN, 0, "apply_hello_long -> args ipport", &ipport, sizeof(ip_port_t));
     debug_hex(D_VOISIN, 0, "apply_hello_long -> args id_source", &id_source, sizeof(u_int64_t));
-    debug_hex(D_VOISIN, 0, "apply_hello_long -> args id_source", &id_dest, sizeof(u_int64_t));
+    debug_hex(D_VOISIN, 0, "apply_hello_long -> args id_dest", &id_dest, sizeof(u_int64_t));
     if (id_dest != g_myid) {
        debug(D_VOISIN, 1, "apply_hello_long", "wrong id : id_dest != myid");
        return false;
