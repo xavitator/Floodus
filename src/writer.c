@@ -1,3 +1,10 @@
+/**
+ * @file writer.c
+ * @author Floodus
+ * @brief Module correspondant à toutes les fonctionnalités d'écriture sur le réseau.
+ * 
+ */
+
 #include "writer.h"
 
 /**

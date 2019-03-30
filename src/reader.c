@@ -1,3 +1,10 @@
+/**
+ * @file reader.c
+ * @author Floodus
+ * @brief Module s'occupant de tout ce qui est lecture d'un datagramme
+ * 
+ */
+
 #include "reader.h"
 
 typedef bool_t (*tlv_function_t)(ip_port_t, data_t *, size_t *);
@@ -37,7 +44,7 @@ bool_t tlv_call_padn(ip_port_t dest, data_t *data, size_t *head_read)
 
 bool_t tlv_call_hello(ip_port_t dest, data_t *data, size_t *head_read)
 {
-    debug_hex(D_READER, 0, "tlv_call_hello -> données recues", data->iov_base, data->iov_len);
+    debug_hex(D_READER, 0, "tlv_call_hello -> données reçues", data->iov_base, data->iov_len);
     debug_hex(D_READER, 0, "tlv_call_hello", &dest, sizeof(dest));
     if (((u_int8_t *)data->iov_base)[*head_read] != 2)
     {

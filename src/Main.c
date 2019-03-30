@@ -1,3 +1,9 @@
+/**
+ * @file Main.c
+ * @author Floodus
+ * @brief Fichier s'occupant de l'exécutation du programme
+ * 
+ */
 
 #define _GNU_SOURCE
 

@@ -1,3 +1,10 @@
+/**
+ * @file iovec.c
+ * @author Floodus
+ * @brief Module contenant toutes les fonctionnalités sur la manipulation des struct iovec
+ * 
+ */
+
 #include "iovec.h"
 
 /**

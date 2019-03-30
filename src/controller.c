@@ -1,3 +1,11 @@
+/**
+ * @file controller.c
+ * @author Floodus
+ * @brief Module s'occupant de faire la liaison entre le reader, le writer et l'inondation
+ * 
+ * 
+ */
+
 #include "controller.h"
 
 /**
