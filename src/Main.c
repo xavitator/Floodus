@@ -33,7 +33,7 @@
  */
 int make_demand(struct addrinfo *p)
 {
-    data_t *hs = hello_short(myid);
+    data_t *hs = hello_short(g_myid);
     ip_port_t ipport = {0};
     ipport.port = ((struct sockaddr_in6 *)p->ai_addr)->sin6_port;
     memmove(ipport.ipv6, &((struct sockaddr_in6 *)p->ai_addr)->sin6_addr, sizeof(ipport.ipv6));
