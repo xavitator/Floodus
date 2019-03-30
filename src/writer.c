@@ -33,7 +33,7 @@ buffer_node_t *g_write_buf = NULL;
  * Cadenas bloquant l'accès concurrent au buffer
  * de messages
  */
-pthread_mutex_t g_lock_buff;
+pthread_mutex_t g_lock_buff = PTHREAD_MUTEX_INITIALIZER;
 
 /**
  * @brief On nettoie le buffer (on le free)

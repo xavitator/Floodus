@@ -20,18 +20,22 @@ static short send_hello_short(node_t *list, int nb) {
     memmove(&addr, current->value->iov_base, sizeof(ip_port_t));
 
     struct iovec *tlv_hello = hello_short(g_myid); 
-    if (tlv_hello == NULL)
+    if (tlv_hello == NULL) {
+      debug(D_SEND_THREAD, 1, "send_hello_short", "tlv_hello = NULL");
       return 0;
-    debug_hex(D_SEND_THREAD, 0, "tlv_hello court", tlv_hello->iov_base, tlv_hello->iov_len);
+    }
+    debug_hex(D_SEND_THREAD, 0, "send_hello short", tlv_hello->iov_base, tlv_hello->iov_len);
 
     rc = add_tlv(addr, tlv_hello);
-    if(rc < 0)
+    if(rc < 0) {
+      debug_int(D_SEND_THREAD, 1, "send_hello_short -> rc", rc);
       return rc;
-
+    }
     freeiovec(tlv_hello);
     count++;
     current = current->next;
   }
+  debug_int(D_SEND_THREAD, 0, "send_hello_short -> count", count);
   return count;
 }
 
@@ -50,17 +54,21 @@ static short send_hello_long(node_t *list) {
     memmove(&addr, current->key->iov_base, sizeof(ip_port_t));
 
     struct iovec *tlv_hello = hello_long(g_myid, intel.id);
-    if (tlv_hello == NULL)
+    if (tlv_hello == NULL) {
+      debug(D_SEND_THREAD, 1, "send_hello_short", "tlv_hello = NULL");
       return c;
-    debug_hex(D_SEND_THREAD, 0, "tlv_hello long", tlv_hello->iov_base, tlv_hello->iov_len);
+    }
+    debug_hex(D_SEND_THREAD, 0, "send_hello long", tlv_hello->iov_base, tlv_hello->iov_len);
     rc = add_tlv(addr, tlv_hello);
-    if(rc < 0)
+    if(rc < 0) {
+      debug_int(D_SEND_THREAD, 1, "send_hello_long -> rc", rc);
       return rc;
-
+    }
     freeiovec(tlv_hello);
     c++;
     current = current->next;
   }
+  debug_int(D_SEND_THREAD, 0, "send_hello_long -> c", c);
   return c;
 }
 
