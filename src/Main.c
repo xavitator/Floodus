@@ -118,14 +118,14 @@ int main(int argc, char *argv[])
     if (rc < 0)
     {
         if (rc == -1)
-            perror("Erreur de création de socket");
+            perror("Main -> Erreur de création de socket ");
         if (rc == -2)
-            perror("Erreur de bind");
+            perror("Main -> Erreur de bind ");
         if (rc == -3)
-            perror("Erreur de récupération des informations");
+            perror("Main -> Erreur de récupération des informations ");
         if (rc == -4)
-            perror("Modification des modes de la socket impossible");
-        printf("Problème de connexion");
+            perror("Main -> Modification des modes de la socket impossible ");
+        printf("Main : Problème de connexion");
         exit(1);
     }
     init_sender();
