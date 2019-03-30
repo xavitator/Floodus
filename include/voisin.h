@@ -13,9 +13,9 @@
 #include <arpa/inet.h>
 #include <pthread.h>
 
-
 #include "iovec.h"
 #include "hashmap.h"
+#include "TLV.h"
 
 #define D_VOISIN 1
 
@@ -43,14 +43,20 @@ typedef struct neighbor_t
     struct timespec long_hello;
 } neighbor_t;
 
+/** 
+ * je suis obligé de mettre le include ici parce que sinon les structures au dessus ne sont pas connus
+ * au moment de la compilation et on a des erreurs.
+ */
+#include "writer.h"
+
 extern u_int64_t g_myid;
 extern hashmap_t *g_neighbors;
 extern hashmap_t *g_environs;
 extern pthread_mutex_t g_lock_n;
 extern pthread_mutex_t g_lock_e;
 
-short lock(pthread_mutex_t*);
-short unlock(pthread_mutex_t*);
+short lock(pthread_mutex_t *);
+short unlock(pthread_mutex_t *);
 void create_user();
 bool_t init_neighbors();
 void free_neighbors();

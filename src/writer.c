@@ -1,3 +1,10 @@
+/**
+ * @file writer.c
+ * @author Floodus
+ * @brief Module correspondant à toutes les fonctionnalités d'écriture sur le réseau.
+ * 
+ */
+
 #include "writer.h"
 
 /**
@@ -14,12 +21,6 @@ typedef struct buffer_node_t
     size_t tlvlen;
     struct buffer_node_t *next;
 } buffer_node_t;
-
-/**
- * @brief Socket de réception et d'envoi des messages
- * 
- */
-u_int32_t g_socket = 1;
 
 /**
  * @brief Buffer d'écriture indexé par :
@@ -50,16 +51,6 @@ void clear_all()
         free(tmp);
     }
     g_write_buf = NULL;
-}
-
-/**
- * @brief Initialisation de la socket d'envoi/écriture
- * 
- * @param socket numéro de fd de la socket
- */
-void init_writer(u_int32_t socket)
-{
-    g_socket = socket;
 }
 
 /**

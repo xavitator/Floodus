@@ -1,3 +1,9 @@
+/**
+ * @file Main.c
+ * @author Floodus
+ * @brief Fichier s'occupant de l'exécutation du programme
+ * 
+ */
 
 #define _GNU_SOURCE
 
@@ -21,26 +27,35 @@
 #include "writer.h"
 #include "reader.h"
 #include "send_thread.h"
-
+#include "controller.h"
 
 #define D_MAIN 1
 
-int make_demand(int s, struct addrinfo *p)
+/**
+ * @brief Envoie de hello court à un destinataire contenu dans un addrinfo
+ * 
+ * @param p destinataire
+ * @return int boolean disant si tout s'est bien passé
+ */
+int make_demand(struct addrinfo *p)
 {
-    init_writer(s);
     data_t *hs = hello_short(g_myid);
     ip_port_t ipport = {0};
-    memmove(&ipport.port, &((struct sockaddr_in6 *)p->ai_addr)->sin6_port, sizeof(ipport.port));
+    ipport.port = ((struct sockaddr_in6 *)p->ai_addr)->sin6_port;
     memmove(ipport.ipv6, &((struct sockaddr_in6 *)p->ai_addr)->sin6_addr, sizeof(ipport.ipv6));
-    send_tlv(&ipport, hs, 1);
-
-    printf("before recvfrom\n");
-    ssize_t rc = read_msg();
-    debug_int(D_MAIN, 0, "rc after test", *(int *)&rc);
-    return 0;
+    int rc = send_tlv(&ipport, hs, 1);
+    freeiovec(hs);
+    return rc;
 }
 
-int send_hello()
+/**
+ * @brief On récupère toutes les infos via getaddrinfo sur la destination et le port passé en arguments.
+ * 
+ * @param dest nom dns de la destination
+ * @param port port de la destination
+ * @return int '0' si ca s'est bien passé, '-1' sinon.
+ */
+int send_hello(char *dest, char *port)
 {
     struct addrinfo h = {0};
     struct addrinfo *r = {0};
@@ -48,37 +63,76 @@ int send_hello()
     h.ai_family = AF_INET6;
     h.ai_socktype = SOCK_DGRAM;
     h.ai_flags = AI_V4MAPPED | AI_ALL;
-    rc = getaddrinfo("jch.irif.fr", "1212", &h, &r);
+    rc = getaddrinfo(dest, port, &h, &r);
     if (rc < 0)
-        debug_and_exit(D_MAIN, 1, "rc", gai_strerror(rc), 1);
+    {
+        debug(D_MAIN, 1, "send_hello -> rc", gai_strerror(rc));
+        return -1;
+    }
     struct addrinfo *p = r;
-    int s = -1;
-    while (p != NULL)
+
+    // demande à toutes les interfaces détectées
+    // while (p != NULL)
+    // {
+    //     make_demand(p);
+    //     p = p->ai_next;
+    // }
+    // fin de la demande à toutes les interfaces
+
+    // demande à la première interface
+    if (p == NULL)
     {
-        s = socket(p->ai_family, p->ai_socktype, p->ai_protocol);
-        if (s >= 0)
-            break;
-        p = p->ai_next;
+        debug(D_MAIN, 1, "send_hello", "aucune interface détectée pour cette adresse");
+        return -1;
     }
-    if (s < 0 || p == NULL)
-    {
-        freeaddrinfo(r);
-        debug_and_exit(D_MAIN, 1, "p", "Connexion impossible", 1);
-    }
-    init_sender(&s);
-    char ip[INET6_ADDRSTRLEN];
-    inet_ntop(p->ai_family, p->ai_addr, ip, INET6_ADDRSTRLEN);
-    debug(D_MAIN, 0, "ip", ip);
-    make_demand(s, p);
-    printf("demande effectuée\n");
-    //recv_demand(s, p);
+    make_demand(p);
+    // fin de la demande à la première interface
+
+    freeaddrinfo(r);
+    debug(D_MAIN, 0, "send_hello", "demande effectuée pour getaddrinfo");
     return 0;
 }
 
-int main()
+/**
+ * @brief initialisation du serveur.
+ * Le commande de lancement peut prendre 2 arguments.
+ * Si les deux arguments sont présents simultanémant :
+ * le premier argument correspondra au nom dns de la destination
+ * le deuxième argument correspondra au port de la destination
+ * 
+ * @param argc nombre d'arguments de la commande
+ * @param argv tableau des arguments de la commande
+ * @return int valeur de retour
+ */
+int main(int argc, char *argv[])
 {
+    char *port = "1212";
+    char *default_dest = "jch.irif.fr";
+    if (argc >= 3)
+    {
+        default_dest = argv[1];
+        port = argv[2];
+    }
+    printf("%s - %s - %s\n", argv[0], default_dest, port);
+    int rc = create_socket(0);
+    if (rc < 0)
+    {
+        if (rc == -1)
+            perror("Main -> Erreur de création de socket ");
+        if (rc == -2)
+            perror("Main -> Erreur de bind ");
+        if (rc == -3)
+            perror("Main -> Erreur de récupération des informations ");
+        if (rc == -4)
+            perror("Main -> Modification des modes de la socket impossible ");
+        printf("Main : Problème de connexion");
+        exit(1);
+    }
+    init_sender();
     init_neighbors();
-    send_hello();
+    rc = send_hello(default_dest, port);
+    if (rc >= 0)
+        launch_program();
     free_neighbors();
     return 0;
 }
