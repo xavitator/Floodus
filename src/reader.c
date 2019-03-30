@@ -9,6 +9,14 @@
 
 typedef bool_t (*tlv_function_t)(ip_port_t, data_t *, size_t *);
 
+/**
+ * @brief Fonction appelé lors de la lecture d'un tlv 'pad1'
+ * 
+ * @param dest couple ip-port de celui qui a envoyé le tlv
+ * @param data strcut iovec contenant l'ensemble des données reçues
+ * @param head_read tête de lecture de la struct iovec 'data'
+ * @return bool_t '1' si la lecture a abouti, et la tête de lecture est déplacé sur le prochain tlv. '0' sinon.
+ */
 bool_t tlv_call_pad1(ip_port_t dest, data_t *data, size_t *head_read)
 {
     debug_hex(D_READER, 0, "tlv_call_pad1", &dest, sizeof(dest));
@@ -22,6 +30,14 @@ bool_t tlv_call_pad1(ip_port_t dest, data_t *data, size_t *head_read)
     return true;
 }
 
+/**
+ * @brief Fonction appelé lors de la lecture d'un tlv 'padn'
+ * 
+ * @param dest couple ip-port de celui qui a envoyé le tlv
+ * @param data strcut iovec contenant l'ensemble des données reçues
+ * @param head_read tête de lecture de la struct iovec 'data'
+ * @return bool_t '1' si la lecture a abouti, et la tête de lecture est déplacé sur le prochain tlv. '0' sinon.
+ */
 bool_t tlv_call_padn(ip_port_t dest, data_t *data, size_t *head_read)
 {
     debug_hex(D_READER, 0, "tlv_call_padn", &dest, sizeof(dest));
@@ -42,6 +58,14 @@ bool_t tlv_call_padn(ip_port_t dest, data_t *data, size_t *head_read)
     return true;
 }
 
+/**
+ * @brief Fonction appelé lors de la lecture d'un tlv 'hello'
+ * 
+ * @param dest couple ip-port de celui qui a envoyé le tlv
+ * @param data strcut iovec contenant l'ensemble des données reçues
+ * @param head_read tête de lecture de la struct iovec 'data'
+ * @return bool_t '1' si la lecture a abouti, et la tête de lecture est déplacé sur le prochain tlv. '0' sinon.
+ */
 bool_t tlv_call_hello(ip_port_t dest, data_t *data, size_t *head_read)
 {
     debug_hex(D_READER, 0, "tlv_call_hello -> données reçues", data->iov_base, data->iov_len);
@@ -68,6 +92,14 @@ bool_t tlv_call_hello(ip_port_t dest, data_t *data, size_t *head_read)
     return true;
 }
 
+/**
+ * @brief Fonction appelé lors de la lecture d'un tlv 'neighbour'
+ * 
+ * @param dest couple ip-port de celui qui a envoyé le tlv
+ * @param data strcut iovec contenant l'ensemble des données reçues
+ * @param head_read tête de lecture de la struct iovec 'data'
+ * @return bool_t '1' si la lecture a abouti, et la tête de lecture est déplacé sur le prochain tlv. '0' sinon.
+ */
 bool_t tlv_call_neighbour(ip_port_t dest, data_t *data, size_t *head_read)
 {
     debug_hex(D_READER, 0, "tlv_call_neighbour", &dest, sizeof(dest));
@@ -93,6 +125,14 @@ bool_t tlv_call_neighbour(ip_port_t dest, data_t *data, size_t *head_read)
     return true;
 }
 
+/**
+ * @brief Fonction appelé lors de la lecture d'un tlv 'data'
+ * 
+ * @param dest couple ip-port de celui qui a envoyé le tlv
+ * @param data strcut iovec contenant l'ensemble des données reçues
+ * @param head_read tête de lecture de la struct iovec 'data'
+ * @return bool_t '1' si la lecture a abouti, et la tête de lecture est déplacé sur le prochain tlv. '0' sinon.
+ */
 bool_t tlv_call_data(ip_port_t dest, data_t *data, size_t *head_read)
 {
     debug_hex(D_READER, 0, "tlv_call_data", &dest, sizeof(dest));
@@ -113,6 +153,14 @@ bool_t tlv_call_data(ip_port_t dest, data_t *data, size_t *head_read)
     return true;
 }
 
+/**
+ * @brief Fonction appelé lors de la lecture d'un tlv 'ack'
+ * 
+ * @param dest couple ip-port de celui qui a envoyé le tlv
+ * @param data strcut iovec contenant l'ensemble des données reçues
+ * @param head_read tête de lecture de la struct iovec 'data'
+ * @return bool_t '1' si la lecture a abouti, et la tête de lecture est déplacé sur le prochain tlv. '0' sinon.
+ */
 bool_t tlv_call_ack(ip_port_t dest, data_t *data, size_t *head_read)
 {
     debug_hex(D_READER, 0, "tlv_call_ack", &dest, sizeof(dest));
@@ -133,6 +181,14 @@ bool_t tlv_call_ack(ip_port_t dest, data_t *data, size_t *head_read)
     return true;
 }
 
+/**
+ * @brief Fonction appelé lors de la lecture d'un tlv 'goaway'
+ * 
+ * @param dest couple ip-port de celui qui a envoyé le tlv
+ * @param data strcut iovec contenant l'ensemble des données reçues
+ * @param head_read tête de lecture de la struct iovec 'data'
+ * @return bool_t '1' si la lecture a abouti, et la tête de lecture est déplacé sur le prochain tlv. '0' sinon.
+ */
 bool_t tlv_call_goaway(ip_port_t dest, data_t *data, size_t *head_read)
 {
     debug_hex(D_READER, 0, "tlv_call_goaway", &dest, sizeof(dest));
@@ -153,6 +209,14 @@ bool_t tlv_call_goaway(ip_port_t dest, data_t *data, size_t *head_read)
     return true;
 }
 
+/**
+ * @brief Fonction appelé lors de la lecture d'un tlv 'warning'
+ * 
+ * @param dest couple ip-port de celui qui a envoyé le tlv
+ * @param data strcut iovec contenant l'ensemble des données reçues
+ * @param head_read tête de lecture de la struct iovec 'data'
+ * @return bool_t '1' si la lecture a abouti, et la tête de lecture est déplacé sur le prochain tlv. '0' sinon.
+ */
 bool_t tlv_call_warning(ip_port_t dest, data_t *data, size_t *head_read)
 {
     debug_hex(D_READER, 0, "tlv_call_warning", &dest, sizeof(dest));
@@ -176,6 +240,10 @@ bool_t tlv_call_warning(ip_port_t dest, data_t *data, size_t *head_read)
     return true;
 }
 
+/**
+ * @brief tableau des différentes fonctions de traitements des tlvs
+ * 
+ */
 tlv_function_t tlv_function_call[NB_TLV] = {
 
     tlv_call_pad1,
@@ -189,6 +257,12 @@ tlv_function_t tlv_function_call[NB_TLV] = {
 
 };
 
+/**
+ * @brief Lecture d'une suite de tlvs
+ * 
+ * @param dest Couple ip-port de celui qui a émis les tlvs reçus
+ * @param tlvs tlvs reçus
+ */
 void read_tlv(ip_port_t dest, data_t *tlvs)
 {
     size_t head_reader = 0;
@@ -211,6 +285,11 @@ void read_tlv(ip_port_t dest, data_t *tlvs)
     debug(D_READER, 0, "read_tlv", "fin de lecture du tlv");
 }
 
+/**
+ * @brief On s'occupe de lire les données sur la socket 'g_socket'
+ * 
+ * @return ssize_t nombre de données lues, '-1' s'il y a une erreur
+ */
 ssize_t read_msg()
 {
     // sockaddr_in6 pour le destinataire
