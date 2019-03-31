@@ -85,11 +85,11 @@ bool_t get_nexttime(struct timespec *tm)
 void launch_program()
 {
     int rc = 0;
+    fd_set readfds;
+    fd_set writefds;
     struct timespec tm = {0};
     while (1)
     {
-        fd_set readfds;
-        fd_set writefds;
         FD_ZERO(&readfds);
         FD_ZERO(&writefds);
         FD_SET(g_socket, &readfds);
