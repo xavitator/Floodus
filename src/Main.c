@@ -45,6 +45,19 @@ int make_demand(struct addrinfo *p)
     memmove(ipport.ipv6, &((struct sockaddr_in6 *)p->ai_addr)->sin6_addr, sizeof(ipport.ipv6));
     int rc = send_tlv(&ipport, hs, 1);
     freeiovec(hs);
+
+    data_t *new_neighbour = neighbour(ipport.ipv6, ipport.port);
+    if (new_neighbour == NULL) {
+        debug(D_MAIN, 1, "make_demand -> new_neighbour", " new = NULL");
+        return 0;
+    }
+    size_t head = 1;
+    rc = apply_tlv_neighbour(new_neighbour, &head);
+    if (rc == false) {
+        debug(D_MAIN, 1, "make_demand -> apply neighbour", " rc = false");
+        return rc;
+    }
+    freeiovec(new_neighbour);
     return rc;
 }
 

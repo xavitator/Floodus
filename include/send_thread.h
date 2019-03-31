@@ -13,6 +13,8 @@
 
 #define D_SEND_THREAD 1
 #define MIN 8
+#define SLEEP_NEIGHBOURS 60
+#define SLEEP_HELLO 30
 
 short init_sender(void);
 

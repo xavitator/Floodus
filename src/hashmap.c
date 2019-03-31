@@ -470,6 +470,7 @@ void print_hashmap(hashmap_t *map)
             print_iovec(p->key);
             printf("Value : \n");
             print_iovec(p->value);
+            p = p->next;
         }
     }
 }

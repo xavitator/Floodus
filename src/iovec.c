@@ -38,7 +38,7 @@ struct iovec *copy_iovec(struct iovec *data)
         debug(D_IOVEC, 1, "copy_iovec", "data : (null)");
         return NULL;
     }
-    struct iovec *copy = malloc(sizeof(data));
+    struct iovec *copy = malloc(sizeof(struct iovec));
     if (copy == NULL)
     {
         debug(D_IOVEC, 1, "copy_iovec", "erreur de malloc de la struct iovec");
