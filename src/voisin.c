@@ -75,7 +75,7 @@ short lock(pthread_mutex_t *lock)
 short unlock(pthread_mutex_t *lock)
 {
     int rc = 0;
-    pthread_mutex_unlock(lock);
+    rc = pthread_mutex_unlock(lock);
     if (rc)
     {
         debug_int(D_VOISIN, 1, "unlock -> rc", rc);
@@ -167,6 +167,7 @@ bool_t apply_hello_court(ip_port_t ipport, u_int64_t id) {
         }
         memmove(&nval, val->iov_base, sizeof(neighbor_t));
         if (id != nval.id) {
+            freeiovec(val);
             debug(D_VOISIN, 1, "apply_hello_court", "id != nval.id");
             unlock(&g_lock_n);
             unlock(&g_lock_e);
@@ -195,13 +196,11 @@ bool_t apply_hello_court(ip_port_t ipport, u_int64_t id) {
     
     debug_hex(D_VOISIN, 0, "apply_hello_court -> tlv_hello", tlv_hello->iov_base, tlv_hello->iov_len);
     int rc = add_tlv(ipport, tlv_hello);
-    
+    freeiovec(tlv_hello);
     if(rc == false) {
       debug_int(D_VOISIN, 1, "send_hello_long -> rc", rc);
       return rc;
     }
-
-    freeiovec(tlv_hello);
     return true;
 }
 
@@ -245,6 +244,7 @@ bool_t apply_hello_long(ip_port_t ipport, u_int64_t id_source, u_int64_t id_dest
         memmove(&nval, val->iov_base, sizeof(neighbor_t));
         if (id_source != nval.id)
         {
+            freeiovec(val);
             debug(D_VOISIN, 1, "apply_hello_long", "id_source != nval.id");
             unlock(&g_lock_n);
             unlock(&g_lock_e);
