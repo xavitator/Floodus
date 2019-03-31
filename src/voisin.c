@@ -161,19 +161,21 @@ bool_t apply_hello_court(ip_port_t ipport, u_int64_t id) {
         data_t *val = get_map(&ipport_iovec, g_neighbors);
         if (val == NULL) {
             debug(D_VOISIN, 1, "apply_hello_court", "val = NULL");
+            unlock(&g_lock_n);
+            unlock(&g_lock_e);
             return false;
         }
         memmove(&nval, val->iov_base, sizeof(neighbor_t));
         if (id != nval.id) {
             debug(D_VOISIN, 1, "apply_hello_court", "id != nval.id");
+            unlock(&g_lock_n);
+            unlock(&g_lock_e);
             return false;
         }
         freeiovec(val);
     } else  {
         debug(D_VOISIN, 0, "apply_hello_court", "insert new neighbor");
-        struct timespec hello = {0};
         nval.id = id;
-        nval.hello = hello;
         remove_map(&ipport_iovec, g_environs);
     }
 
@@ -236,21 +238,21 @@ bool_t apply_hello_long(ip_port_t ipport, u_int64_t id_source, u_int64_t id_dest
         if (val == NULL)
         {
             debug(D_VOISIN, 1, "apply_hello_long", "val = NULL");
+            unlock(&g_lock_n);
+            unlock(&g_lock_e);
             return false;
         }
         memmove(&nval, val->iov_base, sizeof(neighbor_t));
         if (id_source != nval.id)
         {
             debug(D_VOISIN, 1, "apply_hello_long", "id_source != nval.id");
+            unlock(&g_lock_n);
+            unlock(&g_lock_e);
             return false;
         }
         freeiovec(val);
         debug(D_VOISIN, 0, "apply_hello_long", "update neighbor");
-    }
-    else
-    {
-        struct timespec hello = {0};
-        nval.hello = hello;
+    } else {
         nval.id = id_source;
         remove_map(&ipport_iovec, g_environs);
         debug(D_VOISIN, 0, "apply_hello_long", "insert new neighbor");
@@ -287,10 +289,10 @@ bool_t apply_tlv_hello(ip_port_t ipport, data_t *data, size_t *head_read)
         debug(D_VOISIN, 1, "apply_tlv_hello", "head > data_iov");
         return false;
     }
-    u_int8_t lenght = 0;
-    memmove(&lenght, data->iov_base + (*head_read), sizeof(u_int8_t));
+    u_int8_t length = 0;
+    memmove(&length, data->iov_base + (*head_read), sizeof(u_int8_t));
     *head_read = *head_read + 1;
-    switch (lenght)
+    switch (length)
     {
     case sizeof(u_int64_t):
     {
@@ -315,7 +317,7 @@ bool_t apply_tlv_hello(ip_port_t ipport, data_t *data, size_t *head_read)
 
     default:
     {
-        *head_read = *head_read - 1;
+        *head_read = *head_read + length;
         debug(D_VOISIN, 1, "apply_tlv_hello", "wrong TLV Hello");
         return false;
     }
@@ -341,9 +343,9 @@ bool_t apply_tlv_neighbour(data_t *data, size_t *head_read)
         debug(D_VOISIN, 1, "apply_tlv_neighbour", "head_read >= data->iov_");
         return false;
     }
-    u_int8_t lenght = 0;
-    memmove(&lenght, data->iov_base + (*head_read), sizeof(u_int8_t));
-    if (lenght == 18 /* taille tlv_neighbour */)
+    u_int8_t length = 0;
+    memmove(&length, data->iov_base + (*head_read), sizeof(u_int8_t));
+    if (length == 18 /* taille tlv_neighbour */)
     {
         debug(D_VOISIN, 0, "apply_tlv_neighbour", "right neighbor");
         *head_read = *head_read + 1;
