@@ -42,6 +42,7 @@ pthread_mutex_t g_lock_buff = PTHREAD_MUTEX_INITIALIZER;
  */
 void clear_all()
 {
+    lock(&g_lock_buff);
     buffer_node_t *tmp = NULL;
     while (g_write_buf != NULL)
     {
@@ -51,12 +52,13 @@ void clear_all()
         free(tmp);
     }
     g_write_buf = NULL;
+    unlock(&g_lock_buff);
 }
 
 /**
- * @brief Fonction d'envoi des tlvs à une adresse contenue dans 'dest'.
+ * @brief Fonction d'envoi des tlvs à une adresse contenue dans 'ipport'.
  * 
- * @param dest destination du message
+ * @param ipport destination du message
  * @param database contenu du message à envoyer
  * @param len taille du contenu
  * @return bool_t '1' si le message s'est bien envoyé, '0' sinon.
@@ -91,6 +93,7 @@ bool_t send_tlv(ip_port_t *ipport, data_t *database, size_t len)
     msg.msg_iovlen = len + 1;
     while (1)
     {
+        debug(D_WRITER, 0, "send_tlv", "écriture du message dans la socket");
         int rc = sendmsg(g_socket, &msg, 0);
         if (rc >= 0)
             break;
@@ -195,38 +198,40 @@ bool_t add_tlv(ip_port_t dest, data_t *tlv)
     if (child != NULL)
     {
         debug(D_WRITER, 0, "add_tlv", "ajout bien effectué");
+        unlock(&g_lock_buff);
         return true;
     }
     buffer_node_t *node = malloc(sizeof(buffer_node_t));
     if (node == NULL)
     {
         debug(D_WRITER, 1, "add_tlv", "erreur de malloc node");
+        unlock(&g_lock_buff);
         return false;
     }
-    data_t *tlvs = malloc(sizeof(data_t));
-    if (tlvs == NULL)
+    data_t *ntlv = copy_iovec(tlv);
+    if (ntlv == NULL)
     {
         free(node);
-        debug(D_WRITER, 1, "add_tlv", "erreur malloc tlvs");
+        debug(D_WRITER, 1, "add_tlv", "problème de copie de tlv");
+        unlock(&g_lock_buff);
         return false;
     }
     memset(node, 0, sizeof(buffer_node_t));
-    memset(tlvs, 0, sizeof(data_t));
-    tlvs[0] = *tlv;
     node->dest = dest;
-    node->tlvs = tlvs;
+    node->tlvs = ntlv;
     node->tlvlen = 1;
     node->next = NULL;
     if (father == NULL)
     {
         g_write_buf = node;
         debug(D_WRITER, 0, "add_tlv", "initialisation première node du buffer");
+        unlock(&g_lock_buff);
         return true;
     }
     father->next = node;
     debug(D_WRITER, 0, "add_tlv", "ajout d'une node au buffer");
-    return true;
     unlock(&g_lock_buff);
+    return true;
 }
 
 /**
@@ -236,8 +241,10 @@ bool_t add_tlv(ip_port_t dest, data_t *tlv)
  */
 bool_t buffer_is_empty()
 {
+    lock(&g_lock_buff);
     bool_t res = (g_write_buf == NULL);
     debug_int(D_WRITER, 0, "buffer_is_empty", res);
+    unlock(&g_lock_buff);
     return res;
 }
 
@@ -282,6 +289,7 @@ bool_t send_buffer_tlv()
     if (res == false)
     {
         debug(D_WRITER, 1, "send_buffer_tlv", "1er envoi non effectué");
+        unlock(&g_lock_buff);
         return false;
     }
     if (ind < g_write_buf->tlvlen)
@@ -289,7 +297,9 @@ bool_t send_buffer_tlv()
         res = send_tlv(&g_write_buf->dest, g_write_buf->tlvs + ind - 1, g_write_buf->tlvlen - ind + 1);
         if (res == false)
         {
+            // possiblement, il faudrait enlever de la node tous les tlvs qu'on a déjà envoyé
             debug(D_WRITER, 1, "send_buffer_tlv", "2eme envoi non effectué");
+            unlock(&g_lock_buff);
             return false;
         }
     }
@@ -301,7 +311,7 @@ bool_t send_buffer_tlv()
     buffer_node_t *tmp = g_write_buf;
     g_write_buf = g_write_buf->next;
     free(tmp);
-    unlock(&g_lock_buff);
     debug_int(D_WRITER, 0, "send_buffer_tlv -> envoi tlv", res);
+    unlock(&g_lock_buff);
     return res;
 }
