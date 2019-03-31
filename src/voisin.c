@@ -154,6 +154,8 @@ bool_t apply_hello_court(ip_port_t ipport, u_int64_t id) {
     data_t ipport_iovec = {&ipport, sizeof(ipport)};
     neighbor_t nval = {0};
     
+    lock(&g_lock_n);
+    lock(&g_lock_e);
     if (contains_map(&ipport_iovec, g_neighbors)) {
         debug(D_VOISIN, 0, "apply_hello_court", "update neighbor");
         data_t *val = get_map(&ipport_iovec, g_neighbors);
@@ -172,12 +174,16 @@ bool_t apply_hello_court(ip_port_t ipport, u_int64_t id) {
         struct timespec hello = {0};
         nval.id = id;
         nval.hello = hello;
+        remove_map(&ipport_iovec, g_environs);
     }
 
     clock_gettime(CLOCK_MONOTONIC, &nval.hello);
     data_t nval_iovec = {&nval, sizeof(nval)};
     insert_map(&ipport_iovec, &nval_iovec, g_neighbors);
     
+    unlock(&g_lock_n);
+    unlock(&g_lock_e);
+
     struct iovec *tlv_hello = hello_long(g_myid, nval.id);
     
     if (tlv_hello == NULL) {
@@ -222,6 +228,8 @@ bool_t apply_hello_long(ip_port_t ipport, u_int64_t id_source, u_int64_t id_dest
 
     data_t ipport_iovec = {&ipport, sizeof(ipport)};
     neighbor_t nval = {0};
+    lock(&g_lock_n);
+    lock(&g_lock_e);
     if (contains_map(&ipport_iovec, g_neighbors))
     {
         data_t *val = get_map(&ipport_iovec, g_neighbors);
@@ -252,7 +260,9 @@ bool_t apply_hello_long(ip_port_t ipport, u_int64_t id_source, u_int64_t id_dest
     nval.long_hello = nval.hello;
     data_t nval_iovec = {&nval, sizeof(nval)};
     insert_map(&ipport_iovec, &nval_iovec, g_neighbors);
-
+    
+    unlock(&g_lock_n);
+    unlock(&g_lock_e);
     debug_hex(D_VOISIN, 0, "apply_hello_long -> nval", &nval, sizeof(neighbor_t));
     return true;
 }
@@ -338,11 +348,15 @@ bool_t apply_tlv_neighbour(data_t *data, size_t *head_read)
         debug(D_VOISIN, 0, "apply_tlv_neighbour", "right neighbor");
         *head_read = *head_read + 1;
         data_t ipport = {data->iov_base + *head_read, 18};
+        lock(&g_lock_n);
+        lock(&g_lock_e);
         if (contains_map(&ipport, g_neighbors) == false)
         {
             debug(D_VOISIN, 0, "apply_tlv_neighbour", "insert new neighbour");
             insert_map(&ipport, &ipport, g_environs);
         }
+        unlock(&g_lock_e);
+        unlock(&g_lock_n);
         *head_read += 18;
         return true;
     }
