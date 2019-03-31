@@ -1,3 +1,10 @@
+/**
+ * @file TLV.c
+ * @author Floodus
+ * @brief Module s'occupant de tout ce qui est constructon de TLV
+ * 
+ */
+
 #include "TLV.h"
 
 /* Fonction affichage erreur */
@@ -28,7 +35,7 @@ struct iovec *pad1()
   memset(content, 0, sizeof(uint8_t) * size);
   pad->iov_base = content;
   pad->iov_len = size;
-  debug_hex(D_TLV,0,"pad1 contruction TLV", pad->iov_base, pad->iov_len);
+  debug_hex(D_TLV, 0, "pad1 contruction TLV", pad->iov_base, pad->iov_len);
   return pad;
 }
 
@@ -122,7 +129,7 @@ struct iovec *hello_long(uint64_t sender_id, uint64_t id)
   memmove(content + 10, &id, sizeof(uint64_t));
   hello->iov_base = content;
   hello->iov_len = size;
-  debug_hex(D_TLV,0, "hello_long contruction TLV", hello->iov_base, hello->iov_len);
+  debug_hex(D_TLV, 0, "hello_long contruction TLV", hello->iov_base, hello->iov_len);
   return hello;
 }
 
@@ -152,7 +159,7 @@ struct iovec *neighbour(uint8_t source_ip[16], uint16_t port)
   content[0] = 3;
   content[1] = 18;
   memmove(content + 2, source_ip, sizeof(uint8_t) * 16);
-  memmove(content + 16, &port, sizeof(uint16_t));
+  memmove(content + 18, &port, sizeof(uint16_t));
   neighbour_i->iov_base = content;
   neighbour_i->iov_len = size;
   debug_hex(D_TLV, 0, "neighbour contruction TLV", neighbour_i->iov_base, neighbour_i->iov_len);
@@ -193,7 +200,7 @@ struct iovec *data(uint64_t sender_id, uint32_t nonce, uint8_t type, uint8_t msg
   memmove(content + 10, msg, msg_length);
   data_i->iov_base = content;
   data_i->iov_len = size;
-  debug_hex(D_TLV,0, "data contruction TLV", data_i->iov_base, data_i->iov_len);
+  debug_hex(D_TLV, 0, "data contruction TLV", data_i->iov_base, data_i->iov_len);
   return data_i;
 }
 

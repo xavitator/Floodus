@@ -1,3 +1,9 @@
+/**
+ * @file Main.c
+ * @author Floodus
+ * @brief Fichier s'occupant de l'exécutation du programme
+ * 
+ */
 
 #define _GNU_SOURCE
 
@@ -14,124 +20,55 @@
 #include <time.h>
 #include <sys/stat.h>
 #include <fcntl.h>
+
 #include "TLV.h"
 #include "debug.h"
+#include "voisin.h"
+#include "writer.h"
+#include "reader.h"
+#include "send_thread.h"
+#include "controller.h"
 
 #define D_MAIN 1
 
-typedef struct datagram
+/**
+ * @brief Envoie de hello court à un destinataire contenu dans un addrinfo
+ * 
+ * @param p destinataire
+ * @return int boolean disant si tout s'est bien passé
+ */
+int make_demand(struct addrinfo *p)
 {
-    u_int8_t magic;
-    u_int8_t version;
-    u_int16_t body_length;
-    struct iovec *body;
-} datagram;
+    data_t *hs = hello_short(g_myid);
+    ip_port_t ipport = {0};
+    ipport.port = ((struct sockaddr_in6 *)p->ai_addr)->sin6_port;
+    memmove(ipport.ipv6, &((struct sockaddr_in6 *)p->ai_addr)->sin6_addr, sizeof(ipport.ipv6));
+    int rc = send_tlv(&ipport, hs, 1);
+    freeiovec(hs);
 
-u_int64_t id = 0;
+    data_t *new_neighbour = neighbour(ipport.ipv6, ipport.port);
+    if (new_neighbour == NULL) {
+        debug(D_MAIN, 1, "make_demand -> new_neighbour", " new = NULL");
+        return 0;
+    }
+    size_t head = 1;
+    rc = apply_tlv_neighbour(new_neighbour, &head);
+    if (rc == false) {
+        debug(D_MAIN, 1, "make_demand -> apply neighbour", " rc = false");
+        return rc;
+    }
+    freeiovec(new_neighbour);
+    return rc;
+}
 
 /**
- * @brief Instancie l'id du user
+ * @brief On récupère toutes les infos via getaddrinfo sur la destination et le port passé en arguments.
  * 
+ * @param dest nom dns de la destination
+ * @param port port de la destination
+ * @return int '0' si ca s'est bien passé, '-1' sinon.
  */
-void create_user()
-{
-    id = rand();
-    id <<= 32;
-    id += rand();
-}
-
-/**
- * @brief Construction datagram avec les tlv en argument
- * 
- * @param tlvs tlvs à ajouter au datagram
- * @param len taille du tableau de tlv
- * @return datagram* datagram créé
- */
-datagram *make_datagram(struct iovec *tlvs, u_int16_t len)
-{
-    datagram *el = malloc(sizeof(datagram));
-    el->magic = 93;
-    el->version = 2;
-    el->body_length = len;
-    el->body = tlvs;
-    return el;
-}
-
-int make_demand(int s, struct addrinfo *p)
-{
-    datagram *el = make_datagram(hello_short(id), 1);
-    u_int16_t bodylen = 0;
-    for (int i = 0; i < el->body_length; i++)
-    {
-        bodylen += (el->body + i)->iov_len;
-    }
-    debug_int(D_MAIN, 0, "bodylen", bodylen);
-    size_t iovlen = 3 + el->body_length;
-    struct iovec *iov = malloc(iovlen * (sizeof(struct iovec)));
-    struct iovec magic = {0};
-    magic.iov_len = sizeof(u_int8_t);
-    magic.iov_base = &el->magic;
-    struct iovec version = {0};
-    version.iov_len = sizeof(u_int8_t);
-    version.iov_base = &el->version;
-    struct iovec body_length = {0};
-    body_length.iov_len = sizeof(u_int16_t);
-    u_int16_t tmp = htons(bodylen);
-    body_length.iov_base = &tmp;
-    iov[0] = magic;
-    iov[1] = version;
-    iov[2] = body_length;
-    for (int i = 0; i < el->body_length; i++)
-    {
-        el->body[i].iov_len = el->body[i].iov_len;
-        iov[i + 3] = el->body[i];
-    }
-    int rc = 0;
-
-    // envoie avec sendmsg
-    struct msghdr msg = {0};
-    msg.msg_name = p->ai_addr;
-    msg.msg_namelen = p->ai_addrlen;
-    msg.msg_iov = iov;
-    msg.msg_iovlen = iovlen;
-    rc = sendmsg(s, &msg, 0);
-
-    // envoie avec sendto
-    uint8_t res[4096];
-    size_t size = 0;
-    for (unsigned int i = 0; i < iovlen; i++)
-    {
-        memcpy(res + size, iov[i].iov_base, iov[i].iov_len);
-        size += iov[i].iov_len;
-    }
-    //rc = sendto(s, res, size, 0, p->ai_addr, p->ai_addrlen);
-    debug_hex(D_MAIN, 0, "res", res, size);
-    if (rc < 0)
-    {
-        perror("error : ");
-    }
-    debug_int(D_MAIN, 0, "rc", rc);
-
-    unsigned char req[4096];
-    struct iovec io;
-    io.iov_base = req;
-    io.iov_len = 4096;
-
-    msg.msg_iovlen = 1;
-    msg.msg_iov = &io;
-    struct sockaddr test = {0};
-    socklen_t testlen = sizeof(test);
-    printf("before recvfrom\n");
-    //rc = read(s, req, 4096);
-    rc = recvfrom(s, req, 4096, 0, &test, &testlen);
-    //rc = recvmsg(s, &msg, 0);
-    debug_int(D_MAIN, 0, "rc after test", rc);
-    debug_hex(D_MAIN, 0, "requete", req, rc);
-    debug_int(D_MAIN, 0, "msg length", msg.msg_iovlen);
-    return 0;
-}
-
-int send_hello()
+int send_hello(char *dest, char *port)
 {
     struct addrinfo h = {0};
     struct addrinfo *r = {0};
@@ -139,37 +76,76 @@ int send_hello()
     h.ai_family = AF_INET6;
     h.ai_socktype = SOCK_DGRAM;
     h.ai_flags = AI_V4MAPPED | AI_ALL;
-    rc = getaddrinfo("jch.irif.fr", "1212", &h, &r);
+    rc = getaddrinfo(dest, port, &h, &r);
     if (rc < 0)
-        debug_and_exit(D_MAIN, 1, "rc", gai_strerror(rc), 1);
+    {
+        debug(D_MAIN, 1, "send_hello -> rc", gai_strerror(rc));
+        return -1;
+    }
     struct addrinfo *p = r;
-    int s = -1;
-    while (p != NULL)
+
+    // demande à toutes les interfaces détectées
+    // while (p != NULL)
+    // {
+    //     make_demand(p);
+    //     p = p->ai_next;
+    // }
+    // fin de la demande à toutes les interfaces
+
+    // demande à la première interface
+    if (p == NULL)
     {
-        s = socket(p->ai_family, p->ai_socktype, p->ai_protocol);
-        int val;
-        setsockopt(s, IPPROTO_IPV6, IPV6_V6ONLY, &val, sizeof(val));
-        if (s >= 0)
-            break;
-        p = p->ai_next;
+        debug(D_MAIN, 1, "send_hello", "aucune interface détectée pour cette adresse");
+        return -1;
     }
-    if (s < 0 || p == NULL)
-    {
-        freeaddrinfo(r);
-        debug_and_exit(D_MAIN, 1, "p", "Connexion impossible", 1);
-    }
-    char ip[INET6_ADDRSTRLEN];
-    inet_ntop(p->ai_family, p->ai_addr, ip, INET6_ADDRSTRLEN);
-    debug(D_MAIN, 0, "ip", ip);
-    create_user();
-    make_demand(s, p);
-    printf("demande effectuée\n");
-    //recv_demand(s, p);
+    make_demand(p);
+    // fin de la demande à la première interface
+
+    freeaddrinfo(r);
+    debug(D_MAIN, 0, "send_hello", "demande effectuée pour getaddrinfo");
     return 0;
 }
 
-int main()
+/**
+ * @brief initialisation du serveur.
+ * Le commande de lancement peut prendre 2 arguments.
+ * Si les deux arguments sont présents simultanémant :
+ * le premier argument correspondra au nom dns de la destination
+ * le deuxième argument correspondra au port de la destination
+ * 
+ * @param argc nombre d'arguments de la commande
+ * @param argv tableau des arguments de la commande
+ * @return int valeur de retour
+ */
+int main(int argc, char *argv[])
 {
-    send_hello();
+    char *port = "1212";
+    char *default_dest = "jch.irif.fr";
+    if (argc >= 3)
+    {
+        default_dest = argv[1];
+        port = argv[2];
+    }
+    printf("%s - %s - %s\n", argv[0], default_dest, port);
+    int rc = create_socket(0);
+    if (rc < 0)
+    {
+        if (rc == -1)
+            perror("Main -> Erreur de création de socket ");
+        if (rc == -2)
+            perror("Main -> Erreur de bind ");
+        if (rc == -3)
+            perror("Main -> Erreur de récupération des informations ");
+        if (rc == -4)
+            perror("Main -> Modification des modes de la socket impossible ");
+        printf("Main : Problème de connexion");
+        exit(1);
+    }
+    init_sender();
+    init_neighbors();
+    rc = send_hello(default_dest, port);
+    if (rc >= 0)
+        launch_program();
+    free_neighbors();
     return 0;
 }

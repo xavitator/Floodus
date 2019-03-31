@@ -18,9 +18,7 @@
 #define false 0
 #define true 1
 
-typedef unsigned char bool_t;
-
-typedef struct iovec data_t;
+typedef u_int8_t bool_t;
 
 /**
  * @brief Structure correspondant à une node la hashmap.

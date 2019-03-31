@@ -1,3 +1,10 @@
+/**
+ * @file debug.c
+ * @author Floodus
+ * @brief Module implémentant toutes les fonctions de debug
+ * 
+ */
+
 #include "debug.h"
 
 /**
@@ -10,10 +17,10 @@
  */
 void debug(uint8_t flag, uint8_t error, char *name, const char *msg)
 {
-  char *d = (error)?"\e[1;31m[DEBUG]\e[0m":"\e[1;32m[DEBUG]\e[0m" ;
+  char *d = (error) ? "\e[1;31m[DEBUG]\e[0m" : "\e[1;32m[DEBUG]\e[0m";
   if (DEBUG && flag)
   {
-    fprintf(stderr, "%s Str %s : %s\n",d, name, msg);
+    fprintf(stderr, "%s Str %s : %s\n", d, name, msg);
   }
 }
 
@@ -28,10 +35,10 @@ void debug(uint8_t flag, uint8_t error, char *name, const char *msg)
  */
 void debug_and_exit(uint8_t flag, uint8_t error, char *name, const char *msg, int exit_code)
 {
-  char *d = (error)?"\e[1;31m[DEBUG]\e[0m":"\e[1;32m[DEBUG]\e[0m" ;
+  char *d = (error) ? "\e[1;31m[DEBUG]\e[0m" : "\e[1;32m[DEBUG]\e[0m";
   if (DEBUG && flag)
   {
-    fprintf(stderr, "%s Str %s : %s\n",d, name, msg);
+    fprintf(stderr, "%s Str %s : %s\n", d, name, msg);
     exit(exit_code);
   }
 }
@@ -45,15 +52,15 @@ void debug_and_exit(uint8_t flag, uint8_t error, char *name, const char *msg, in
  * @param data le tableau d'octets
  * @param length la taille des données
  */
-void debug_hex(uint8_t flag, uint8_t error, char *name, uint8_t *data, int length)
+void debug_hex(uint8_t flag, uint8_t error, char *name, void *data, int length)
 {
-  char *d = (error)?"\e[1;31m[DEBUG]\e[0m":"\e[1;32m[DEBUG]\e[0m" ;
+  char *d = (error) ? "\e[1;31m[DEBUG]\e[0m" : "\e[1;32m[DEBUG]\e[0m";
   if (DEBUG && flag)
   {
-    fprintf(stderr, "%s Hexa %s : ",d, name);
+    fprintf(stderr, "%s Hexa %s : ", d, name);
     for (int i = 0; i < length; i++)
     {
-      fprintf(stderr, "%.2x ", data[i]);
+      fprintf(stderr, "%.2x ", ((uint8_t *)data)[i]);
     }
     fprintf(stderr, "\n");
   }
@@ -69,15 +76,15 @@ void debug_hex(uint8_t flag, uint8_t error, char *name, uint8_t *data, int lengt
  * @param length la taille des données
  * @param exit_code le code d'erreur
  */
-void debug_hex_and_exit(uint8_t flag, uint8_t error, char *name, uint8_t *data, int length, int exit_code)
+void debug_hex_and_exit(uint8_t flag, uint8_t error, char *name, void *data, int length, int exit_code)
 {
-  char *d = (error)?"\e[1;31m[DEBUG]\e[0m":"\e[1;32m[DEBUG]\e[0m" ;
+  char *d = (error) ? "\e[1;31m[DEBUG]\e[0m" : "\e[1;32m[DEBUG]\e[0m";
   if (DEBUG && flag)
   {
-    fprintf(stderr, "%s Hexa %s : ",d, name);
+    fprintf(stderr, "%s Hexa %s : ", d, name);
     for (int i = 0; i < length; i++)
     {
-      fprintf(stderr, "%.2x ", data[i]);
+      fprintf(stderr, "%.2x ", ((uint8_t *)data)[i]);
     }
     fprintf(stderr, "\n");
     exit(exit_code);
@@ -94,10 +101,10 @@ void debug_hex_and_exit(uint8_t flag, uint8_t error, char *name, uint8_t *data, 
  */
 void debug_int(uint8_t flag, uint8_t error, char *name, int rc)
 {
-  char *d = (error)?"\e[1;31m[DEBUG]\e[0m":"\e[1;32m[DEBUG]\e[0m" ;
+  char *d = (error) ? "\e[1;31m[DEBUG]\e[0m" : "\e[1;32m[DEBUG]\e[0m";
   if (DEBUG && flag)
   {
-    fprintf(stderr, "%s Int %s: %d\n",d, name, rc);
+    fprintf(stderr, "%s Int %s: %d\n", d, name, rc);
   }
 }
 
@@ -112,10 +119,10 @@ void debug_int(uint8_t flag, uint8_t error, char *name, int rc)
  */
 void debug_int_and_exit(uint8_t flag, uint8_t error, char *name, int rc, int exit_code)
 {
-  char *d = (error)?"\e[1;31m[DEBUG]\e[0m":"\e[1;32m[DEBUG]\e[0m" ;
+  char *d = (error) ? "\e[1;31m[DEBUG]\e[0m" : "\e[1;32m[DEBUG]\e[0m";
   if (DEBUG && flag)
   {
-    fprintf(stderr, "%s Int %s : %d\n",d, name, rc);
+    fprintf(stderr, "%s Int %s : %d\n", d, name, rc);
     exit(exit_code);
   }
 }

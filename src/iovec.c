@@ -1,3 +1,10 @@
+/**
+ * @file iovec.c
+ * @author Floodus
+ * @brief Module contenant toutes les fonctionnalités sur la manipulation des struct iovec
+ * 
+ */
+
 #include "iovec.h"
 
 /**
@@ -31,7 +38,7 @@ struct iovec *copy_iovec(struct iovec *data)
         debug(D_IOVEC, 1, "copy_iovec", "data : (null)");
         return NULL;
     }
-    struct iovec *copy = malloc(sizeof(data));
+    struct iovec *copy = malloc(sizeof(struct iovec));
     if (copy == NULL)
     {
         debug(D_IOVEC, 1, "copy_iovec", "erreur de malloc de la struct iovec");
@@ -49,6 +56,36 @@ struct iovec *copy_iovec(struct iovec *data)
     copy->iov_len = data->iov_len;
     debug(D_IOVEC, 0, "copy_iovec", "renvoie de la copie");
     return copy;
+}
+
+/**
+ * @brief Creer une structure iovec contenant une copie de ses arguments.
+ * 
+ * @param data contenu de la struct iovec
+ * @param len taille du contenu
+ * @return struct iovec* renvoie NULL si on a un problème de malloc, une struct iovec contenant les arguments sinon.
+ */
+struct iovec *create_iovec(void *data, size_t len)
+{
+    struct iovec *create = malloc(sizeof(struct iovec));
+    memset(create, 0, sizeof(struct iovec));
+    if (create == NULL)
+    {
+        debug(D_IOVEC, 1, "create_iovec", "problème de malloc pour create");
+        return NULL;
+    }
+    void *content = malloc(len);
+    if (content == NULL)
+    {
+        debug(D_IOVEC, 1, "create_iovec", "problème de malloc pour content");
+        free(create);
+        return NULL;
+    }
+    memmove(content, data, len);
+    create->iov_base = content;
+    create->iov_len = len;
+    debug(D_IOVEC, 0, "create_iovec", "création de la struct iovec");
+    return create;
 }
 
 /**
