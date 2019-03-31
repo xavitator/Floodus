@@ -159,7 +159,7 @@ struct iovec *neighbour(uint8_t source_ip[16], uint16_t port)
   content[0] = 3;
   content[1] = 18;
   memmove(content + 2, source_ip, sizeof(uint8_t) * 16);
-  memmove(content + 16, &port, sizeof(uint16_t));
+  memmove(content + 18, &port, sizeof(uint16_t));
   neighbour_i->iov_base = content;
   neighbour_i->iov_len = size;
   debug_hex(D_TLV, 0, "neighbour contruction TLV", neighbour_i->iov_base, neighbour_i->iov_len);

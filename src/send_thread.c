@@ -19,8 +19,8 @@ static short send_neighbour(ip_port_t *addr, node_t *n_list) {
   int rc = 0;
   while(current != NULL) {
     memmove(&current_addr, current->key->iov_base, sizeof(ip_port_t));
-    if(memcmp(addr->ipv6, current_addr.ipv6, 16) != 0 &&
-      addr->port == current_addr.port) {
+    if(memcmp(addr->ipv6, current_addr.ipv6, 16) != 0 ||
+      addr->port != current_addr.port) {
       data_t *tlv_neighbour = neighbour(current_addr.ipv6, current_addr.port);
       if(tlv_neighbour == NULL) {
         debug(D_VOISIN, 1, "send_neighbours", "tlv_neighbours = NULL");
@@ -109,7 +109,6 @@ static short send_hello_short(node_t *list, int nb)
       return 0;
     }
     debug_hex(D_SEND_THREAD, 0, "send_hello short -> tlv", tlv_hello->iov_base, tlv_hello->iov_len);
-
 
     rc = add_tlv(addr, tlv_hello);
     if(rc == false) {
