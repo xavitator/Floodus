@@ -13,6 +13,7 @@
 #include "TLV.h"
 #include "hashmap.h"
 #include "voisin.h"
+#include "view.h"
 
 typedef struct message_t
 {
@@ -29,8 +30,10 @@ typedef struct message_t
 
 void free_inondation();
 int compare_time(struct timespec ta, struct timespec tb);
-bool_t add_message(ip_port_t sender, u_int64_t id, uint32_t nonce, uint8_t type, char *content, u_int8_t contentlen);
+bool_t add_message(ip_port_t sender, u_int64_t id, uint32_t nonce, uint8_t type, u_int8_t *content, u_int8_t contentlen);
 bool_t get_nexttime(struct timespec *tm);
 bool_t launch_flood();
+bool_t apply_tlv_data(ip_port_t dest, data_t *data, size_t *head_read);
+bool_t apply_tlv_ack(ip_port_t dest, data_t *data, size_t *head_read);
 
 #endif

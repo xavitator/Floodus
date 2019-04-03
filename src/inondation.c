@@ -79,7 +79,7 @@ void free_inondation()
  * @param contentlen taille du message envoyé
  * @return message_t* structure construite avec toutes les données correspondantes
  */
-message_t *create_message(ip_port_t sender, u_int64_t id, uint32_t nonce, uint8_t type, char *content, u_int8_t contentlen)
+message_t *create_message(ip_port_t sender, u_int64_t id, uint32_t nonce, uint8_t type, u_int8_t *content, u_int8_t contentlen)
 {
     struct timespec tc = {0};
     int rc = 0;
@@ -179,12 +179,12 @@ int compare_time(struct timespec ta, struct timespec tb)
  * @param type type du data
  * @return bool_t '1' si on contient déjà le message et on a enlevé le voisin à inonder, '0' sinon.
  */
-bool_t contains_message(ip_port_t sender, u_int64_t id, uint32_t nonce, u_int8_t type)
+bool_t contains_message(ip_port_t sender, u_int64_t id, uint32_t nonce)
 {
     message_t *tmp = g_floods;
     while (tmp != NULL)
     {
-        if (tmp->id == id && tmp->nonce == nonce && tmp->type == type)
+        if (tmp->id == id && tmp->nonce == nonce)
         {
             data_t sender_iovec = {&sender, sizeof(sender)};
             int res = remove_map(&sender_iovec, tmp->recipient);
@@ -235,9 +235,9 @@ bool_t insert_message(message_t *msg)
  * @param contentlen taille du contenu
  * @return bool_t '1' si le traitement a bien été fait, '0' sinon.
  */
-bool_t add_message(ip_port_t sender, u_int64_t id, uint32_t nonce, uint8_t type, char *content, u_int8_t contentlen)
+bool_t add_message(ip_port_t sender, u_int64_t id, uint32_t nonce, uint8_t type, u_int8_t *content, u_int8_t contentlen)
 {
-    if (contains_message(sender, id, nonce, type))
+    if (contains_message(sender, id, nonce))
     {
         debug(D_INOND, 0, "add_message", "message en cours d'envoi");
         return true;
@@ -380,5 +380,108 @@ bool_t launch_flood()
         rc += 1;
     }
     debug_int(D_INOND, 0, "launch_flood -> nombre de messages faits", rc);
+    return true;
+}
+
+/**
+ * @brief Fonction qui vient faire l'action correspondante à un data pour l'inondation.
+ * Si la lecture du tlv s'est bien passé, le champs 'head_read' sera modifié pour pointer vers le tlv suivant.
+ * 
+ * @param data Structure iovec contenant une suite de tlv.
+ * @param head_read tête de lecture sur le tableau contenu dans la struct iovec.
+ * @return bool_t renvoie '1' si tout s'est bien passé, '0' si on a rien fait ou s'il y a eu un problème.
+ */
+bool_t apply_tlv_data(ip_port_t dest, data_t *data, size_t *head_read)
+{
+    if (*head_read >= data->iov_len)
+    {
+        debug(D_INOND, 1, "apply_tlv_data", "head_read >= data->iov_len");
+        return false;
+    }
+    uint8_t length = 0;
+    memmove(&length, data->iov_base + *head_read, sizeof(u_int8_t));
+    *head_read++;
+    if (length < 14) //taille d'un tlv data avec au moins 1 uint8_t dans le champs message
+    {
+        *head_read += length;
+        debug(D_INOND, 1, "apply_tlv_data", "taille trop petite");
+        return false;
+    }
+    u_int64_t sender_id = 0;
+    memmove(&sender_id, data->iov_base + *head_read, sizeof(u_int64_t));
+    *head_read += sizeof(u_int64_t);
+    length -= sizeof(u_int64_t);
+    u_int32_t nonce = 0;
+    memmove(&nonce, data->iov_base + *head_read, sizeof(u_int32_t));
+    *head_read += sizeof(u_int32_t);
+    length -= sizeof(u_int32_t);
+    u_int8_t type = 0;
+    memmove(&type, data->iov_base + *head_read, sizeof(u_int8_t));
+    *head_read += sizeof(u_int8_t);
+    length -= sizeof(u_int8_t);
+    if (type == 0)
+    {
+        // action à faire quand on doit afficher une data à l'utilisateur
+        print_data(data->iov_base + *head_read, length);
+    }
+    int rc = add_message(dest, sender_id, nonce, type, data->iov_base + *head_read, length);
+    if (rc == false)
+    {
+        *head_read += length;
+        debug(D_INOND, 1, "apply_tlv_data", "problème d'ajout du message");
+        return false;
+    }
+    *head_read += length;
+    data_t *ack_iovec = ack(sender_id, nonce);
+    if (ack_iovec == NULL)
+    {
+        debug(D_INOND, 1, "apply_tlv_data", "problème d'envoi de l'acquitement");
+        return false;
+    }
+    rc = add_tlv(dest, ack_iovec);
+    if (rc == false)
+    {
+        debug(D_INOND, 1, "apply_tlv_data", "problème d'ajout du tlv ack");
+        return false;
+    }
+    debug(D_INOND, 0, "apply_tlv_data", "traitement du tlv data effectué");
+    return true;
+}
+
+/**
+ * @brief Fonction qui vient faire l'action correspondante à un ack pour l'inondation.
+ * Si la lecture du tlv s'est bien passé, le champs 'head_read' sera modifié pour pointer vers le tlv suivant.
+ * 
+ * @param data Structure iovec contenant une suite de tlv.
+ * @param head_read tête de lecture sur le tableau contenu dans la struct iovec.
+ * @return bool_t renvoie '1' si tout s'est bien passé, '0' si on a rien fait ou s'il y a eu un problème.
+ */
+bool_t apply_tlv_ack(ip_port_t dest, data_t *data, size_t *head_read)
+{
+    if (*head_read >= data->iov_len)
+    {
+        debug(D_INOND, 1, "apply_tlv_ack", "head_read >= data->iov_len");
+        return false;
+    }
+    uint8_t length = 0;
+    memmove(&length, data->iov_base + *head_read, sizeof(u_int8_t));
+    *head_read++;
+    if (length != 12) // taille du tlv ack
+    {
+        *head_read += length;
+        debug(D_INOND, 1, "apply_tlv_ack", "taille trop petite");
+        return false;
+    }
+    u_int64_t sender_id = 0;
+    memmove(&sender_id, data->iov_base + *head_read, sizeof(u_int64_t));
+    *head_read += sizeof(u_int64_t);
+    u_int32_t nonce = 0;
+    memmove(&nonce, data->iov_base + *head_read, sizeof(u_int32_t));
+    *head_read += sizeof(u_int32_t);
+    if (contains_message(dest, sender_id, nonce) == false)
+    {
+        debug(D_INOND, 0, "apply_tlv_ack", "message non en mémoire");
+    }
+    debug(D_INOND, 0, "apply_tlv_ack", "mise à jour du message");
     return true;
 }
