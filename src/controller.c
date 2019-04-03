@@ -69,24 +69,13 @@ int create_socket(uint16_t port)
     return 0;
 }
 
-/**
- * @brief On récupère le temps qu'il reste avant le prochain message à inonder
- * 
- * @param tm struct timespec à remplir
- * @return bool_t '1' si 'tm' a été rempli, '0' sinon.
- */
-bool_t get_nexttime(struct timespec *tm)
-{
-    tm->tv_nsec = 0;
-    tm->tv_sec = 10;
-    return 1;
-}
-
 void launch_program()
 {
     int rc = 0;
+    int nb_fd = 0;
     fd_set readfds;
     fd_set writefds;
+    struct timespec zero = {0, 0};
     struct timespec tm = {0};
     while (1)
     {
@@ -99,7 +88,7 @@ void launch_program()
             FD_SET(g_socket, &writefds);
         }
         get_nexttime(&tm);
-        if (pselect(g_socket + 1, &readfds, &writefds, NULL, &tm, NULL) > 0)
+        if ((nb_fd = pselect(g_socket + 1, &readfds, &writefds, NULL, &tm, NULL)) > 0)
         {
             if (FD_ISSET(g_socket, &readfds))
             {
@@ -121,6 +110,13 @@ void launch_program()
                 else
                     debug(D_CONTROL, 0, "launch_program", "envoie d'un message");
             }
+        }
+        if (compare_time(tm, zero) <= 0 || nb_fd == 0)
+        {
+            if (launch_flood())
+                debug(D_CONTROL, 0, "launch_program", "inondation");
+            else
+                debug(D_CONTROL, 0, "launch_program", "problème d'inondation");
         }
     }
 }

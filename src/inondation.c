@@ -4,9 +4,11 @@
  * @brief Variable globale contenant la liste des messages à inonder
  * 
  */
-message_t *floods = NULL;
+message_t *g_floods = NULL;
 
 /**
+ * Cette fonction est deprecated 
+ * 
  * @brief Fonction retournant si le temps donné en argument a dépassé 2 secondes.
  * 
  * @param tv temps à comparer
@@ -20,11 +22,50 @@ bool_t is_symetric(struct timespec tv)
     if (rc < 0)
     {
         debug(D_CONTROL, 1, "is_symetric -> erreur clock_gettime", strerror(errno));
-        return NULL;
+        return false;
     }
     bool_t res = (tc.tv_sec - tv.tv_sec) < 2;
     debug_int(D_INOND, 0, "is_symetric", res);
     return res;
+}
+
+/**
+ * @brief On libère la mémoire d'un message
+ * 
+ * @param msg message dont on libère la mémoire
+ */
+void freemessage(message_t *msg)
+{
+    free(msg->content);
+    freehashmap(msg->recipient);
+    free(msg);
+}
+
+/**
+ * @brief On libère la mémoire d'un message et de ses suivants.
+ * 
+ * @param msg message dont on libère la mémoire et ses suivants
+ */
+void freedeepmessage(message_t *msg)
+{
+    message_t *tmp = msg;
+    message_t *tmp2 = msg;
+    while (tmp != NULL)
+    {
+        tmp2 = tmp->next;
+        freemessage(tmp);
+        tmp = tmp2;
+    }
+}
+
+/**
+ * @brief On libère toute la mémoire prise par l'inondation
+ * 
+ */
+void free_inondation()
+{
+    freedeepmessage(g_floods);
+    g_floods = NULL;
 }
 
 /**
@@ -55,7 +96,7 @@ message_t *create_message(ip_port_t sender, u_int64_t id, uint32_t nonce, uint8_
         free(res);
         return NULL;
     }
-    char *cont_copy = malloc(contentlen);
+    u_int8_t *cont_copy = malloc(contentlen);
     if (cont_copy == NULL)
     {
         debug(D_INOND, 1, "create_message", "copy du contenu -> problème de malloc");
@@ -70,9 +111,9 @@ message_t *create_message(ip_port_t sender, u_int64_t id, uint32_t nonce, uint8_
         free(cont_copy);
         return NULL;
     }
-    lock(g_neighbors);
+    lock(&g_lock_n);
     node_t *neighbour = map_to_list(g_neighbors);
-    unlock(g_neighbors);
+    unlock(&g_lock_n);
     node_t *tmp = neighbour;
     memset(res, 0, sizeof(message_t));
     memmove(cont_copy, content, contentlen);
@@ -140,18 +181,47 @@ int compare_time(struct timespec ta, struct timespec tb)
  */
 bool_t contains_message(ip_port_t sender, u_int64_t id, uint32_t nonce, u_int8_t type)
 {
-    message_t *tmp = floods;
+    message_t *tmp = g_floods;
     while (tmp != NULL)
     {
         if (tmp->id == id && tmp->nonce == nonce && tmp->type == type)
         {
-            int res = remove_map(&sender, tmp->recipient);
+            data_t sender_iovec = {&sender, sizeof(sender)};
+            int res = remove_map(&sender_iovec, tmp->recipient);
             debug_int(D_INOND, 0, "contains_message -> on envoie deja le message et l'emetteur est enlevé des inondés", res);
             return res;
         }
     }
     debug(D_INOND, 0, "contains_message", "on n'envoie pas le message");
     return false;
+}
+
+/**
+ * @brief Insert le message dans la liste des messages de telle façon à garder l'odre des messages
+ * 
+ * @param msg message à insérer
+ * @return bool_t '1' si l'insertion a eu lieu, '0' sinon.
+ */
+bool_t insert_message(message_t *msg)
+{
+    message_t *child = g_floods;
+    message_t *father = child;
+    while (child != NULL && compare_time(child->send_time, msg->send_time) < 0)
+    {
+        father = child;
+        child = child->next;
+    }
+    if (father == child)
+    {
+        g_floods = msg;
+        msg->next = father;
+        debug(D_INOND, 0, "insert_message", "insertion en première position");
+        return true;
+    }
+    father->next = msg;
+    msg->next = child;
+    debug(D_INOND, 0, "insert_message", "ajout de la node");
+    return true;
 }
 
 /**
@@ -178,22 +248,7 @@ bool_t add_message(ip_port_t sender, u_int64_t id, uint32_t nonce, uint8_t type,
         debug(D_INOND, 1, "add_message", "problème de création d'un message_t");
         return false;
     }
-    if (floods == NULL)
-    {
-        floods = msg;
-        debug(D_INOND, 0, "add_message", "création première node");
-        return true;
-    }
-    message_t *child = floods;
-    message_t *father = child;
-    while (child != NULL && compare_time(child->send_time, msg->send_time) < 0)
-    {
-        father = child;
-        child = child->next;
-    }
-    father->next = msg;
-    msg->next = child;
-    return true;
+    return insert_message(msg);
 }
 
 /**
@@ -204,7 +259,126 @@ bool_t add_message(ip_port_t sender, u_int64_t id, uint32_t nonce, uint8_t type,
  */
 bool_t get_nexttime(struct timespec *tm)
 {
-    tm->tv_sec = (floods == NULL) ? 30 : floods->send_time.tv_sec;
-    tm->tv_nsec = (floods == NULL) ? 0 : floods->send_time.tv_nsec;
+
+    if (g_floods == NULL)
+    {
+        tm->tv_sec = 30;
+        tm->tv_nsec = 0;
+        return true;
+    }
+    struct timespec tc = {0};
+    int rc = clock_gettime(CLOCK_MONOTONIC, &tc);
+    if (rc < 0)
+    {
+        debug(D_CONTROL, 1, "get_nexttime -> erreur clock_gettime", strerror(errno));
+        return false;
+    }
+    long diff_sec = g_floods->send_time.tv_sec - tc.tv_sec;
+    long diff_nsec = g_floods->send_time.tv_nsec - tc.tv_nsec;
+    tm->tv_sec = (diff_sec > 0) ? diff_sec : 0;
+    tm->tv_nsec = diff_nsec;
+    return true;
+}
+
+/**
+ * @brief Envoie de tous les tlv go_away à ceux qui n'ont pas acquitté le message
+ * 
+ * @param msg message qui a été inondé
+ * @return bool_t '1' si l'envoi s'est bien passé, '0' sinon.
+ */
+bool_t flood_goaway(message_t *msg)
+{
+    node_t *list = map_to_list(msg->recipient);
+    node_t *tmp = list;
+    int rc = 0;
+    char *message = "L'utilisateur n'a pas acquité le message [00000000,0000]";
+    snprintf(message, strlen(message), "L'utilisateur n'a pas acquité le message [%8.lx,%4.x]", msg->id, msg->nonce);
+    data_t *tlv = go_away(2, strlen(message), (u_int8_t *)message);
+    while (tmp != NULL)
+    {
+        ip_port_t dest = {0};
+        memmove(&dest, tmp->value->iov_base, sizeof(ip_port_t));
+        add_tlv(dest, tlv);
+        rc += 1;
+        // il faudrait maintenant mettre le voisin dans la liste des voisins potentiels
+        // et le supprimer des (a)symétriques
+        //
+        // zone à compléter :
+
+        //
+        //
+        tmp = tmp->next;
+    }
+    freedeepnode(list);
+    debug_int(D_INOND, 0, "flood_goaway -> envoi des go_away, nombre d'envoi", rc);
+    return true;
+}
+
+/**
+ * @brief On procède à l'inondation sur un message.
+ * 
+ * @param msg message à inonder
+ * @return bool_t '1' si le message a été inondé.
+ * '0' si on a envoyé des go_away, et donc que le message n'est pas à rajouté dans la liste des messages à inonder.
+ */
+bool_t flood_message(message_t *msg)
+{
+    if (msg->count > COUNT_INOND)
+    {
+        flood_goaway(msg);
+        debug(D_INOND, 0, "flood_message", "envoi des goaway");
+        return false;
+    }
+    node_t *list = map_to_list(msg->recipient);
+    node_t *tmp = list;
+    int rc = 0;
+    data_t *tlv = data(msg->id, msg->nonce, msg->type, msg->contentlen, msg->content);
+    while (tmp != NULL)
+    {
+        ip_port_t dest = {0};
+        memmove(&dest, tmp->value->iov_base, sizeof(ip_port_t));
+        add_tlv(dest, tlv);
+        rc += 1;
+        tmp = tmp->next;
+    }
+    freedeepnode(list);
+    msg->count++;
+    double add_time = pow((double)2, (double)msg->count);
+    msg->send_time.tv_sec += (int)add_time;
+    debug_int(D_INOND, 0, "flood_message -> envoi des datas, nombre d'envoi", rc);
+    return true;
+}
+
+/**
+ * @brief Boucle principal qui procède à l'inondation de tous les messages qui sont arrivés à maturation.
+ * 
+ * @return bool_t '1', si tout s'est bien passé, '0' sinon.
+ */
+bool_t launch_flood()
+{
+    message_t *msg = NULL;
+    struct timespec tc = {0};
+    int rc = clock_gettime(CLOCK_MONOTONIC, &tc);
+    if (rc < 0)
+    {
+        debug(D_CONTROL, 1, "launch_flood -> erreur clock_gettime", strerror(errno));
+        return false;
+    }
+    rc = 0;
+    while (g_floods != NULL && compare_time(tc, g_floods->send_time) <= 0)
+    {
+        msg = g_floods;
+        g_floods = g_floods->next;
+        if (flood_message(msg) == false)
+        {
+            freemessage(msg);
+        }
+        else
+        {
+            insert_message(msg);
+        }
+        rc += 1;
+    }
+    debug_int(D_INOND, 0, "launch_flood -> nombre de messages faits", rc);
     return true;
 }
