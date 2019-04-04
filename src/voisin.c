@@ -364,7 +364,25 @@ bool_t apply_tlv_neighbour(data_t *data, size_t *head_read)
     }
     else
     {
-        debug(D_VOISIN, 0, "apply_tlv_neighbour", "wrong neighbour size");
+        *head_read += data->iov_len; // En cas d'erreur on ignore la donnée
+        debug(D_VOISIN, 1, "apply_tlv_neighbour", "wrong neighbour size");
         return false;
     }
+}
+
+/**
+ * @brief
+ * Retourne si un voisin est asymétrique ou non
+ *
+ * @param node_tv temps du dernier hello long
+ */
+bool_t is_more_than_two(struct timespec node_tv) {
+  struct timespec tv_current = {0};
+  if(clock_gettime(CLOCK_MONOTONIC, &tv_current)) {
+    debug(D_VOISIN, 1, "is_asymetric", "can't get clockgetime");
+    return false;
+  }
+  if(tv_current.tv_sec - node_tv.tv_sec > 120)
+    return true;
+  return false;
 }
