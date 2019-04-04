@@ -8,6 +8,22 @@
 
 /**
  * @brief
+ * Donne le temps restant nécessaire au sleep 
+ * 
+ * @param time le temps original
+ * @param wake_up le temps auquel le thread se réveille
+ */
+static uint32_t get_remain_time(uint32_t time, struct timespec wake_up) {
+  struct timespec current_time = {0};
+  if(clock_gettime(CLOCK_MONOTONIC, &current_time)) {
+    debug(D_SEND_THREAD, 1, "get_remain_time", "can't get clockgetime");
+    return time;
+  }
+  return time - (current_time.tv_sec - wake_up.tv_sec);
+}
+
+/**
+ * @brief
  * Deplace les données de la hashmap g_neighbors
  * vers g_environ
  * 
@@ -134,9 +150,18 @@ static short send_neighbours(node_t *list)
 static void *neighbour_sender(void *unused)
 {
   (void)unused; // Enleve le warning unused
+  struct timespec wake_up = {0};
+  if(clock_gettime(CLOCK_MONOTONIC, &wake_up)) {
+      debug(D_SEND_THREAD 1, "neighbour_sender", "can't get clockgetime");
+      pthread_exit(NULL);
+  }
   while (1)
   {
-    sleep(SLEEP_NEIGHBOURS);
+    sleep(get_remain_time(SLEEP_NEIGHBOURS, wake_up));
+    if(clock_gettime(CLOCK_MONOTONIC, &wake_up)) {
+      debug(D_SEND_THREAD, 1, "neighbour_sender", "can't get clockgetime");
+      pthread_exit(NULL);
+    }
     debug(D_SEND_THREAD, 0, "pthread neighbour", "Read hashmaps and send");
 
     lock(&g_lock_n);
@@ -236,9 +261,18 @@ static void *hello_sender(void *unused)
   (void)unused; // Enleve le warning unused
 
   int count = 0;
+  struct timespec wake_up = {0};
+  if(clock_gettime(CLOCK_MONOTONIC, &wake_up)) {
+    debug(D_VOISIN, 1, "hello_sender", "can't get clockgetime");
+    pthread_exit(NULL);
+  }
   while (1)
   {
-    sleep(SLEEP_HELLO);
+    sleep(get_remain_time(SLEEP_HELLO, wake_up));
+    if(clock_gettime(CLOCK_MONOTONIC, &wake_up)) {
+      debug(D_VOISIN, 1, "hello_sender", "can't get clockgetime");
+      pthread_exit(NULL);
+    }
     debug(D_SEND_THREAD, 0, "pthread", "Read hashmaps and send");
 
     lock(&g_lock_n);
