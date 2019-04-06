@@ -59,8 +59,10 @@ short lock(pthread_mutex_t *);
 short unlock(pthread_mutex_t *);
 void create_user();
 bool_t init_neighbors();
+bool_t update_neighbours(node_t *current, char *msg); 
 void free_neighbors();
 bool_t apply_tlv_hello(ip_port_t ipport, data_t *data, size_t *head_read);
 bool_t apply_tlv_neighbour(data_t *data, size_t *head_read);
+bool_t is_more_than_two(struct timespec node_tv);
 
 #endif
