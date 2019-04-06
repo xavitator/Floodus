@@ -53,7 +53,7 @@ pthread_mutex_t g_lock_e = PTHREAD_MUTEX_INITIALIZER;
  * Bloque le cadenas si il est libre
  * sinon attend
  * @param lock le cadenas à verrouiller
- * @return rc > 0 en cas de succès
+ * @return rc
  */
 short lock(pthread_mutex_t *lock)
 {
@@ -64,7 +64,6 @@ short lock(pthread_mutex_t *lock)
         debug_int(D_VOISIN, 1, "lock -> rc", rc);
         return rc;
     }
-    //debug(D_VOISIN, 0, "lock", "lock mutex");
     return rc;
 }
 
@@ -72,7 +71,7 @@ short lock(pthread_mutex_t *lock)
  * @brief
  * Débloque le cadenas 
  * @param lock le cadenas à déverrouiller
- * @return rc > 0 en cas de succès
+ * @return rc 
  */
 short unlock(pthread_mutex_t *lock)
 {
@@ -83,7 +82,6 @@ short unlock(pthread_mutex_t *lock)
         debug_int(D_VOISIN, 1, "unlock -> rc", rc);
         return rc;
     }
-    //debug(D_VOISIN, 0, "unlock", "unlock mutex");
     return rc;
 }
 
@@ -153,12 +151,12 @@ static bool_t from_neighbours_to_env(ip_port_t *addr) {
  * Ajoute un GoAway à la liste des envois
  * 
  * @param addr l'adresse à laquelle envoyer le goaway
+ * @param msg le message à envoyer
  * @return true si le tlv go_away a été envoyé
  */
-static bool_t inform_neighbor(ip_port_t *addr) {
+static bool_t inform_neighbor(ip_port_t *addr, char *msg) {
     int rc;
-    char *content = "Time out with hello";
-    data_t *tlv_go_away = go_away(2, strlen(content)+1, (uint8_t*)content);
+    data_t *tlv_go_away = go_away(2, strlen(msg)+1, (uint8_t*)msg);
     if(tlv_go_away == NULL) {
       debug(D_VOISIN, 1, "inform_neighbor", "tlv_go_away = NULL");
       return false;
@@ -179,14 +177,15 @@ static bool_t inform_neighbor(ip_port_t *addr) {
  * go away.
  * 
  * @param current le node à tester 
+ * @param msg le message à envoyer
  * @return true en cas de succès
  */
-bool_t update_neighbours(node_t *current) {
+bool_t update_neighbours(node_t *current, char *msg) {
   ip_port_t addr = {0};
   memmove(&addr, current->key->iov_base, sizeof(ip_port_t));
   if(from_neighbours_to_env(&addr) == false)
     return false;
-  if(inform_neighbor(&addr) == false)
+  if(inform_neighbor(&addr, msg) == false)
     return false;
   return true;
 }
@@ -457,22 +456,4 @@ bool_t is_more_than_two(struct timespec node_tv) {
   return false;
 }
 
-
-/**
- * @brief
- * Donne le temps restant nécessaire au sleep 
- * 
- * @param time le temps original
- * @param wake_up le temps auquel le thread se réveille
- * @return le temps à sleep
- */
-uint32_t get_remain_time(uint32_t TIME, struct timespec wake_up) {
-  struct timespec current_time = {0};
-  if(clock_gettime(CLOCK_MONOTONIC, &current_time) < 0) {
-    debug(D_VOISIN, 1, "get_remain_time", "can't get clockgetime");
-    return 0;
-  }
-  uint32_t res = TIME - (current_time.tv_sec - wake_up.tv_sec);
-  return (res <= 0 || res > TIME)?0:res;
-}
 
