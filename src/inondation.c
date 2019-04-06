@@ -7,29 +7,6 @@
 message_t *g_floods = NULL;
 
 /**
- * Cette fonction est deprecated 
- * 
- * @brief Fonction retournant si le temps donné en argument a dépassé 2 secondes.
- * 
- * @param tv temps à comparer
- * @return bool_t résultat
- */
-bool_t is_symetric(struct timespec tv)
-{
-    struct timespec tc = {0};
-    int rc = 0;
-    rc = clock_gettime(CLOCK_MONOTONIC, &tc);
-    if (rc < 0)
-    {
-        debug(D_CONTROL, 1, "is_symetric -> erreur clock_gettime", strerror(errno));
-        return false;
-    }
-    bool_t res = (tc.tv_sec - tv.tv_sec) < 2;
-    debug_int(D_INOND, 0, "is_symetric", res);
-    return res;
-}
-
-/**
  * @brief On libère la mémoire d'un message
  * 
  * @param msg message dont on libère la mémoire
@@ -121,7 +98,7 @@ message_t *create_message(ip_port_t sender, u_int64_t id, uint32_t nonce, uint8_
     {
         neighbor_t voisin = {0};
         memmove(&voisin, neighbour->value, sizeof(neighbor_t));
-        if (is_symetric(voisin.long_hello) && voisin.id != id && memcmp(&sender, neighbour->key, sizeof(ip_port_t)) != 0)
+        if (is_more_than_two(voisin.long_hello) && voisin.id != id && memcmp(&sender, neighbour->key, sizeof(ip_port_t)) != 0)
         {
             insert_map(neighbour->key, neighbour->key, recipient);
         }
@@ -290,28 +267,18 @@ bool_t flood_goaway(message_t *msg)
 {
     node_t *list = map_to_list(msg->recipient);
     node_t *tmp = list;
-    int rc = 0;
+    bool_t no_error = true;
     char *message = "L'utilisateur n'a pas acquité le message [00000000,0000]";
     snprintf(message, strlen(message), "L'utilisateur n'a pas acquité le message [%8.lx,%4.x]", msg->id, msg->nonce);
-    data_t *tlv = go_away(2, strlen(message), (u_int8_t *)message);
     while (tmp != NULL)
     {
-        ip_port_t dest = {0};
-        memmove(&dest, tmp->value->iov_base, sizeof(ip_port_t));
-        add_tlv(dest, tlv);
-        rc += 1;
-        // il faudrait maintenant mettre le voisin dans la liste des voisins potentiels
-        // et le supprimer des (a)symétriques
-        //
-        // zone à compléter :
-
-        //
-        //
+        if(update_neighbours(tmp, message) == false)
+          no_error = false;
         tmp = tmp->next;
     }
     freedeepnode(list);
-    debug_int(D_INOND, 0, "flood_goaway -> envoi des go_away, nombre d'envoi", rc);
-    return true;
+    debug_int(D_INOND, 0, "flood_goaway -> erreurs : ", no_error);
+    return no_error;
 }
 
 /**

@@ -156,7 +156,7 @@ static bool_t from_neighbours_to_env(ip_port_t *addr) {
  */
 static bool_t inform_neighbor(ip_port_t *addr, char *msg) {
     int rc;
-    data_t *tlv_go_away = go_away(2, strlen(msg)+1, (uint8_t*)msg);
+    data_t *tlv_go_away = go_away(2, strlen(msg), (uint8_t*)msg);
     if(tlv_go_away == NULL) {
       debug(D_VOISIN, 1, "inform_neighbor", "tlv_go_away = NULL");
       return false;
