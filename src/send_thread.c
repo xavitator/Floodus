@@ -8,85 +8,6 @@
 
 /**
  * @brief
- * Donne le temps restant nécessaire au sleep 
- * 
- * @param time le temps original
- * @param wake_up le temps auquel le thread se réveille
- */
-static uint32_t get_remain_time(uint32_t time, struct timespec wake_up) {
-  struct timespec current_time = {0};
-  if(clock_gettime(CLOCK_MONOTONIC, &current_time)) {
-    debug(D_SEND_THREAD, 1, "get_remain_time", "can't get clockgetime");
-    return time;
-  }
-  return time - (current_time.tv_sec - wake_up.tv_sec);
-}
-
-/**
- * @brief
- * Deplace les données de la hashmap g_neighbors
- * vers g_environ
- * 
- * @param addr l'adresse à déplacer dans la hashmap
- */
-static bool_t from_neighbours_to_env(ip_port_t *addr) {
-  data_t addr_iov = {&addr, sizeof(ip_port_t)};
-  lock(&g_lock_e);
-  if(insert_map(&addr_iov, &addr_iov, g_environs) == false)
-    return false;
-  unlock(&g_lock_e);
-  lock(&g_lock_n);
-  if(remove_map(&addr_iov, g_neighbors) == false)
-    return false;
-  unlock(&g_lock_n);
-  return true;
-}
-
-/**
- * Ajoute un GoAway à la liste des envois
- * 
- * @param addr l'adresse à laquelle envoyer le goaway
- */
-static bool_t inform_neighbor(ip_port_t *addr) {
-    int rc;
-    char *content = "Time out with hello";
-    data_t *tlv_go_away = go_away(2, strlen(content)+1, (uint8_t*)content);
-    if(tlv_go_away == NULL) {
-      debug(D_SEND_THREAD, 1, "inform_neighbor", "tlv_go_away = NULL");
-      return false;
-    }
-    debug_hex(D_SEND_THREAD, 0, "inform_neighbor -> tlv", tlv_go_away->iov_base, tlv_go_away->iov_len);
-    rc = add_tlv(*addr, tlv_go_away);
-    if(rc == false) {
-      debug_int(D_SEND_THREAD, 1, "send_neighbour -> rc", rc);
-    }
-      return rc;
-}
-
-/**
- * @brief
- * Vérifie si le voisin dans le node doit être maintenu
- * où s'il doit être enlevé de la liste environ
- * 
- * @param current le node à tester 
- */
-static short update_neighbours(node_t *current) {
-  ip_port_t addr = {0};
-  neighbor_t content = {0};
-  memmove(&content, current->value->iov_base, sizeof(neighbor_t));
-  memmove(&addr, current->key->iov_base, sizeof(ip_port_t));
-  if(is_more_than_two(content.hello)) {
-      if(from_neighbours_to_env(&addr) == false)
-        return 0;
-      if(inform_neighbor(&addr) == false)
-        return 0;
-  }
-  return 1;
-}
-
-
-/**
- * @brief
  * Envoie les voisins à un pair
  * 
  * @param addr l'adresse de l'envoyeur
@@ -95,12 +16,17 @@ static short update_neighbours(node_t *current) {
 static short send_neighbour(ip_port_t *addr, node_t *n_list) {
   node_t *current = n_list;
   ip_port_t current_addr = {0};
+  neighbor_t content = {0};
+  memmove(&content, current->value->iov_base, sizeof(neighbor_t));
   int rc = 0;
   while(current != NULL) {
-    if (update_neighbours(current)) {
+    if (is_more_than_two(content.hello) == false) {
+      if(update_neighbours(current) == false)
+        return 0;
       current = current->next;
       continue;
     }
+  
     memmove(&current_addr, current->key->iov_base, sizeof(ip_port_t));
     if(memcmp(addr->ipv6, current_addr.ipv6, 16) != 0 ||
       addr->port != current_addr.port) {
@@ -152,17 +78,19 @@ static void *neighbour_sender(void *unused)
   (void)unused; // Enleve le warning unused
   struct timespec wake_up = {0};
   if(clock_gettime(CLOCK_MONOTONIC, &wake_up)) {
-      debug(D_SEND_THREAD 1, "neighbour_sender", "can't get clockgetime");
+      debug(D_SEND_THREAD, 1, "neighbour_sender", "can't get clockgetime");
       pthread_exit(NULL);
   }
   while (1)
   {
-    sleep(get_remain_time(SLEEP_NEIGHBOURS, wake_up));
+    uint32_t remains = get_remain_time(SLEEP_NEIGHBOURS, wake_up);
+    sleep(remains);
     if(clock_gettime(CLOCK_MONOTONIC, &wake_up)) {
       debug(D_SEND_THREAD, 1, "neighbour_sender", "can't get clockgetime");
       pthread_exit(NULL);
     }
     debug(D_SEND_THREAD, 0, "pthread neighbour", "Read hashmaps and send");
+    debug_int(D_SEND_THREAD, 0, "pthread neighbour", remains);
 
     lock(&g_lock_n);
     node_t *n_list = map_to_list(g_neighbors);

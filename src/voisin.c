@@ -63,7 +63,7 @@ short lock(pthread_mutex_t *lock)
         debug_int(D_VOISIN, 1, "lock -> rc", rc);
         return rc;
     }
-    debug(D_VOISIN, 0, "lock", "lock mutex");
+    //debug(D_VOISIN, 0, "lock", "lock mutex");
     return rc;
 }
 
@@ -81,7 +81,7 @@ short unlock(pthread_mutex_t *lock)
         debug_int(D_VOISIN, 1, "unlock -> rc", rc);
         return rc;
     }
-    debug(D_VOISIN, 0, "unlock", "unlock mutex");
+    //debug(D_VOISIN, 0, "unlock", "unlock mutex");
     return rc;
 }
 
@@ -96,6 +96,7 @@ void create_user()
     g_myid += rand();
     debug_hex(D_VOISIN, 0, "create_user -> id", &g_myid, sizeof(g_myid));
 }
+
 
 /**
  * @brief Initialise les variables globales de voisins et de voisins possibles.
@@ -122,6 +123,68 @@ bool_t init_neighbors()
     debug(D_VOISIN, 0, "init_neighbors", "init all environments");
     return true;
 }
+
+
+/**
+ * @brief
+ * Deplace les données de la hashmap g_neighbors
+ * vers g_environ
+ * 
+ * @param addr l'adresse à déplacer dans la hashmap
+ */
+static bool_t from_neighbours_to_env(ip_port_t *addr) {
+  data_t addr_iov = {&addr, sizeof(ip_port_t)};
+  lock(&g_lock_e);
+  if(insert_map(&addr_iov, &addr_iov, g_environs) == false)
+    return false;
+  unlock(&g_lock_e);
+  lock(&g_lock_n);
+  if(remove_map(&addr_iov, g_neighbors) == false)
+    return false;
+  unlock(&g_lock_n);
+  return true;
+}
+
+
+/**
+ * Ajoute un GoAway à la liste des envois
+ * 
+ * @param addr l'adresse à laquelle envoyer le goaway
+ */
+static bool_t inform_neighbor(ip_port_t *addr) {
+    int rc;
+    char *content = "Time out with hello";
+    data_t *tlv_go_away = go_away(2, strlen(content)+1, (uint8_t*)content);
+    if(tlv_go_away == NULL) {
+      debug(D_VOISIN, 1, "inform_neighbor", "tlv_go_away = NULL");
+      return false;
+    }
+    debug_hex(D_VOISIN, 0, "inform_neighbor -> tlv", tlv_go_away->iov_base, tlv_go_away->iov_len);
+    rc = add_tlv(*addr, tlv_go_away);
+    if(rc == false) {
+      debug_int(D_VOISIN, 1, "send_neighbour -> rc", rc);
+    }
+      return rc;
+}
+
+
+/**
+ * @brief
+ * Vérifie si le voisin dans le node doit être maintenu
+ * où s'il doit être enlevé de la liste environ
+ * 
+ * @param current le node à tester 
+ */
+bool_t update_neighbours(node_t *current) {
+  ip_port_t addr = {0};
+  memmove(&addr, current->key->iov_base, sizeof(ip_port_t));
+  if(from_neighbours_to_env(&addr) == false)
+    return false;
+  if(inform_neighbor(&addr) == false)
+    return false;
+  return true;
+}
+
 
 /**
  * @brief On libère l'espace mémoire utilisé pour la gestion des voisins
@@ -364,7 +427,7 @@ bool_t apply_tlv_neighbour(data_t *data, size_t *head_read)
     }
     else
     {
-        *head_read += data->iov_len; // En cas d'erreur on ignore la donnée
+        *head_read += length; // En cas d'erreur on ignore la donnée
         debug(D_VOISIN, 1, "apply_tlv_neighbour", "wrong neighbour size");
         return false;
     }
@@ -386,3 +449,22 @@ bool_t is_more_than_two(struct timespec node_tv) {
     return true;
   return false;
 }
+
+
+/**
+ * @brief
+ * Donne le temps restant nécessaire au sleep 
+ * 
+ * @param time le temps original
+ * @param wake_up le temps auquel le thread se réveille
+ */
+uint32_t get_remain_time(uint32_t TIME, struct timespec wake_up) {
+  struct timespec current_time = {0};
+  if(clock_gettime(CLOCK_MONOTONIC, &current_time) < 0) {
+    debug(D_VOISIN, 1, "get_remain_time", "can't get clockgetime");
+    return 0;
+  }
+  uint32_t res = TIME - (current_time.tv_sec - wake_up.tv_sec);
+  return (res <= 0 || res > TIME)?0:res;
+}
+
