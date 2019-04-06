@@ -34,17 +34,19 @@ static uint32_t get_remain_time(uint32_t TIME, struct timespec wake_up) {
  * @param n_list la liste des voisins à envoyer
  * @return 1 si l'envoi a marché 
  */
-static short send_neighbour(ip_port_t *addr, node_t *n_list) {
+static bool_t send_neighbour(ip_port_t *addr, node_t *n_list) {
   node_t *current = n_list;
   ip_port_t current_addr = {0};
   neighbor_t content = {0};
   memmove(&content, current->value->iov_base, sizeof(neighbor_t));
   int rc = 0;
+  bool_t error = 0;
   while(current != NULL) {
     if (is_more_than_two(content.hello)) {
       if(update_neighbours(current, "time out hello") == false)
          debug(D_SEND_THREAD, 1, "send_neighbour", "error with go_away");
       current = current->next;
+      error = true;
       continue;
     }
   
@@ -52,18 +54,24 @@ static short send_neighbour(ip_port_t *addr, node_t *n_list) {
     if(memcmp(addr->ipv6, current_addr.ipv6, 16) != 0 ||
       addr->port != current_addr.port) {
       data_t *tlv_neighbour = neighbour(current_addr.ipv6, current_addr.port);
-      if(tlv_neighbour == NULL) 
-        return 0;
+      if(tlv_neighbour == NULL) {
+        debug(D_SEND_THREAD, 1, "send_neighbour", "creation de tlv_neighbour impossible");
+        current = current -> next;
+        error = true;
+        continue;
+      }
       debug_hex(D_SEND_THREAD, 0, "send_neighbour -> tlv", tlv_neighbour->iov_base, tlv_neighbour->iov_len);
       rc = add_tlv(*addr, tlv_neighbour);
       if(rc == false) {
         debug_int(D_SEND_THREAD, 1, "send_neighbour -> rc", rc);
-        return rc;
+        current = current -> next;
+        error = true;
+        continue;
       }
     }
     current = current->next;
   }
-  return 1;
+  return (error) ? false : true;
 }
 
 /**
@@ -73,8 +81,10 @@ static short send_neighbour(ip_port_t *addr, node_t *n_list) {
  * @param list liste des voisins courants
  * @return 1 si tous les voisins ont été envoyés
  */
-static short send_neighbours(node_t *list)
+static bool_t send_neighbours(node_t *list)
 {
+  int rc = 1;
+  bool_t error = 0;
   node_t *current = list;
   while (current != NULL)
   {
@@ -82,10 +92,11 @@ static short send_neighbours(node_t *list)
     neighbor_t intel = {0};
     memmove(&intel, current->value->iov_base, sizeof(neighbor_t));
     memmove(&addr, current->key->iov_base, sizeof(ip_port_t));
-    send_neighbour(&addr, list);
+    rc = send_neighbour(&addr, list);
+    error = (!rc)? true : error;
   }
   debug(D_SEND_THREAD, 0, "send_neighbours", "->neighbours");
-  return 1;
+  return (error) ? false : true;
 }
 
 /**
@@ -134,7 +145,7 @@ static void *neighbour_sender(void *unused)
  * @param nb le nombre à qui envoyer
  * @return nombre d'hellos envoyés
  */
-static short send_hello_short(node_t *list, int nb)
+static int send_hello_short(node_t *list, int nb)
 {
   int rc = 0, count = 0;
   node_t *current = list;
@@ -170,7 +181,7 @@ static short send_hello_short(node_t *list, int nb)
  * @param list liste des voisins courants
  * @return nombre d'hellos envoyés
  */
-static short send_hello_long(node_t *list)
+static int send_hello_long(node_t *list)
 {
   int rc = 0, c = 0;
   node_t *current = list;

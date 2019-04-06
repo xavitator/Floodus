@@ -98,7 +98,7 @@ message_t *create_message(ip_port_t sender, u_int64_t id, uint32_t nonce, uint8_
     {
         neighbor_t voisin = {0};
         memmove(&voisin, neighbour->value, sizeof(neighbor_t));
-        if (is_more_than_two(voisin.long_hello) && voisin.id != id && memcmp(&sender, neighbour->key, sizeof(ip_port_t)) != 0)
+        if (is_more_than_two(voisin.long_hello) == false  && voisin.id != id && memcmp(&sender, neighbour->key, sizeof(ip_port_t)) != 0)
         {
             insert_map(neighbour->key, neighbour->key, recipient);
         }
@@ -269,7 +269,7 @@ bool_t flood_goaway(message_t *msg)
     node_t *tmp = list;
     bool_t no_error = true;
     char *message = "L'utilisateur n'a pas acquité le message [00000000,0000]";
-    snprintf(message, strlen(message), "L'utilisateur n'a pas acquité le message [%8.lx,%4.x]", msg->id, msg->nonce);
+    snprintf(message, strlen(message) + 1, "L'utilisateur n'a pas acquité le message [%8.lx,%4.x]", msg->id, msg->nonce);
     while (tmp != NULL)
     {
         if(update_neighbours(tmp, message) == false)
