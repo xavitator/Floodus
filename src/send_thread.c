@@ -12,6 +12,7 @@
  * 
  * @param addr l'adresse de l'envoyeur
  * @param neighbour la liste des voisins à envoyer
+ * @return 1 si l'envoi a marché 
  */
 static short send_neighbour(ip_port_t *addr, node_t *n_list) {
   node_t *current = n_list;
@@ -52,6 +53,7 @@ static short send_neighbour(ip_port_t *addr, node_t *n_list) {
  * Envoie les voisins
  * 
  * @param list liste des voisins courants
+ * @return 1 si tous les voisins ont été envoyés
  */
 static short send_neighbours(node_t *list)
 {
@@ -112,6 +114,7 @@ static void *neighbour_sender(void *unused)
  * 
  * @param list liste des voisins potentiels
  * @param nb le nombre à qui envoyer
+ * @return 1 si le tlv hello a été envoyé
  */
 static short send_hello_short(node_t *list, int nb)
 {
@@ -147,6 +150,7 @@ static short send_hello_short(node_t *list, int nb)
  * @brief
  * Envoie à tous les voisins un TLV Hello Long
  * @param list liste des voisins courants
+ * @return 1 si le tlv hello long est parti
  */
 static short send_hello_long(node_t *list)
 {
@@ -230,6 +234,9 @@ static void *hello_sender(void *unused)
 /**
  * @brief
  * Declenche un nouveau thread d'envoi de Hello
+ * et un d'envoi de neighbours
+ *
+ * @return si les threads ont été lancés
  */
 short init_sender()
 {

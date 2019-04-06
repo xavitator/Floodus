@@ -53,6 +53,7 @@ pthread_mutex_t g_lock_e = PTHREAD_MUTEX_INITIALIZER;
  * Bloque le cadenas si il est libre
  * sinon attend
  * @param lock le cadenas à verrouiller
+ * @return rc > 0 en cas de succès
  */
 short lock(pthread_mutex_t *lock)
 {
@@ -71,6 +72,7 @@ short lock(pthread_mutex_t *lock)
  * @brief
  * Débloque le cadenas 
  * @param lock le cadenas à déverrouiller
+ * @return rc > 0 en cas de succès
  */
 short unlock(pthread_mutex_t *lock)
 {
@@ -131,6 +133,7 @@ bool_t init_neighbors()
  * vers g_environ
  * 
  * @param addr l'adresse à déplacer dans la hashmap
+ * @return true si le déplacement a fonctionné
  */
 static bool_t from_neighbours_to_env(ip_port_t *addr) {
   data_t addr_iov = {&addr, sizeof(ip_port_t)};
@@ -150,6 +153,7 @@ static bool_t from_neighbours_to_env(ip_port_t *addr) {
  * Ajoute un GoAway à la liste des envois
  * 
  * @param addr l'adresse à laquelle envoyer le goaway
+ * @return true si le tlv go_away a été envoyé
  */
 static bool_t inform_neighbor(ip_port_t *addr) {
     int rc;
@@ -170,10 +174,12 @@ static bool_t inform_neighbor(ip_port_t *addr) {
 
 /**
  * @brief
- * Vérifie si le voisin dans le node doit être maintenu
- * où s'il doit être enlevé de la liste environ
+ * Fait passer un voisin de voisin à
+ * voisin potentiel et envoie un tlv 
+ * go away.
  * 
  * @param current le node à tester 
+ * @return true en cas de succès
  */
 bool_t update_neighbours(node_t *current) {
   ip_port_t addr = {0};
@@ -438,6 +444,7 @@ bool_t apply_tlv_neighbour(data_t *data, size_t *head_read)
  * Retourne si un voisin est asymétrique ou non
  *
  * @param node_tv temps du dernier hello long
+ * @return true si le temps est supérieur à 2min
  */
 bool_t is_more_than_two(struct timespec node_tv) {
   struct timespec tv_current = {0};
@@ -457,6 +464,7 @@ bool_t is_more_than_two(struct timespec node_tv) {
  * 
  * @param time le temps original
  * @param wake_up le temps auquel le thread se réveille
+ * @return le temps à sleep
  */
 uint32_t get_remain_time(uint32_t TIME, struct timespec wake_up) {
   struct timespec current_time = {0};
