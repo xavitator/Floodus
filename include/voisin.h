@@ -63,6 +63,7 @@ bool_t update_neighbours(node_t *current, char *msg);
 void free_neighbors();
 bool_t apply_tlv_hello(ip_port_t ipport, data_t *data, size_t *head_read);
 bool_t apply_tlv_neighbour(data_t *data, size_t *head_read);
+bool_t is_symetric(ip_port_t ip);
 bool_t is_more_than_two(struct timespec node_tv);
 
 #endif

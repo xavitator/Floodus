@@ -438,6 +438,24 @@ bool_t apply_tlv_neighbour(data_t *data, size_t *head_read)
     }
 }
 
+/*
+ * Renvoie true si c'est un voisin symétrique
+ */
+bool_t is_symetric(ip_port_t ip) {
+  struct iovec ip_iovec = {&ip, sizeof(ip_port_t)};
+  data_t *value = get_map(&ip_iovec, g_neighbors);
+  if(value != NULL) {
+    neighbor_t tmp_neighbor = {0};
+    memmove(&tmp_neighbor, value->iov_base, value->iov_len);
+    if(is_more_than_two(tmp_neighbor.long_hello) == false) {
+      freeiovec(value);
+      return true;
+    }
+  }
+  freeiovec(value);
+  return false;
+}
+
 /**
  * @brief
  * Retourne si un voisin est asymétrique ou non
