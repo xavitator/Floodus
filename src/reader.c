@@ -216,6 +216,7 @@ bool_t tlv_call_goaway(ip_port_t dest, data_t *data, size_t *head_read)
     }
     debug_hex(D_READER, 0, "tlv_call_goaway", data->iov_base + *head_read + 1, len);
     debug(D_READER, 0, "tlv_call_goaway", "traitement du tlv goaway en cours");
+    apply_tlv_goaway(dest, data, head_read);
     return true;
 }
 

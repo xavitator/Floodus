@@ -134,7 +134,7 @@ bool_t init_neighbors()
  * @return true si le déplacement a fonctionné
  */
 static bool_t from_neighbours_to_env(ip_port_t *addr) {
-  data_t addr_iov = {&addr, sizeof(ip_port_t)};
+  data_t addr_iov = {addr, sizeof(ip_port_t)};
   lock(&g_lock_e);
   if(insert_map(&addr_iov, &addr_iov, g_environs) == false)
     return false;
@@ -436,6 +436,58 @@ bool_t apply_tlv_neighbour(data_t *data, size_t *head_read)
         debug(D_VOISIN, 1, "apply_tlv_neighbour", "wrong neighbour size");
         return false;
     }
+}
+
+/**
+ * @brief
+ * Applique un TLV Go_away
+ *
+ * @param dest l'ip/port du message
+ * @param data la donnée
+ * @param head_read la tete de lecture
+ * @return true si il a pu l'appliquer
+ */
+bool_t apply_tlv_goaway(ip_port_t dest, data_t *data, size_t *head_read) {
+  if(*head_read >= data->iov_len)
+  {
+    debug(D_VOISIN, 1, "apply_tlv_go_away", "head_read >= data->iov_");
+    return false;
+  }
+  u_int8_t length = 0;
+  memmove(&length, data->iov_base + (*head_read), sizeof(u_int8_t));
+  *head_read += 1;
+  length -= 1;
+  u_int8_t code = 0;
+  memmove(&code, data->iov_base + (*head_read), sizeof(u_int8_t));
+  *head_read += 1;
+  length -= 1;
+  uint8_t *msg = malloc(length+1);
+  memmove(msg, data->iov_base + *head_read, length);
+  msg[length] = '\0';
+  if (code == 0 || code == 2 || code == 3) {
+    *head_read += length; 
+    debug_hex(D_VOISIN, 1, "apply_tlv_goaway -> 0/2/3", msg, length+1);
+    if(from_neighbours_to_env(&dest) == false) {
+      free(msg);
+      return false;
+    }
+    free(msg);
+    return true;
+  } else if (code == 1) {
+    data_t ipport = {&dest, sizeof(ip_port_t)};
+    *head_read += length;
+    debug_hex(D_VOISIN, 1, "apply_tlv_goaway -> 0/2/3", msg, length+1);
+    if(!remove_map(&ipport, g_neighbors) && !remove_map(&ipport, g_environs)) {
+        free(msg);
+        return false;
+    }
+    free(msg);
+    return true;
+  }  else {
+    *head_read += length; 
+    debug(D_VOISIN, 1, "apply_tlv_goaway", "wrong go_away size");
+    return false;
+  }
 }
 
 /*
