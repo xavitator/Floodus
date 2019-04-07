@@ -150,7 +150,8 @@ int compare_time(struct timespec ta, struct timespec tb)
 /**
  * Enlève le sender de la liste des voisins 
  */
-static bool_t remove_sender(ip_port_t sender, message_t *tmp) {
+static bool_t remove_sender(ip_port_t sender, message_t *tmp)
+{
     data_t sender_iovec = {&sender, sizeof(sender)};
     int res = remove_map(&sender_iovec, tmp->recipient);
     debug_int(D_INOND, 0, "remove_sender -> l'emetteur est enlevé des inondés", res);
@@ -165,13 +166,13 @@ static bool_t remove_sender(ip_port_t sender, message_t *tmp) {
  * @param nonce nonce du data
  * @return le message s'il le contient NULL sinon
  */
-message_t * contains_message(u_int64_t id, uint32_t nonce)
+message_t *contains_message(u_int64_t id, uint32_t nonce)
 {
     message_t *tmp = g_floods;
     while (tmp != NULL)
     {
         if (tmp->id == id && tmp->nonce == nonce)
-          return tmp;
+            return tmp;
         tmp = tmp->next;
     }
     debug(D_INOND, 0, "contains_message", "on n'envoie pas le message");
@@ -361,8 +362,9 @@ bool_t launch_flood()
 /*
  * Affiche le TLV à l'utilisateur
  */
-static void print_tlv(uint8_t type, data_t *data, size_t *head_read, uint8_t length) {
- if (type == 0)
+static void print_tlv(uint8_t type, data_t *data, size_t *head_read, uint8_t length)
+{
+    if (type == 0)
     {
         // action à faire quand on doit afficher une data à l'utilisateur
         print_data(data->iov_base + *head_read, length);
@@ -431,7 +433,8 @@ bool_t apply_tlv_data(ip_port_t dest, data_t *data, size_t *head_read)
     memmove(&type, data->iov_base + *head_read, sizeof(u_int8_t));
     *head_read += sizeof(u_int8_t);
     length -= sizeof(u_int8_t);
-    int rc = add_message(dest, sender_id, nonce, type, data->iov_base + *head_read, length);
+    data_t content = {data->iov_base + *head_read, length};
+    int rc = add_message(dest, sender_id, nonce, type, &content);
     if (rc == false)
     {
         *head_read += length;
@@ -442,7 +445,7 @@ bool_t apply_tlv_data(ip_port_t dest, data_t *data, size_t *head_read)
     print_tlv(type, data, head_read, length);
     rc = send_ack(dest, sender_id, nonce);
     return rc;
- }
+}
 
 /**
  * @brief Fonction qui vient faire l'action correspondante à un ack pour l'inondation.
@@ -476,7 +479,7 @@ bool_t apply_tlv_ack(ip_port_t dest, data_t *data, size_t *head_read)
     *head_read += sizeof(u_int32_t);
 
     message_t *tmp = NULL;
-    if (( tmp = contains_message(sender_id, nonce)) != NULL)
+    if ((tmp = contains_message(sender_id, nonce)) != NULL)
     {
         remove_sender(dest, tmp);
         debug(D_INOND, 0, "apply_tlv_ack", "message non en mémoire");
