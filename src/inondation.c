@@ -66,13 +66,6 @@ message_t *create_message(ip_port_t sender, u_int64_t id, uint32_t nonce, uint8_
         debug(D_INOND, 1, "create_message", "création res -> problème de malloc");
         return NULL;
     }
-    rc = clock_gettime(CLOCK_MONOTONIC, &tc);
-    if (rc < 0)
-    {
-        debug(D_CONTROL, 1, "create_message -> erreur clock_gettime", strerror(errno));
-        free(res);
-        return NULL;
-    }
     u_int8_t *cont_copy = malloc(contentlen);
     if (cont_copy == NULL)
     {
@@ -98,12 +91,22 @@ message_t *create_message(ip_port_t sender, u_int64_t id, uint32_t nonce, uint8_
     {
         neighbor_t voisin = {0};
         memmove(&voisin, neighbour->value, sizeof(neighbor_t));
-        if (is_more_than_two(voisin.long_hello) == false  && voisin.id != id && memcmp(&sender, neighbour->key, sizeof(ip_port_t)) != 0)
+        if (is_more_than_two(voisin.long_hello) == false && voisin.id != id && memcmp(&sender, neighbour->key, sizeof(ip_port_t)) != 0)
         {
             insert_map(neighbour->key, neighbour->key, recipient);
         }
+        neighbour = neighbour->next;
     }
     freedeepnode(tmp);
+    rc = clock_gettime(CLOCK_MONOTONIC, &tc);
+    if (rc < 0)
+    {
+        debug(D_CONTROL, 1, "create_message -> erreur clock_gettime", strerror(errno));
+        freehashmap(recipient);
+        free(cont_copy);
+        free(res);
+        return NULL;
+    }
     tc.tv_sec += 1;
     res->content = cont_copy;
     res->contentlen = contentlen;
@@ -150,7 +153,7 @@ int compare_time(struct timespec ta, struct timespec tb)
  * @brief On regarde si on envoie déjà le message ayant pour identifiant (id, nonce).
  * On considère le message comme un acquitement, et on enlève le 'sender' de la liste des voisins à inonder.
  * 
- * @param sender voisin qui a envoyé un tlv data
+ * @param sender ip-port du voisin qui a envoyé un tlv data
  * @param id id du data
  * @param nonce nonce du data
  * @param type type du data
@@ -272,8 +275,8 @@ bool_t flood_goaway(message_t *msg)
     snprintf(message, strlen(message) + 1, "L'utilisateur n'a pas acquité le message [%8.lx,%4.x]", msg->id, msg->nonce);
     while (tmp != NULL)
     {
-        if(update_neighbours(tmp, message) == false)
-          no_error = false;
+        if (update_neighbours(tmp, message) == false)
+            no_error = false;
         tmp = tmp->next;
     }
     freedeepnode(list);
@@ -351,6 +354,31 @@ bool_t launch_flood()
 }
 
 /**
+ * @brief Envoie d'un acquittement pour le message reçu.
+ * 
+ * @param dest ip-port du destinataire
+ * @param sender_id id du message
+ * @param nonce nonce du message
+ * @return bool_t '1' si l'acquittement a été ajouter, '0' sinon.
+ */
+bool_t send_ack(ip_port_t dest, uint64_t sender_id, u_int32_t nonce)
+{
+    data_t *ack_iovec = ack(sender_id, nonce);
+    if (ack_iovec == NULL)
+    {
+        debug(D_INOND, 1, "send_ack", "problème d'envoi de l'acquitement");
+        return false;
+    }
+    int rc = add_tlv(dest, ack_iovec);
+    if (rc == false)
+    {
+        debug(D_INOND, 1, "send_ack", "problème d'ajout du tlv ack");
+        return false;
+    }
+    return true;
+}
+
+/**
  * @brief Fonction qui vient faire l'action correspondante à un data pour l'inondation.
  * Si la lecture du tlv s'est bien passé, le champs 'head_read' sera modifié pour pointer vers le tlv suivant.
  * 
@@ -399,20 +427,9 @@ bool_t apply_tlv_data(ip_port_t dest, data_t *data, size_t *head_read)
         return false;
     }
     *head_read += length;
-    data_t *ack_iovec = ack(sender_id, nonce);
-    if (ack_iovec == NULL)
-    {
-        debug(D_INOND, 1, "apply_tlv_data", "problème d'envoi de l'acquitement");
-        return false;
-    }
-    rc = add_tlv(dest, ack_iovec);
-    if (rc == false)
-    {
-        debug(D_INOND, 1, "apply_tlv_data", "problème d'ajout du tlv ack");
-        return false;
-    }
-    debug(D_INOND, 0, "apply_tlv_data", "traitement du tlv data effectué");
-    return true;
+    rc = send_ack(dest, sender_id, nonce);
+    debug(D_INOND, 0, "send_ack", "traitement du tlv data effectué");
+    return rc;
 }
 
 /**

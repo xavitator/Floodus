@@ -6,7 +6,6 @@
 
 #include "send_thread.h"
 
-
 /**
  * @brief
  * Donne le temps restant nécessaire au sleep 
@@ -15,16 +14,17 @@
  * @param wake_up le temps auquel le thread se réveille
  * @return le temps à sleep
  */
-static uint32_t get_remain_time(uint32_t TIME, struct timespec wake_up) {
+static uint32_t get_remain_time(uint32_t TIME, struct timespec wake_up)
+{
   struct timespec current_time = {0};
-  if(clock_gettime(CLOCK_MONOTONIC, &current_time) < 0) {
+  if (clock_gettime(CLOCK_MONOTONIC, &current_time) < 0)
+  {
     debug(D_SEND_THREAD, 1, "get_remain_time", "can't get clockgetime");
     return 0;
   }
   uint32_t res = TIME - (current_time.tv_sec - wake_up.tv_sec);
-  return (res > TIME)?0:res;
+  return (res > TIME) ? 0 : res;
 }
-
 
 /**
  * @brief
@@ -34,37 +34,43 @@ static uint32_t get_remain_time(uint32_t TIME, struct timespec wake_up) {
  * @param n_list la liste des voisins à envoyer
  * @return 1 si l'envoi a marché 
  */
-static bool_t send_neighbour(ip_port_t *addr, node_t *n_list) {
+static bool_t send_neighbour(ip_port_t *addr, node_t *n_list)
+{
   node_t *current = n_list;
   ip_port_t current_addr = {0};
   neighbor_t content = {0};
   memmove(&content, current->value->iov_base, sizeof(neighbor_t));
   int rc = 0;
   bool_t error = 0;
-  while(current != NULL) {
-    if (is_more_than_two(content.hello)) {
-      if(update_neighbours(current, "time out hello") == false)
-         debug(D_SEND_THREAD, 1, "send_neighbour", "error with go_away");
+  while (current != NULL)
+  {
+    if (is_more_than_two(content.hello))
+    {
+      if (update_neighbours(current, "time out hello") == false)
+        debug(D_SEND_THREAD, 1, "send_neighbour", "error with go_away");
       current = current->next;
       error = true;
       continue;
     }
-  
+
     memmove(&current_addr, current->key->iov_base, sizeof(ip_port_t));
-    if(memcmp(addr->ipv6, current_addr.ipv6, 16) != 0 ||
-      addr->port != current_addr.port) {
+    if (memcmp(addr->ipv6, current_addr.ipv6, 16) != 0 ||
+        addr->port != current_addr.port)
+    {
       data_t *tlv_neighbour = neighbour(current_addr.ipv6, current_addr.port);
-      if(tlv_neighbour == NULL) {
+      if (tlv_neighbour == NULL)
+      {
         debug(D_SEND_THREAD, 1, "send_neighbour", "creation de tlv_neighbour impossible");
-        current = current -> next;
+        current = current->next;
         error = true;
         continue;
       }
       debug_hex(D_SEND_THREAD, 0, "send_neighbour -> tlv", tlv_neighbour->iov_base, tlv_neighbour->iov_len);
       rc = add_tlv(*addr, tlv_neighbour);
-      if(rc == false) {
+      if (rc == false)
+      {
         debug_int(D_SEND_THREAD, 1, "send_neighbour -> rc", rc);
-        current = current -> next;
+        current = current->next;
         error = true;
         continue;
       }
@@ -84,7 +90,7 @@ static bool_t send_neighbour(ip_port_t *addr, node_t *n_list) {
 static bool_t send_neighbours(node_t *list)
 {
   int rc = 1;
-  bool_t error = 0;
+  bool_t error = false;
   node_t *current = list;
   while (current != NULL)
   {
@@ -93,7 +99,7 @@ static bool_t send_neighbours(node_t *list)
     memmove(&intel, current->value->iov_base, sizeof(neighbor_t));
     memmove(&addr, current->key->iov_base, sizeof(ip_port_t));
     rc = send_neighbour(&addr, list);
-    error = (!rc)? true : error;
+    error = (!rc) ? true : error;
   }
   debug(D_SEND_THREAD, 0, "send_neighbours", "->neighbours");
   return (error) ? false : true;
@@ -108,15 +114,17 @@ static void *neighbour_sender(void *unused)
 {
   (void)unused; // Enleve le warning unused
   struct timespec wake_up = {0};
-  if(clock_gettime(CLOCK_MONOTONIC, &wake_up) < 0) {
-      debug(D_SEND_THREAD, 1, "neighbour_sender", "can't get clockgetime");
-      pthread_exit(NULL);
+  if (clock_gettime(CLOCK_MONOTONIC, &wake_up) < 0)
+  {
+    debug(D_SEND_THREAD, 1, "neighbour_sender", "can't get clockgetime");
+    pthread_exit(NULL);
   }
   while (1)
   {
     uint32_t remains = get_remain_time(SLEEP_NEIGHBOURS, wake_up);
     sleep(remains);
-    if(clock_gettime(CLOCK_MONOTONIC, &wake_up)) {
+    if (clock_gettime(CLOCK_MONOTONIC, &wake_up))
+    {
       debug(D_SEND_THREAD, 1, "neighbour_sender", "can't get clockgetime");
       pthread_exit(NULL);
     }
@@ -126,7 +134,7 @@ static void *neighbour_sender(void *unused)
     lock(&g_lock_n);
     node_t *n_list = map_to_list(g_neighbors);
     unlock(&g_lock_n);
-  
+
     send_neighbours(n_list);
 
     if (n_list != NULL)
@@ -135,7 +143,6 @@ static void *neighbour_sender(void *unused)
   }
   pthread_exit(NULL);
 }
-
 
 /**
  * @brief
@@ -154,16 +161,17 @@ static int send_hello_short(node_t *list, int nb)
     ip_port_t addr = {0};
     memmove(&addr, current->value->iov_base, sizeof(ip_port_t));
 
-
-    struct iovec *tlv_hello = hello_short(g_myid); 
-    if (tlv_hello == NULL) {
+    struct iovec *tlv_hello = hello_short(g_myid);
+    if (tlv_hello == NULL)
+    {
       debug(D_SEND_THREAD, 1, "send_hello_short", "tlv_hello = NULL");
       return 0;
     }
     debug_hex(D_SEND_THREAD, 0, "send_hello short -> tlv", tlv_hello->iov_base, tlv_hello->iov_len);
 
     rc = add_tlv(addr, tlv_hello);
-    if(rc == false) {
+    if (rc == false)
+    {
       debug_int(D_SEND_THREAD, 1, "send_hello_short -> rc", rc);
       return rc;
     }
@@ -193,14 +201,16 @@ static int send_hello_long(node_t *list)
     memmove(&addr, current->key->iov_base, sizeof(ip_port_t));
 
     struct iovec *tlv_hello = hello_long(g_myid, intel.id);
-    if (tlv_hello == NULL) {
+    if (tlv_hello == NULL)
+    {
       debug(D_SEND_THREAD, 1, "send_hello_short", "tlv_hello = NULL");
       return c;
     }
     debug_hex(D_SEND_THREAD, 0, "send_hello long", tlv_hello->iov_base, tlv_hello->iov_len);
-    
+
     rc = add_tlv(addr, tlv_hello);
-    if(rc == false) {
+    if (rc == false)
+    {
       debug_int(D_SEND_THREAD, 1, "send_hello_long -> rc", rc);
       return rc;
     }
@@ -223,14 +233,16 @@ static void *hello_sender(void *unused)
 
   int count = 0;
   struct timespec wake_up = {0};
-  if(clock_gettime(CLOCK_MONOTONIC, &wake_up)<0) {
+  if (clock_gettime(CLOCK_MONOTONIC, &wake_up) < 0)
+  {
     debug(D_VOISIN, 1, "hello_sender", "can't get clockgetime");
     pthread_exit(NULL);
   }
   while (1)
   {
     sleep(get_remain_time(SLEEP_HELLO, wake_up));
-    if(clock_gettime(CLOCK_MONOTONIC, &wake_up) < 0) {
+    if (clock_gettime(CLOCK_MONOTONIC, &wake_up) < 0)
+    {
       debug(D_VOISIN, 1, "hello_sender", "can't get clockgetime");
       pthread_exit(NULL);
     }

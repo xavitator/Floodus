@@ -6,7 +6,6 @@
 #define COUNT_INOND 6
 
 #include <time.h>
-#include <stdio.h>
 #include <math.h>
 
 #include "debug.h"
