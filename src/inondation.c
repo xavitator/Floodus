@@ -4,7 +4,7 @@
  * @brief Variable globale contenant la liste des messages à inonder
  * 
  */
-message_t *g_floods = NULL;
+static message_t *g_floods = NULL;
 
 /**
  * @brief On libère la mémoire d'un message
@@ -66,6 +66,7 @@ message_t *create_message(ip_port_t sender, u_int64_t id, uint32_t nonce, uint8_
         debug(D_INOND, 1, "create_message", "création res -> problème de malloc");
         return NULL;
     }
+    memset(res, 0, sizeof(message_t));
     u_int8_t *cont_copy = malloc(contentlen);
     if (cont_copy == NULL)
     {
@@ -73,6 +74,7 @@ message_t *create_message(ip_port_t sender, u_int64_t id, uint32_t nonce, uint8_
         free(res);
         return NULL;
     }
+    memmove(cont_copy, content, contentlen);
     hashmap_t *recipient = init_map();
     if (recipient == NULL)
     {
@@ -85,8 +87,6 @@ message_t *create_message(ip_port_t sender, u_int64_t id, uint32_t nonce, uint8_
     node_t *neighbour = map_to_list(g_neighbors);
     unlock(&g_lock_n);
     node_t *tmp = neighbour;
-    memset(res, 0, sizeof(message_t));
-    memmove(cont_copy, content, contentlen);
     while (neighbour != NULL)
     {
         neighbor_t voisin = {0};
@@ -151,12 +151,11 @@ int compare_time(struct timespec ta, struct timespec tb)
 
 /**
  * @brief On regarde si on envoie déjà le message ayant pour identifiant (id, nonce).
- * On considère le message comme un acquitement, et on enlève le 'sender' de la liste des voisins à inonder.
+ * On considère le message comme un acquittement, et on enlève le 'sender' de la liste des voisins à inonder.
  * 
  * @param sender ip-port du voisin qui a envoyé un tlv data
  * @param id id du data
  * @param nonce nonce du data
- * @param type type du data
  * @return bool_t '1' si on contient déjà le message et on a enlevé le voisin à inonder, '0' sinon.
  */
 bool_t contains_message(ip_port_t sender, u_int64_t id, uint32_t nonce)
