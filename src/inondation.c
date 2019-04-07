@@ -415,6 +415,12 @@ bool_t apply_tlv_data(ip_port_t dest, data_t *data, size_t *head_read)
     uint8_t length = 0;
     memmove(&length, data->iov_base + *head_read, sizeof(u_int8_t));
     *head_read += 1;
+    if (is_symetric(dest) == false)
+    {
+        *head_read += length;
+        debug(D_INOND, 1, "apply_tlv_data", "destinataire non symétrique");
+        return true;
+    }
     if (length < 14) //taille d'un tlv data avec au moins 1 uint8_t dans le champs message
     {
         *head_read += length;
