@@ -13,7 +13,7 @@ static message_t *g_floods = NULL;
  */
 void freemessage(message_t *msg)
 {
-    free(msg->content);
+    freeiovec(msg->content);
     freehashmap(msg->recipient);
     free(msg);
 }
@@ -56,7 +56,7 @@ void free_inondation()
  * @param contentlen taille du message envoyé
  * @return message_t* structure construite avec toutes les données correspondantes
  */
-message_t *create_message(ip_port_t sender, u_int64_t id, uint32_t nonce, uint8_t type, u_int8_t *content, u_int8_t contentlen)
+message_t *create_message(ip_port_t sender, u_int64_t id, uint32_t nonce, uint8_t type, data_t *content)
 {
     struct timespec tc = {0};
     int rc = 0;
@@ -67,20 +67,19 @@ message_t *create_message(ip_port_t sender, u_int64_t id, uint32_t nonce, uint8_
         return NULL;
     }
     memset(res, 0, sizeof(message_t));
-    u_int8_t *cont_copy = malloc(contentlen);
+    data_t *cont_copy = copy_iovec(content);
     if (cont_copy == NULL)
     {
         debug(D_INOND, 1, "create_message", "copy du contenu -> problème de malloc");
         free(res);
         return NULL;
     }
-    memmove(cont_copy, content, contentlen);
     hashmap_t *recipient = init_map();
     if (recipient == NULL)
     {
         debug(D_INOND, 1, "create_message", "problème de création de hashmap");
         free(res);
-        free(cont_copy);
+        freeiovec(cont_copy);
         return NULL;
     }
     lock(&g_lock_n);
@@ -103,13 +102,12 @@ message_t *create_message(ip_port_t sender, u_int64_t id, uint32_t nonce, uint8_
     {
         debug(D_CONTROL, 1, "create_message -> erreur clock_gettime", strerror(errno));
         freehashmap(recipient);
-        free(cont_copy);
+        freeiovec(cont_copy);
         free(res);
         return NULL;
     }
     tc.tv_sec += 1;
     res->content = cont_copy;
-    res->contentlen = contentlen;
     res->count = 0;
     res->id = id;
     res->next = NULL;
@@ -214,14 +212,14 @@ bool_t insert_message(message_t *msg)
  * @param contentlen taille du contenu
  * @return bool_t '1' si le traitement a bien été fait, '0' sinon.
  */
-bool_t add_message(ip_port_t sender, u_int64_t id, uint32_t nonce, uint8_t type, u_int8_t *content, u_int8_t contentlen)
+bool_t add_message(ip_port_t sender, u_int64_t id, uint32_t nonce, uint8_t type, data_t *content)
 {
     if (contains_message(sender, id, nonce))
     {
         debug(D_INOND, 0, "add_message", "message en cours d'envoi");
         return true;
     }
-    message_t *msg = create_message(sender, id, nonce, type, content, contentlen);
+    message_t *msg = create_message(sender, id, nonce, type, content);
     if (msg == NULL)
     {
         debug(D_INOND, 1, "add_message", "problème de création d'un message_t");
@@ -301,7 +299,7 @@ bool_t flood_message(message_t *msg)
     node_t *list = map_to_list(msg->recipient);
     node_t *tmp = list;
     int rc = 0;
-    data_t *tlv = data(msg->id, msg->nonce, msg->type, msg->contentlen, msg->content);
+    data_t *tlv = data(msg->id, msg->nonce, msg->type, msg->content->iov_len, (uint8_t *)msg->content->iov_base);
     while (tmp != NULL)
     {
         ip_port_t dest = {0};
@@ -312,8 +310,9 @@ bool_t flood_message(message_t *msg)
     }
     freedeepnode(list);
     msg->count++;
-    double add_time = pow((double)2, (double)msg->count);
-    msg->send_time.tv_sec += (int)add_time;
+    double two_pow_c = pow((double)2, (double)msg->count);
+    int add_time = (int)((rand() % (int)two_pow_c) + two_pow_c);
+    msg->send_time.tv_sec += add_time;
     debug_int(D_INOND, 0, "flood_message -> envoi des datas, nombre d'envoi", rc);
     return true;
 }
