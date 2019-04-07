@@ -7,6 +7,7 @@
 #include <fcntl.h>
 #include <unistd.h>
 
+#include "inondation.h"
 #include "reader.h"
 #include "writer.h"
 

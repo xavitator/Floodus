@@ -148,8 +148,13 @@ bool_t tlv_call_data(ip_port_t dest, data_t *data, size_t *head_read)
         debug(D_READER, 1, "tlv_call_data", "taille du message non correspondante");
         return false;
     }
-    debug_hex(D_WRITER, 0, "tlv_call_data", data->iov_base + *head_read + 1, len);
-    debug(D_READER, 0, "tlv_call_data", "traitement du tlv data en cours");
+    bool_t res = apply_tlv_data(dest, data, head_read);
+    if (res == false)
+    {
+        debug(D_READER, 1, "tlv_call_data", "problème application du tlv data");
+        return res;
+    }
+    debug(D_READER, 0, "tlv_call_data", "traitement du tlv data effectué");
     return true;
 }
 
@@ -176,8 +181,13 @@ bool_t tlv_call_ack(ip_port_t dest, data_t *data, size_t *head_read)
         debug(D_READER, 1, "tlv_call_ack", "taille du message non correspondante");
         return false;
     }
-    debug_hex(D_WRITER, 0, "tlv_call_ack", data->iov_base + *head_read + 1, len);
-    debug(D_READER, 0, "tlv_call_ack", "traitement du tlv ack en cours");
+    bool_t res = apply_tlv_ack(dest, data, head_read);
+    if (res == false)
+    {
+        debug(D_READER, 1, "tlv_call_ack", "problème application du tlv ack");
+        return res;
+    }
+    debug(D_READER, 0, "tlv_call_ack", "traitement du tlv ack effectué");
     return true;
 }
 
@@ -204,8 +214,9 @@ bool_t tlv_call_goaway(ip_port_t dest, data_t *data, size_t *head_read)
         debug(D_READER, 1, "tlv_call_goaway", "taille du message non correspondante");
         return false;
     }
-    debug_hex(D_WRITER, 0, "tlv_call_goaway", data->iov_base + *head_read + 1, len);
+    debug_hex(D_READER, 0, "tlv_call_goaway", data->iov_base + *head_read + 1, len);
     debug(D_READER, 0, "tlv_call_goaway", "traitement du tlv goaway en cours");
+    apply_tlv_goaway(dest, data, head_read);
     return true;
 }
 
@@ -235,7 +246,7 @@ bool_t tlv_call_warning(ip_port_t dest, data_t *data, size_t *head_read)
     char content[len + 1];
     memmove(content, data->iov_base + *head_read + 1, len);
     content[len] = '\0';
-    debug(D_WRITER, 0, "tlv_call_warning -> message", content);
+    debug(D_READER, 0, "tlv_call_warning -> message", content);
     debug(D_READER, 0, "tlv_call_warning", "traitement du tlv warning en cours");
     return true;
 }

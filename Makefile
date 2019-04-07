@@ -11,7 +11,7 @@ OBJ:= $(FILES:$(SRCDIR)%.c=$(BIN)%.o)
 
 CC = gcc
 FLAGS = -Wall -Wextra -Werror
-LDLIBS = -pthread -D_REENTRANT
+LDLIBS = -pthread -D_REENTRANT -lm
 
 .PHONY: all
 all:
@@ -19,7 +19,7 @@ all:
 
 $(NAME): $(OBJ)
 	@printf "[\e[1;34mEn cours\e[0m] Assemblement\n"
-	$(CC) -o $(NAME) $(FLAGS) -I $(INCL) $(LDLIBS) $(OBJ)
+	$(CC) -o $(NAME) $(FLAGS) -I $(INCL) $(OBJ) $(LDLIBS)
 	@printf "[\e[1;32mOK\e[0m] Assemblement finie\n"
 
 $(BIN)%.o: $(SRCDIR)%.c
