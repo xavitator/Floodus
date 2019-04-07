@@ -312,8 +312,16 @@ bool_t flood_message(message_t *msg)
     {
         ip_port_t dest = {0};
         memmove(&dest, tmp->value->iov_base, sizeof(ip_port_t));
-        add_tlv(dest, tlv);
-        rc += 1;
+        if (is_symetric(dest))
+        {
+            add_tlv(dest, tlv);
+            rc += 1;
+        }
+        else
+        {
+            data_t ipport_iovec = {&dest, sizeof(ip_port_t)};
+            remove_map(&ipport_iovec, msg->recipient);
+        }
         tmp = tmp->next;
     }
     freedeepnode(list);
