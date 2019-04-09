@@ -366,7 +366,7 @@ bool_t apply_tlv_hello(ip_port_t ipport, data_t *data, size_t *head_read)
     {
         debug(D_VOISIN, 0, "apply_tlv_hello", "TLV court");
         u_int64_t id = 0;
-        memmove(&id, data + *head_read, sizeof(u_int64_t));
+        memmove(&id, data->iov_base + *head_read, sizeof(u_int64_t));
         *head_read = *head_read + sizeof(u_int64_t);
         return apply_hello_court(ipport, id);
     }
