@@ -331,6 +331,7 @@ ssize_t read_msg()
     // attente active si la socket est pas dispo meme après un select
     while (1)
     {
+        debug(D_WRITER, 0, "read_msg", "turn");
         rc = recvmsg(g_socket, &reader, 0);
         if (rc >= 0)
             break;

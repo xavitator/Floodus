@@ -100,6 +100,7 @@ static bool_t send_neighbours(node_t *list)
     memmove(&addr, current->key->iov_base, sizeof(ip_port_t));
     rc = send_neighbour(&addr, list);
     error = (!rc) ? true : error;
+    current = current->next;
   }
   debug(D_SEND_THREAD, 0, "send_neighbours", "->neighbours");
   return (error) ? false : true;
