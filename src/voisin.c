@@ -91,6 +91,7 @@ short unlock(pthread_mutex_t *lock)
  */
 void create_user()
 {
+    srand(time(NULL));
     g_myid = rand();
     g_myid <<= 32;
     g_myid += rand();
