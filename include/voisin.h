@@ -26,7 +26,7 @@
  */
 typedef struct ip_port_t
 {
-    u_int8_t ipv6[16];
+    u_int8_t ipv6[IPV6_LEN];
     u_int16_t port;
 } ip_port_t;
 
@@ -36,35 +36,31 @@ typedef struct ip_port_t
  * Le champs 'hello' correspond au temps auquel on a reçu le dernier hello.
  * le champs 'long_hello' correspond au temps auquel on a reçu le dernier hello long.
  */
-typedef struct neighbor_t
+typedef struct neighbour_t
 {
     u_int64_t id;
     struct timespec hello;
     struct timespec long_hello;
-} neighbor_t;
+} neighbour_t;
 
-/** 
- * je suis obligé de mettre le include ici parce que sinon les structures au dessus ne sont pas connus
- * au moment de la compilation et on a des erreurs.
- */
 #include "writer.h"
 
 extern u_int64_t g_myid;
-extern hashmap_t *g_neighbors;
+extern hashmap_t *g_neighbours;
 extern hashmap_t *g_environs;
 extern pthread_mutex_t g_lock_n;
 extern pthread_mutex_t g_lock_e;
 
 short lock(pthread_mutex_t *);
 short unlock(pthread_mutex_t *);
-void create_user();
-bool_t init_neighbors();
-bool_t update_neighbours(node_t *current, char *msg); 
-void free_neighbors();
-bool_t apply_tlv_hello(ip_port_t ipport, data_t *data, size_t *head_read);
+void create_user(void);
+bool_t init_neighbours(void);
+bool_t update_neighbours(node_t *node, char *msg); 
+void free_neighbors(void);
+bool_t apply_tlv_hello(ip_port_t src, data_t *data, size_t *head_read);
 bool_t apply_tlv_neighbour(data_t *data, size_t *head_read);
-bool_t apply_tlv_goaway(ip_port_t dest, data_t *data, size_t *head_read); 
-bool_t is_symetric(ip_port_t ip);
-bool_t is_more_than_two(struct timespec node_tv);
+bool_t apply_tlv_goaway(ip_port_t src, data_t *data, size_t *head_read); 
+bool_t is_symetric(ip_port_t ipport);
+bool_t is_more_than_two(struct timespec tm);
 
 #endif

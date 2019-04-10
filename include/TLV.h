@@ -8,17 +8,19 @@
 #include <string.h>
 
 #include "debug.h"
+#include "iovec.h"
 
 #define D_TLV 0
+#define IPV6_LEN 16
 
-struct iovec *pad1();
-struct iovec *pad_n(uint8_t N);
-struct iovec *hello_short(uint64_t source_id);
-struct iovec *hello_long(uint64_t source_id, uint64_t id);
-struct iovec *neighbour(uint8_t source_ip[16], uint16_t port);
-struct iovec *data(uint64_t sender_id, uint32_t nonce, uint8_t type, uint8_t msg_length, uint8_t *msg);
-struct iovec *ack(uint64_t sender_id, uint32_t nonce);
-struct iovec *go_away(uint8_t code, uint8_t msg_length, uint8_t *msg);
-struct iovec *warning(uint8_t msg_length, uint8_t *msg);
+data_t * pad1(void);
+data_t * pad_n(uint8_t len);
+data_t * hello_short(uint64_t dest_id);
+data_t * hello_long(uint64_t dest_id, uint64_t src_id);
+data_t * neighbour(uint8_t src_ip[IPV6_LEN], uint16_t port);
+data_t * data(uint64_t dest_id, uint32_t nonce, uint8_t type, uint8_t *msg, uint8_t msg_length);
+data_t * ack(uint64_t dest_id, uint32_t nonce);
+data_t * go_away(uint8_t code, uint8_t *msg, uint8_t msg_length);
+data_t * warning(uint8_t *msg, uint8_t msg_length);
 
 #endif

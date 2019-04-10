@@ -56,7 +56,7 @@ void free_inondation()
  * @param contentlen taille du message envoyé
  * @return message_t* structure construite avec toutes les données correspondantes
  */
-message_t *create_message(ip_port_t sender, u_int64_t id, uint32_t nonce, uint8_t type, data_t *content)
+message_t *create_message(ip_port_t dest, u_int64_t id, uint32_t nonce, uint8_t type, data_t *content)
 {
     struct timespec tc = {0};
     int rc = 0;
@@ -83,14 +83,14 @@ message_t *create_message(ip_port_t sender, u_int64_t id, uint32_t nonce, uint8_
         return NULL;
     }
     lock(&g_lock_n);
-    node_t *neighbour = map_to_list(g_neighbors);
+    node_t *neighbour = map_to_list(g_neighbours);
     unlock(&g_lock_n);
     node_t *tmp = neighbour;
     while (neighbour != NULL)
     {
-        neighbor_t voisin = {0};
-        memmove(&voisin, neighbour->value, sizeof(neighbor_t));
-        if (is_more_than_two(voisin.long_hello) == false && voisin.id != id && memcmp(&sender, neighbour->key, sizeof(ip_port_t)) != 0)
+        neighbour_t voisin = {0};
+        memmove(&voisin, neighbour->value, sizeof(neighbour_t));
+        if (is_more_than_two(voisin.long_hello) == false && voisin.id != id && memcmp(&dest, neighbour->key, sizeof(ip_port_t)) != 0)
         {
             insert_map(neighbour->key, neighbour->key, recipient);
         }
@@ -150,9 +150,9 @@ int compare_time(struct timespec ta, struct timespec tb)
 /**
  * Enlève le sender de la liste des voisins 
  */
-static bool_t remove_sender(ip_port_t sender, message_t *tmp)
+static bool_t remove_sender(ip_port_t dest, message_t *tmp)
 {
-    data_t sender_iovec = {&sender, sizeof(sender)};
+    data_t sender_iovec = {&dest, sizeof(dest)};
     int res = remove_map(&sender_iovec, tmp->recipient);
     debug_int(D_INOND, 0, "remove_sender -> l'emetteur est enlevé des inondés", res);
     return res;
@@ -218,16 +218,16 @@ bool_t insert_message(message_t *msg)
  * @param contentlen taille du contenu
  * @return bool_t '1' si le traitement a bien été fait, '0' sinon.
  */
-bool_t add_message(ip_port_t sender, u_int64_t id, uint32_t nonce, uint8_t type, data_t *content)
+bool_t add_message(ip_port_t dest, u_int64_t id, uint32_t nonce, uint8_t type, data_t *content)
 {
     message_t *tmp = NULL;
     if ((tmp = contains_message(id, nonce)) != NULL)
     {
-        remove_sender(sender, tmp);
+        remove_sender(dest, tmp);
         debug(D_INOND, 0, "add_message", "message en cours d'envoi");
         return true;
     }
-    message_t *msg = create_message(sender, id, nonce, type, content);
+    message_t *msg = create_message(dest, id, nonce, type, content);
     if (msg == NULL)
     {
         debug(D_INOND, 1, "add_message", "problème de création d'un message_t");
@@ -307,7 +307,7 @@ bool_t flood_message(message_t *msg)
     node_t *list = map_to_list(msg->recipient);
     node_t *tmp = list;
     int rc = 0;
-    data_t *tlv = data(msg->id, msg->nonce, msg->type, msg->content->iov_len, (uint8_t *)msg->content->iov_base);
+    data_t *tlv = data(msg->id, msg->nonce, msg->type, (uint8_t *)msg->content->iov_base, msg->content->iov_len);
     while (tmp != NULL)
     {
         ip_port_t dest = {0};

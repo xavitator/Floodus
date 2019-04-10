@@ -63,12 +63,12 @@ void clear_all()
  * @param len taille du contenu
  * @return bool_t '1' si le message s'est bien envoyé, '0' sinon.
  */
-bool_t send_tlv(ip_port_t *ipport, data_t *database, size_t len)
+bool_t send_tlv(ip_port_t ipport, data_t *database, size_t len)
 {
     struct sockaddr_in6 dest = {0};
     dest.sin6_family = AF_INET6;
-    dest.sin6_port = ipport->port;
-    memmove(&dest.sin6_addr, ipport->ipv6, sizeof(ipport->ipv6));
+    dest.sin6_port = ipport.port;
+    memmove(&dest.sin6_addr, ipport.ipv6, sizeof(ipport.ipv6));
     struct iovec header = {0};
     u_int8_t entete[4] = {93, 2, 0, 0};
     u_int16_t total_len = 0;
@@ -285,7 +285,7 @@ bool_t send_buffer_tlv()
         else
             break;
     }
-    res = send_tlv(&g_write_buf->dest, g_write_buf->tlvs, ind);
+    res = send_tlv(g_write_buf->dest, g_write_buf->tlvs, ind);
     if (res == false)
     {
         debug(D_WRITER, 1, "send_buffer_tlv", "1er envoi non effectué");
@@ -294,7 +294,7 @@ bool_t send_buffer_tlv()
     }
     if (ind < g_write_buf->tlvlen)
     {
-        res = send_tlv(&g_write_buf->dest, g_write_buf->tlvs + ind - 1, g_write_buf->tlvlen - ind + 1);
+        res = send_tlv(g_write_buf->dest, g_write_buf->tlvs + ind - 1, g_write_buf->tlvlen - ind + 1);
         if (res == false)
         {
             // possiblement, il faudrait enlever de la node tous les tlvs qu'on a déjà envoyé
