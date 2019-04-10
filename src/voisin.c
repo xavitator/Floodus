@@ -61,7 +61,7 @@ short lock(pthread_mutex_t *lock)
   rc = pthread_mutex_lock(lock);
   if (rc)
   {
-    debug_int(D_VOISIN, 1, "lock -> rc", strerror(rc));
+    debug(D_VOISIN, 1, "lock -> rc", strerror(rc));
     return rc;
   }
   return rc;
@@ -512,7 +512,7 @@ bool_t apply_tlv_goaway(ip_port_t dest, data_t *data, size_t *head_read)
   *head_read += 1;
   length -= 1;
 
-  uint8_t *msg = malloc(length + 1);
+  char *msg = malloc(length + 1);
   memmove(msg, data->iov_base + *head_read, length);
   msg[length] = '\0';
   *head_read += length;
