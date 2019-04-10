@@ -244,10 +244,10 @@ bool_t add_message(ip_port_t dest, u_int64_t id, uint32_t nonce, uint8_t type, d
  */
 bool_t get_nexttime(struct timespec *tm)
 {
-
+    long one_sec_in_nsec = 1000000000;
     if (g_floods == NULL)
     {
-        tm->tv_sec = 30;
+        tm->tv_sec = 10;
         tm->tv_nsec = 0;
         return true;
     }
@@ -260,8 +260,29 @@ bool_t get_nexttime(struct timespec *tm)
     }
     long diff_sec = g_floods->send_time.tv_sec - tc.tv_sec;
     long diff_nsec = g_floods->send_time.tv_nsec - tc.tv_nsec;
-    tm->tv_sec = (diff_sec > 0) ? diff_sec : 0;
-    tm->tv_nsec = diff_nsec;
+    if (diff_sec < 0)
+    {
+        tm->tv_nsec = 0;
+        tm->tv_sec = 0;
+    }
+    else
+    {
+        if (diff_nsec < 0)
+        {
+            if (diff_sec > 0)
+            {
+                diff_nsec = one_sec_in_nsec + diff_nsec;
+                diff_sec--;
+            }
+            else
+            {
+                diff_sec = 0;
+                diff_nsec = 0;
+            }
+        }
+        tm->tv_nsec = diff_nsec;
+        tm->tv_sec = diff_sec;
+    }
     return true;
 }
 
@@ -340,6 +361,11 @@ bool_t flood_message(message_t *msg)
  */
 bool_t launch_flood()
 {
+    if (g_floods == NULL)
+    {
+        debug(D_INOND, 0, "launch_flood", "floods vide");
+        return true;
+    }
     message_t *msg = NULL;
     struct timespec tc = {0};
     int rc = clock_gettime(CLOCK_MONOTONIC, &tc);
@@ -349,7 +375,10 @@ bool_t launch_flood()
         return false;
     }
     rc = 0;
-    while (g_floods != NULL && compare_time(tc, g_floods->send_time) <= 0)
+    printf("tc : %lu %ld\n", tc.tv_sec, tc.tv_nsec);
+    printf("send_time : %lu %ld\n", g_floods->send_time.tv_sec, g_floods->send_time.tv_nsec);
+    debug_int(D_INOND, 0, "compare_time -> tc et g_floods", compare_time(tc, g_floods->send_time));
+    while (g_floods != NULL && compare_time(tc, g_floods->send_time) >= 0)
     {
         msg = g_floods;
         g_floods = g_floods->next;
@@ -370,12 +399,12 @@ bool_t launch_flood()
 /*
  * Affiche le TLV à l'utilisateur
  */
-static void print_tlv(uint8_t type, data_t *data, size_t *head_read, uint8_t length)
+static void print_tlv(uint8_t type, data_t content)
 {
     if (type == 0)
     {
         // action à faire quand on doit afficher une data à l'utilisateur
-        print_data(data->iov_base + *head_read, length);
+        print_data(content.iov_base, content.iov_len);
     }
 }
 
@@ -398,9 +427,11 @@ static bool_t send_ack(ip_port_t dest, uint64_t sender_id, u_int32_t nonce)
     int rc = add_tlv(dest, ack_iovec);
     if (rc == false)
     {
+        freeiovec(ack_iovec);
         debug(D_INOND, 1, "send_ack", "problème d'ajout du tlv ack");
         return false;
     }
+    freeiovec(ack_iovec);
     debug(D_INOND, 0, "send_ack", "traitement du tlv data effectué");
     return true;
 }
@@ -456,7 +487,7 @@ bool_t apply_tlv_data(ip_port_t dest, data_t *data, size_t *head_read)
         return false;
     }
     *head_read += length;
-    print_tlv(type, data, head_read, length);
+    print_tlv(type, content);
     rc = send_ack(dest, sender_id, nonce);
     return rc;
 }

@@ -100,7 +100,7 @@ bool_t send_tlv(ip_port_t ipport, data_t *database, size_t len)
         if (errno == EINTR ||
             (errno != EWOULDBLOCK && errno != EAGAIN))
         {
-            debug(D_WRITER, 1, "send_tlv -> envoi non effectué", strerror(errno));
+            debug_and_exit(D_WRITER, 1, "send_tlv -> envoi non effectué", strerror(errno), 1);
             return false;
         }
     }

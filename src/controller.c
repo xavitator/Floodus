@@ -73,12 +73,12 @@ void launch_program()
 {
     int rc = 0;
     int nb_fd = 0;
-    fd_set readfds;
-    fd_set writefds;
     struct timespec zero = {0, 0};
     struct timespec tm = {0};
     while (1)
     {
+        fd_set readfds;
+        fd_set writefds;
         FD_ZERO(&readfds);
         FD_ZERO(&writefds);
         FD_SET(g_socket, &readfds);
@@ -102,6 +102,7 @@ void launch_program()
             }
             if (FD_ISSET(g_socket, &writefds))
             {
+                debug(D_CONTROL, 1, "launch_program", "fd_isset en ecriture");
                 rc = send_buffer_tlv();
                 if (rc == false)
                 {
@@ -110,6 +111,11 @@ void launch_program()
                 else
                     debug(D_CONTROL, 0, "launch_program", "envoie d'un message");
             }
+        }
+        if (nb_fd < 0)
+        {
+            debug(D_CONTROL, 1, "launch_program -> problem du pselect", strerror(errno));
+            return;
         }
         if (compare_time(tm, zero) <= 0 || nb_fd == 0)
         {

@@ -14,7 +14,6 @@
 #define D_INOND 1
 #define COUNT_INOND 5
 
-
 typedef struct message_t
 {
     struct timespec send_time; // temps absolu à partir duquel on peut envoyer le message

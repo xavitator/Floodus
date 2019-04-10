@@ -154,7 +154,7 @@ bool_t tlv_call_data(ip_port_t dest, data_t *data, size_t *head_read)
         debug(D_READER, 1, "tlv_call_data", "problème application du tlv data");
         return res;
     }
-    debug(D_READER, 0, "tlv_call_data", "traitement du tlv data effectué");
+    debug(D_READER, 1, "tlv_call_data", "traitement du tlv data effectué");
     return true;
 }
 
@@ -280,7 +280,7 @@ void read_tlv(ip_port_t dest, data_t *tlvs)
     u_int8_t type = 0;
     while (head_reader < tlvs->iov_len)
     {
-   
+
         type = ((u_int8_t *)tlvs->iov_base)[head_reader];
         printf("Type => %d\n", type); // TEST
         if (type >= NB_TLV)
