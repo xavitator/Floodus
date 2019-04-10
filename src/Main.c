@@ -43,7 +43,7 @@ int make_demand(struct addrinfo *p)
     ip_port_t ipport = {0};
     ipport.port = ((struct sockaddr_in6 *)p->ai_addr)->sin6_port;
     memmove(ipport.ipv6, &((struct sockaddr_in6 *)p->ai_addr)->sin6_addr, sizeof(ipport.ipv6));
-    int rc = send_tlv(&ipport, hs, 1);
+    int rc = send_tlv(ipport, hs, 1);
     freeiovec(hs);
 
     data_t *new_neighbour = neighbour(ipport.ipv6, ipport.port);
@@ -142,7 +142,7 @@ int main(int argc, char *argv[])
         exit(1);
     }
     init_sender();
-    init_neighbors();
+    init_neighbours();
     rc = send_hello(default_dest, port);
     if (rc >= 0)
         launch_program();

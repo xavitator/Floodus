@@ -9,6 +9,6 @@
 
 #include "debug.h"
 
-void print_data(u_int8_t *content, u_int8_t contentlen);
+void print_data(u_int8_t *content, u_int8_t content_len);
 
 #endif

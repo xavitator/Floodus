@@ -16,7 +16,7 @@ static void error(char *obj)
 /**
  * @brief Créer une struct iovec pour PDA1
  */
-struct iovec *pad1()
+data_t *pad1()
 {
   struct iovec *pad = malloc(sizeof(struct iovec));
   if (pad == NULL)
@@ -44,7 +44,7 @@ struct iovec *pad1()
  *
  * @param La taille du N, en cas de dépassement 253
  */
-struct iovec *pad_n(uint8_t N)
+data_t *pad_n(uint8_t N)
 {
   struct iovec *pad = malloc(sizeof(struct iovec));
   if (pad == NULL)
@@ -74,7 +74,7 @@ struct iovec *pad_n(uint8_t N)
  *
  * @param source_id l'id de 64 bits de l'émetteur 
  */
-struct iovec *hello_short(uint64_t sender_id)
+data_t *hello_short(uint64_t sender_id)
 {
   struct iovec *hello = malloc(sizeof(struct iovec));
   if (hello == NULL)
@@ -106,7 +106,7 @@ struct iovec *hello_short(uint64_t sender_id)
  * @param source_id l'id de 64 bits de l'émetteur
  * @param id l'id de 64 bits du destinataire
  */
-struct iovec *hello_long(uint64_t sender_id, uint64_t id)
+data_t *hello_long(uint64_t sender_id, uint64_t id)
 {
   struct iovec *hello = malloc(sizeof(struct iovec));
   if (hello == NULL)
@@ -139,7 +139,7 @@ struct iovec *hello_long(uint64_t sender_id, uint64_t id)
  * @param ip l'ip à partager
  * @param port le port de l'ip
  */
-struct iovec *neighbour(uint8_t source_ip[16], uint16_t port)
+data_t *neighbour(uint8_t source_ip[16], uint16_t port)
 {
   struct iovec *neighbour_i = malloc(sizeof(struct iovec));
   if (neighbour_i == NULL)
@@ -175,7 +175,7 @@ struct iovec *neighbour(uint8_t source_ip[16], uint16_t port)
  * @param msg_length la taille du message, prend le min avec 240
  * @param msg le message à envoyer
  */
-struct iovec *data(uint64_t sender_id, uint32_t nonce, uint8_t type, uint8_t msg_length, uint8_t *msg)
+data_t *data(uint64_t sender_id, uint32_t nonce, uint8_t type, uint8_t *msg, uint8_t msg_length)
 {
   struct iovec *data_i = malloc(sizeof(struct iovec));
   if (data_i == NULL)
@@ -210,7 +210,7 @@ struct iovec *data(uint64_t sender_id, uint32_t nonce, uint8_t type, uint8_t msg
  * @param sender_id l'id de l'envoyeur (copie)
  * @param nonce l'apax pour l'acquitement (copie)
  */
-struct iovec *ack(uint64_t sender_id, uint32_t nonce)
+data_t *ack(uint64_t sender_id, uint32_t nonce)
 {
   struct iovec *ack_i = malloc(sizeof(struct iovec));
   if (ack_i == NULL)
@@ -244,7 +244,7 @@ struct iovec *ack(uint64_t sender_id, uint32_t nonce)
  * @param msg_length la taille du message, prend le min entre msg_length et 252
  * @param msg le message à joindre
  */
-struct iovec *go_away(uint8_t code, uint8_t msg_length, uint8_t *msg)
+data_t *go_away(uint8_t code, uint8_t *msg, uint8_t msg_length)
 {
   struct iovec *go_away_i = malloc(sizeof(struct iovec));
   if (go_away_i == NULL)
@@ -277,7 +277,7 @@ struct iovec *go_away(uint8_t code, uint8_t msg_length, uint8_t *msg)
  * @param msg_length la taille du message, prend le min entre msg_length et 253
  * @param msg le message
  */
-struct iovec *warning(uint8_t msg_length, uint8_t *msg)
+data_t *warning( uint8_t *msg, uint8_t msg_length)
 {
   struct iovec *warning_i = malloc(sizeof(struct iovec));
   if (warning_i == NULL)
