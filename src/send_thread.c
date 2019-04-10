@@ -10,8 +10,8 @@
  * @brief
  * Donne le temps restant nécessaire au sleep 
  * 
- * @param time le temps original
- * @param wake_up le temps auquel le thread se réveille
+ * @param TIME le temps original
+ * @param tm le temps auquel le thread se réveille
  * @return le temps à sleep
  */
 static uint32_t get_remain_time(uint32_t TIME, struct timespec tm)
@@ -30,7 +30,7 @@ static uint32_t get_remain_time(uint32_t TIME, struct timespec tm)
  * @brief
  * Envoie les voisins à un pair
  * 
- * @param addr l'adresse de l'envoyeur
+ * @param dest l'adresse de l'envoyeur
  * @param n_list la liste des voisins à envoyer
  * @return 1 si l'envoi a marché 
  */
@@ -39,17 +39,14 @@ static bool_t send_neighbour(ip_port_t *dest, node_t *n_list)
   node_t *node = n_list;
   ip_port_t ipport = {0};
   neighbour_t content = {0};
-  memmove(&content, node->value->iov_base, sizeof(neighbour_t));
   int rc = 0;
   bool_t error = 0;
   while (node != NULL)
   {
+    memmove(&content, node->value->iov_base, sizeof(neighbour_t));
     if (is_more_than_two(content.hello))
     {
-      if (update_neighbours(node, "time out hello") == false)
-        debug(D_SEND_THREAD, 1, "send_neighbour", "error with go_away");
       node = node->next;
-      error = true;
       continue;
     }
 
@@ -66,7 +63,7 @@ static bool_t send_neighbour(ip_port_t *dest, node_t *n_list)
         freeiovec(tlv_neighbour);
         continue;
       }
-      debug_hex(D_SEND_THREAD, 0, "send_neighbour -> tlv", tlv_neighbour->iov_base, tlv_neighbour->iov_len);
+      //debug_hex(D_SEND_THREAD, 0, "send_neighbour -> tlv", tlv_neighbour->iov_base, tlv_neighbour->iov_len);
       rc = add_tlv(*dest, tlv_neighbour);
       if (rc == false)
       {
@@ -87,25 +84,33 @@ static bool_t send_neighbour(ip_port_t *dest, node_t *n_list)
  * @brief
  * Envoie les voisins
  * 
- * @param list liste des voisins courants
+ * @param n_list liste des voisins courants
  * @return 1 si tous les voisins ont été envoyés
  */
-static bool_t send_neighbours(node_t *list)
+static bool_t send_neighbours(node_t *n_list)
 {
   int rc = 1;
   bool_t error = false;
-  node_t *node = list;
+  node_t *node = n_list;
   while (node != NULL)
   {
     ip_port_t ipport = {0};
     neighbour_t content = {0};
-    memmove(&content, node->value->iov_base, sizeof(neighbour_t));
     memmove(&ipport, node->key->iov_base, sizeof(ip_port_t));
-    rc = send_neighbour(&ipport, list);
-    error = (!rc) ? true : error;
+    memmove(&content, node->value->iov_base, sizeof(neighbour_t));
+    if (is_more_than_two(content.hello) && !update_neighbours(node, "time out hello"))
+    {
+      debug(D_SEND_THREAD, 1, "send_neighbour", "error with go_away");
+      error = true;
+    }
+    else
+    {
+      rc = send_neighbour(&ipport, n_list);
+      error = (!rc) ? true : error;
+    }
     node = node->next;
   }
-  debug(D_SEND_THREAD, 0, "send_neighbours", "->neighbours");
+  //debug(D_SEND_THREAD, 0, "send_neighbours", "->neighbours");
   return (error) ? false : true;
 }
 
@@ -132,18 +137,16 @@ static void *neighbour_sender(void *unused)
       debug(D_SEND_THREAD, 1, "neighbour_sender", "can't get clockgetime");
       pthread_exit(NULL);
     }
-    debug(D_SEND_THREAD, 0, "pthread neighbour", "Read hashmaps and send");
-    debug_int(D_SEND_THREAD, 0, "pthread neighbour", remains);
+    //debug(D_SEND_THREAD, 0, "neighbour_sender", "Read hashmaps and send");
+    debug_int(D_SEND_THREAD, 0, "neighbour_sender -> remains", remains);
 
     lock(&g_lock_n);
     node_t *n_list = map_to_list(g_neighbours);
     unlock(&g_lock_n);
 
     send_neighbours(n_list);
-
-    if (n_list != NULL)
-      freedeepnode(n_list);
-    debug(D_SEND_THREAD, 0, "pthread neighbour", "Sending neighbour done");
+    freedeepnode(n_list);
+    debug(D_SEND_THREAD, 0, "neighbour_sender", "Sending neighbour done");
   }
   pthread_exit(NULL);
 }
@@ -152,14 +155,14 @@ static void *neighbour_sender(void *unused)
  * @brief
  * Envoie à tous les voisins un TLV Hello Court
  * 
- * @param list liste des voisins potentiels
+ * @param e_list liste des voisins potentiels
  * @param nb le nombre à qui envoyer
  * @return nombre d'hellos envoyés
  */
-static int send_hello_short(node_t *list, int nb)
+static int send_hello_short(node_t *e_list, int nb)
 {
   int rc = 0, count = 0;
-  node_t *node = list;
+  node_t *node = e_list;
   while (node != NULL && count < nb)
   {
     ip_port_t ipport = {0};
@@ -169,17 +172,18 @@ static int send_hello_short(node_t *list, int nb)
     if (tlv_hello == NULL)
     {
       debug(D_SEND_THREAD, 1, "send_hello_short", "tlv_hello = NULL");
-      freeiovec(tlv_hello);
-      return 0;
+      node = node->next;
+      continue;
     }
-    debug_hex(D_SEND_THREAD, 0, "send_hello short -> tlv", tlv_hello->iov_base, tlv_hello->iov_len);
+    //debug_hex(D_SEND_THREAD, 0, "send_hello short -> tlv", tlv_hello->iov_base, tlv_hello->iov_len);
 
     rc = add_tlv(ipport, tlv_hello);
     freeiovec(tlv_hello);
-    if (rc == false)
+    if (!rc)
     {
       debug_int(D_SEND_THREAD, 1, "send_hello_short -> rc", rc);
-      return rc;
+      node = node->next;
+      continue;
     }
     count++;
     node = node->next;
@@ -191,13 +195,13 @@ static int send_hello_short(node_t *list, int nb)
 /**
  * @brief
  * Envoie à tous les voisins un TLV Hello Long
- * @param list liste des voisins courants
+ * @param n_list liste des voisins courants
  * @return nombre d'hellos envoyés
  */
-static int send_hello_long(node_t *list)
+static int send_hello_long(node_t *n_list)
 {
-  int rc = 0, c = 0;
-  node_t *node = list;
+  int rc = 0, count = 0, no_send = 0;
+  node_t *node = n_list;
   while (node != NULL)
   {
     ip_port_t ipport = {0};
@@ -208,26 +212,29 @@ static int send_hello_long(node_t *list)
     data_t *tlv_hello = hello_long(g_myid, content.id);
     if (tlv_hello == NULL)
     {
-      debug(D_SEND_THREAD, 1, "send_hello_short", "tlv_hello = NULL");
-      freeiovec(tlv_hello);
+      debug(D_SEND_THREAD, 1, "send_hello_long", "tlv_hello = NULL");
+      no_send++;
       node = node->next;
       continue;
     }
-    debug_hex(D_SEND_THREAD, 0, "send_hello long", tlv_hello->iov_base, tlv_hello->iov_len);
+    //debug_hex(D_SEND_THREAD, 0, "send_hello long", tlv_hello->iov_base, tlv_hello->iov_len);
 
     rc = add_tlv(ipport, tlv_hello);
     freeiovec(tlv_hello);
     if (rc == false)
     {
       debug_int(D_SEND_THREAD, 1, "send_hello_long -> rc", rc);
+      no_send++;
       node = node->next;
       continue;
     }
-    c++;
+    count++;
     node = node->next;
   }
-  debug_int(D_SEND_THREAD, 0, "send_hello_long -> c", c);
-  return c;
+  if (no_send > 0)
+    debug_int(D_SEND_THREAD, 1, "send_hello_long -> non envoyé", no_send);
+  debug_int(D_SEND_THREAD, 0, "send_hello_long -> envoyé", count);
+  return count;
 }
 
 /**
@@ -248,34 +255,35 @@ static void *hello_sender(void *unused)
   }
   while (1)
   {
-    sleep(get_remain_time(SLEEP_HELLO, tm));
+    u_int32_t remains = get_remain_time(SLEEP_HELLO, tm);
+    sleep(remains);
     if (clock_gettime(CLOCK_MONOTONIC, &tm) < 0)
     {
       debug(D_VOISIN, 1, "hello_sender", "can't get clockgetime");
       pthread_exit(NULL);
     }
-    debug(D_SEND_THREAD, 0, "pthread", "Read hashmaps and send");
+    //debug(D_SEND_THREAD, 0, "pthread", "Read hashmaps and send");
+    debug_int(D_SEND_THREAD, 0, "hello_sender -> remains", remains);
 
     lock(&g_lock_n);
     node_t *n_list = map_to_list(g_neighbours);
     unlock(&g_lock_n);
-    lock(&g_lock_e);
-    node_t *e_list = map_to_list(g_environs);
-    unlock(&g_lock_e);
 
     count = send_hello_long(n_list);
-    debug_int(D_SEND_THREAD, 0, "count n", count);
+    freedeepnode(n_list);
+    debug_int(D_SEND_THREAD, 0, "hello_sender -> count neighbour", count);
+
     if (count < MIN)
     {
+      lock(&g_lock_e);
+      node_t *e_list = map_to_list(g_environs);
+      unlock(&g_lock_e);
       count = send_hello_short(e_list, MIN - count);
-      debug_int(D_SEND_THREAD, 0, "count e", count);
+      freedeepnode(e_list);
+      debug_int(D_SEND_THREAD, 0, "hello_sender -> count environs", count);
     }
 
-    if (n_list != NULL)
-      freedeepnode(n_list);
-    if (e_list != NULL)
-      freedeepnode(e_list);
-    debug(D_SEND_THREAD, 0, "pthread", "Sending Done");
+    debug(D_SEND_THREAD, 0, "hello_sender", "Sending Done");
   }
   pthread_exit(NULL);
 }
@@ -283,7 +291,7 @@ static void *hello_sender(void *unused)
 /**
  * @brief
  * Declenche un nouveau thread d'envoi de Hello
- * et un d'envoi de neighbours
+ * et un nouveau d'envoi de neighbours
  *
  * @return si les threads ont été lancés
  */
