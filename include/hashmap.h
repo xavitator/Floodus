@@ -15,10 +15,6 @@
 #define D_HASHMAP 0
 #define BIT_MAPSIZE 12
 #define HASHMAP_SIZE 4096
-#define false 0
-#define true 1
-
-typedef u_int8_t bool_t;
 
 /**
  * @brief Structure correspondant à une node la hashmap.

@@ -9,6 +9,12 @@
 
 #define DEBUG 1
 
+#define false 0
+#define true 1
+
+typedef u_int8_t bool_t;
+
+
 void debug(uint8_t flag, uint8_t error, char *name, const char *msg);
 void debug_and_exit(uint8_t flag, uint8_t error, char *name, const char *msg, int exit_code);
 void debug_hex(uint8_t flag, uint8_t error, char *name, void *data, int data_len);

@@ -139,16 +139,13 @@ static bool_t from_neighbours_to_env(ip_port_t ipport)
 static bool_t inform_neighbor(ip_port_t dest, char *msg)
 {
   int rc;
-  data_t *tlv_go_away = go_away(2, (uint8_t *)msg, strlen(msg));
-  if (tlv_go_away == NULL)
+  data_t tlv_go_away;
+  if(!go_away(&tlv_go_away, 2, (uint8_t *)msg, strlen(msg)))
   {
     debug(D_VOISIN, 1, "inform_neighbor", "tlv_go_away = NULL");
-    freeiovec(tlv_go_away);
     return false;
   }
-  //debug_hex(D_VOISIN, 0, "inform_neighbor -> tlv", tlv_go_away->iov_base, tlv_go_away->iov_len);
-  rc = add_tlv(dest, tlv_go_away);
-  freeiovec(tlv_go_away);
+  rc = add_tlv(dest, &tlv_go_away);
   if (rc == false)
   {
     debug_int(D_VOISIN, 1, "inform_neighbor -> rc", rc);
@@ -261,17 +258,14 @@ bool_t apply_hello_court(ip_port_t src, u_int64_t id)
   unlock(&g_neighbours);
   unlock(&g_environs);
 
-  data_t *tlv_hello = hello_long(g_myid, nval.id);
-
-  if (tlv_hello == NULL)
+  data_t tlv_hello;
+  if(!hello_long(&tlv_hello, g_myid, nval.id)) 
   {
     debug(D_VOISIN, 1, "apply_hello_court", "tlv_hello = NULL");
     return false;
   }
 
-  //debug_hex(D_VOISIN, 0, "apply_hello_court -> tlv_hello", tlv_hello->iov_base, tlv_hello->iov_len);
-  rc = add_tlv(src, tlv_hello);
-  freeiovec(tlv_hello);
+  rc = add_tlv(src, &tlv_hello);
   if (rc == false)
   {
     debug_int(D_VOISIN, 1, "apply_hello_court -> rc", rc);
@@ -329,13 +323,11 @@ bool_t apply_hello_long(ip_port_t src, u_int64_t id_src, u_int64_t id_dest)
       return false;
     }
     freeiovec(val);
-    //debug(D_VOISIN, 0, "apply_hello_long", "update neighbor");
   }
   else
   {
     nval.id = id_src;
     remove_map(&src_ivc, get_hashmap_from(&g_environs));
-    //debug(D_VOISIN, 0, "apply_hello_long", "insert new neighbor");
   }
 
   rc = clock_gettime(CLOCK_MONOTONIC, &nval.hello);
@@ -365,10 +357,6 @@ bool_t apply_hello_long(ip_port_t src, u_int64_t id_src, u_int64_t id_dest)
  */
 bool_t apply_tlv_hello(ip_port_t src, data_t *data, size_t *head_read)
 {
-  //debug_hex(D_VOISIN, 0, "apply_tlv_hello -> args src", &src, sizeof(ip_port_t));
-  //debug_hex(D_VOISIN, 0, "apply_tlv_hello -> args data", data->iov_base, data->iov_len);
-  //debug_int(D_VOISIN, 0, "apply_tlv_hello -> args head_read", *head_read);
-  // on considère que la tete de lecture est sur l'octet correspondant à 'length' du tlv.
   if (*head_read >= data->iov_len)
   {
     debug(D_VOISIN, 1, "apply_tlv_hello", "head >= data->iov_len");
@@ -420,9 +408,6 @@ bool_t apply_tlv_hello(ip_port_t src, data_t *data, size_t *head_read)
  */
 bool_t apply_tlv_neighbour(data_t *data, size_t *head_read)
 {
-  //debug_hex(D_VOISIN, 0, "apply_tlv_neighbour -> args data", data->iov_base, data->iov_len);
-  //debug_int(D_VOISIN, 0, "apply_tlv_neighbour -> args head_read", *head_read);
-  // on considère que la tete de lecture est sur l'octet correspondant à 'length' du tlv.
   if (*head_read >= data->iov_len)
   {
     debug(D_VOISIN, 1, "apply_tlv_neighbour", "head_read >= data->iov_len");

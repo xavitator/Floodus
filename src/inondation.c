@@ -328,14 +328,20 @@ bool_t flood_message(message_t *msg)
     node_t *list = map_to_list(msg->recipient);
     node_t *tmp = list;
     int rc = 0;
-    data_t *tlv = data(msg->id, msg->nonce, msg->type, (uint8_t *)msg->content->iov_base, msg->content->iov_len);
+    data_t tlv =  {0};
+    if(!data(&tlv, msg->id, msg->nonce, msg->type,
+          (uint8_t *)msg->content->iov_base, msg->content->iov_len))
+    {
+        debug(D_INOND, 1, "flood_message", "erreur data");
+        return false;
+    }
     while (tmp != NULL)
     {
         ip_port_t dest = {0};
         memmove(&dest, tmp->value->iov_base, sizeof(ip_port_t));
         if (is_symetric(dest))
         {
-            add_tlv(dest, tlv);
+            add_tlv(dest, &tlv);
             rc += 1;
         }
         else
@@ -418,20 +424,18 @@ static void print_tlv(uint8_t type, data_t content)
  */
 static bool_t send_ack(ip_port_t dest, uint64_t sender_id, u_int32_t nonce)
 {
-    data_t *ack_iovec = ack(sender_id, nonce);
-    if (ack_iovec == NULL)
+    data_t ack_iovec = {0};
+    if(!ack(&ack_iovec, sender_id, nonce))
     {
         debug(D_INOND, 1, "send_ack", "problème d'envoi de l'acquitement");
         return false;
     }
-    int rc = add_tlv(dest, ack_iovec);
+    int rc = add_tlv(dest, &ack_iovec);
     if (rc == false)
     {
-        freeiovec(ack_iovec);
         debug(D_INOND, 1, "send_ack", "problème d'ajout du tlv ack");
         return false;
     }
-    freeiovec(ack_iovec);
     debug(D_INOND, 0, "send_ack", "traitement du tlv data effectué");
     return true;
 }

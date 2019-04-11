@@ -54,27 +54,23 @@ static bool_t send_neighbour(ip_port_t *dest, node_t *n_list)
     if (memcmp(dest->ipv6, ipport.ipv6, 16) != 0 ||
         dest->port != ipport.port)
     {
-      data_t *tlv_neighbour = neighbour(ipport.ipv6, ipport.port);
-      if (tlv_neighbour == NULL)
+      data_t tlv_neighbour;
+      if(!neighbour(&tlv_neighbour, ipport.ipv6, ipport.port))
       {
         debug(D_SEND_THREAD, 1, "send_neighbour", "creation de tlv_neighbour impossible");
         node = node->next;
         error = true;
-        freeiovec(tlv_neighbour);
         continue;
       }
-      //debug_hex(D_SEND_THREAD, 0, "send_neighbour -> tlv", tlv_neighbour->iov_base, tlv_neighbour->iov_len);
-      rc = add_tlv(*dest, tlv_neighbour);
+      rc = add_tlv(*dest, &tlv_neighbour);
       if (rc == false)
       {
         debug_int(D_SEND_THREAD, 1, "send_neighbour -> rc", rc);
         node = node->next;
         error = true;
-        freeiovec(tlv_neighbour);
         continue;
       }
-      freeiovec(tlv_neighbour);
-    }
+     }
     node = node->next;
   }
   return (error) ? false : true;
@@ -110,8 +106,7 @@ static bool_t send_neighbours(node_t *n_list)
     }
     node = node->next;
   }
-  //debug(D_SEND_THREAD, 0, "send_neighbours", "->neighbours");
-  return (error) ? false : true;
+ return (error) ? false : true;
 }
 
 /**
@@ -137,7 +132,6 @@ static void *neighbour_sender(void *unused)
       debug(D_SEND_THREAD, 1, "neighbour_sender", "can't get clockgetime");
       pthread_exit(NULL);
     }
-    //debug(D_SEND_THREAD, 0, "neighbour_sender", "Read hashmaps and send");
     debug_int(D_SEND_THREAD, 0, "neighbour_sender -> remains", remains);
 
     lock(&g_neighbours);
@@ -168,18 +162,16 @@ static int send_hello_short(node_t *e_list, int nb)
     ip_port_t ipport = {0};
     memmove(&ipport, node->value->iov_base, sizeof(ip_port_t));
 
-    data_t *tlv_hello = hello_short(g_myid);
-    if (tlv_hello == NULL)
+    data_t tlv_hello = {0};
+    if(!hello_short(&tlv_hello, g_myid))
     {
       debug(D_SEND_THREAD, 1, "send_hello_short", "tlv_hello = NULL");
       node = node->next;
       continue;
     }
-    //debug_hex(D_SEND_THREAD, 0, "send_hello short -> tlv", tlv_hello->iov_base, tlv_hello->iov_len);
-
-    rc = add_tlv(ipport, tlv_hello);
-    freeiovec(tlv_hello);
-    if (!rc)
+  
+    rc = add_tlv(ipport, &tlv_hello);
+       if (!rc)
     {
       debug_int(D_SEND_THREAD, 1, "send_hello_short -> rc", rc);
       node = node->next;
@@ -209,18 +201,16 @@ static int send_hello_long(node_t *n_list)
     memmove(&content, node->value->iov_base, sizeof(neighbour_t));
     memmove(&ipport, node->key->iov_base, sizeof(ip_port_t));
 
-    data_t *tlv_hello = hello_long(g_myid, content.id);
-    if (tlv_hello == NULL)
+    data_t tlv_hello = {0};
+    if(!hello_long(&tlv_hello, g_myid, content.id))
     {
       debug(D_SEND_THREAD, 1, "send_hello_long", "tlv_hello = NULL");
       no_send++;
       node = node->next;
       continue;
     }
-    //debug_hex(D_SEND_THREAD, 0, "send_hello long", tlv_hello->iov_base, tlv_hello->iov_len);
 
-    rc = add_tlv(ipport, tlv_hello);
-    freeiovec(tlv_hello);
+    rc = add_tlv(ipport, &tlv_hello);
     if (rc == false)
     {
       debug_int(D_SEND_THREAD, 1, "send_hello_long -> rc", rc);
@@ -262,7 +252,6 @@ static void *hello_sender(void *unused)
       debug(D_VOISIN, 1, "hello_sender", "can't get clockgetime");
       pthread_exit(NULL);
     }
-    //debug(D_SEND_THREAD, 0, "pthread", "Read hashmaps and send");
     debug_int(D_SEND_THREAD, 0, "hello_sender -> remains", remains);
 
     lock(&g_neighbours);
