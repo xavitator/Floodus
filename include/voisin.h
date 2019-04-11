@@ -15,6 +15,7 @@
 
 #include "iovec.h"
 #include "hashmap.h"
+#include "pthread_var.h"
 #include "TLV.h"
 
 #define D_VOISIN 1
@@ -46,13 +47,11 @@ typedef struct neighbour_t
 #include "writer.h"
 
 extern u_int64_t g_myid;
-extern hashmap_t *g_neighbours;
-extern hashmap_t *g_environs;
+extern pthread_var_t g_neighbours;
+extern pthread_var_t g_environs;
 extern pthread_mutex_t g_lock_n;
 extern pthread_mutex_t g_lock_e;
 
-short lock(pthread_mutex_t *);
-short unlock(pthread_mutex_t *);
 void create_user(void);
 bool_t init_neighbours(void);
 bool_t update_neighbours(node_t *node, char *msg); 

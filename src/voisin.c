@@ -17,73 +17,18 @@
 u_int64_t g_myid = 0;
 
 /**
- * @brief Voisins actuels
- * Hashmap dont :
- * - la key correspond à un ip_port_t
- * - la value correspond à un neighbor_t
- * 
- */
-hashmap_t *g_neighbours = NULL;
-
-/**
- * @brief Voisins possibles
- * Hashmap dont :
- * - la key correspond à un ip_port_t
- * - la value correspond à un ip_port_t qui est à priori le meme que la key
- * 
- */
-hashmap_t *g_environs = NULL;
-
-/**
  * @brief
- * Cadenas de sécurité pour les threads
- * Bloque l'accès à neighbors
+ * Variable encapsulant une hashmap de voisins
  */
-pthread_mutex_t g_lock_n = PTHREAD_MUTEX_INITIALIZER;
+pthread_var_t g_neighbours = {0};
+
 
 /**
- * @brief
- * Cadenas de sécurité pour les threads
- * Bloque l'accès à environs
+ * @brief 
+ * Variable encaspulant une hashmap de voisins potentiels
  */
-pthread_mutex_t g_lock_e = PTHREAD_MUTEX_INITIALIZER;
+pthread_var_t g_environs = {0};
 
-/**
- * @brief
- * Bloque le cadenas si il est libre
- * sinon attend
- * @param lock le cadenas à verrouiller
- * @return rc
- */
-short lock(pthread_mutex_t *lock)
-{
-  int rc = 0;
-  rc = pthread_mutex_lock(lock);
-  if (rc)
-  {
-    debug(D_VOISIN, 1, "lock -> rc", strerror(rc));
-    return rc;
-  }
-  return rc;
-}
-
-/**
- * @brief
- * Débloque le cadenas 
- * @param lock le cadenas à déverrouiller
- * @return rc 
- */
-short unlock(pthread_mutex_t *lock)
-{
-  int rc = 0;
-  rc = pthread_mutex_unlock(lock);
-  if (rc)
-  {
-    debug_int(D_VOISIN, 1, "unlock -> rc", rc);
-    return rc;
-  }
-  return rc;
-}
 
 /**
  * @brief Instancie l'id du user
@@ -99,33 +44,46 @@ void create_user()
 }
 
 /**
+ * Initialise les structures d'encapsulation
+ * des hasmaps
+ */
+static void init_lockers() {
+  //pthread_mutex_t lock_test = PTHREAD_MUTEX_INITIALIZER;
+  pthread_mutex_init(&g_neighbours.locker, NULL);
+  g_neighbours.content = NULL;
+  pthread_mutex_init(&g_environs.locker, NULL);
+  g_environs.content = NULL;
+}
+
+
+/**
  * @brief Initialise les variables globales de voisins et de voisins possibles.
  * 
  * @return bool_t renvoie '0' s'il y a une erreur d'initialisation, '1' sinon.
  */
 bool_t init_neighbours()
 {
+  init_lockers();
   create_user();
-  lock(&g_lock_n);
-  g_neighbours = init_map();
-  if (g_neighbours == NULL)
+  lock(&g_neighbours);
+  g_neighbours.content = init_map();
+  if (g_neighbours.content == NULL)
   {
     debug(D_VOISIN, 1, "init_neighbors", "neighbors = NULL");
     return false;
   }
-  unlock(&g_lock_n);
-  lock(&g_lock_e);
-  g_environs = init_map();
-  if (g_environs == NULL)
+  unlock(&g_neighbours);
+  lock(&g_environs);
+  g_environs.content = init_map();
+  if (g_environs.content == NULL)
   {
-    lock(&g_lock_n);
+    lock(&g_neighbours);
     debug(D_VOISIN, 1, "init_neighbors", "environs = NULL");
-    freehashmap(g_neighbours);
-    g_neighbours = NULL;
-    unlock(&g_lock_n);
+    freehashmap(g_neighbours.content);
+    unlock(&g_neighbours);
     return false;
   }
-  unlock(&g_lock_e);
+  unlock(&g_environs);
   debug(D_VOISIN, 0, "init_neighbors", "init all environments");
   return true;
 }
@@ -141,22 +99,22 @@ bool_t init_neighbours()
 static bool_t from_neighbours_to_env(ip_port_t ipport)
 {
   data_t ipport_ivc = {&ipport, sizeof(ip_port_t)};
-  lock(&g_lock_e);
-  if (insert_map(&ipport_ivc, &ipport_ivc, g_environs) == false)
+  lock(&g_environs);
+  if (insert_map(&ipport_ivc, &ipport_ivc, get_hashmap_from(&g_environs)) == false)
   {
-    unlock(&g_lock_e);
+    unlock(&g_environs);
     debug(D_VOISIN, 1, "from_neighbour_to_env", "insertion dans g_environs non effectuée");
     return false;
   }
-  unlock(&g_lock_e);
-  lock(&g_lock_n);
-  if (remove_map(&ipport_ivc, g_neighbours) == false)
+  unlock(&g_environs);
+  lock(&g_neighbours);
+  if (remove_map(&ipport_ivc, get_hashmap_from(&g_neighbours)) == false)
   {
-    unlock(&g_lock_n);
+    unlock(&g_neighbours);
     debug(D_VOISIN, 1, "from_neighbour_to_env", "suppression de g_neighbours non effectuée");
     return false;
   }
-  unlock(&g_lock_n);
+  unlock(&g_neighbours);
   debug(D_VOISIN, 0, "from_neighbour_to_env", "déplacement effectué");
   return true;
 }
@@ -222,12 +180,12 @@ bool_t update_neighbours(node_t *node, char *msg)
  */
 void free_neighbors()
 {
-  lock(&g_lock_n);
-  freehashmap(g_neighbours);
-  unlock(&g_lock_n);
-  lock(&g_lock_e);
-  freehashmap(g_environs);
-  unlock(&g_lock_e);
+  lock(&g_neighbours);
+  freehashmap(g_neighbours.content);
+  unlock(&g_neighbours);
+  lock(&g_environs);
+  freehashmap(g_environs.content);
+  unlock(&g_environs);
   debug(D_VOISIN, 0, "free_neighbors", "free env");
 }
 
@@ -249,17 +207,17 @@ bool_t apply_hello_court(ip_port_t src, u_int64_t id)
   data_t src_ivc = {&src, sizeof(ip_port_t)};
   neighbour_t nval = {0};
 
-  lock(&g_lock_n);
-  lock(&g_lock_e);
-  if (contains_map(&src_ivc, g_neighbours))
+  lock(&g_neighbours);
+  lock(&g_environs);
+  if (contains_map(&src_ivc, get_hashmap_from(&g_neighbours)))
   {
     debug(D_VOISIN, 0, "apply_hello_court", "update neighbor");
-    data_t *val = get_map(&src_ivc, g_neighbours);
+    data_t *val = get_map(&src_ivc, get_hashmap_from(&g_neighbours));
     if (val == NULL)
     {
       debug(D_VOISIN, 1, "apply_hello_court", "val = NULL");
-      unlock(&g_lock_n);
-      unlock(&g_lock_e);
+      unlock(&g_neighbours);
+      unlock(&g_environs);
       freeiovec(val);
       return false;
     }
@@ -268,8 +226,8 @@ bool_t apply_hello_court(ip_port_t src, u_int64_t id)
     {
       freeiovec(val);
       debug(D_VOISIN, 1, "apply_hello_court", "id != nval.id");
-      unlock(&g_lock_n);
-      unlock(&g_lock_e);
+      unlock(&g_neighbours);
+      unlock(&g_environs);
       return false;
     }
     freeiovec(val);
@@ -278,7 +236,7 @@ bool_t apply_hello_court(ip_port_t src, u_int64_t id)
   {
     debug(D_VOISIN, 0, "apply_hello_court", "insert new neighbour");
     nval.id = id;
-    remove_map(&src_ivc, g_environs);
+    remove_map(&src_ivc, get_hashmap_from(&g_environs));
   }
 
   rc = clock_gettime(CLOCK_MONOTONIC, &nval.hello);
@@ -288,10 +246,10 @@ bool_t apply_hello_court(ip_port_t src, u_int64_t id)
     return false;
   }
   data_t nval_ivc = {&nval, sizeof(nval)};
-  insert_map(&src_ivc, &nval_ivc, g_neighbours);
+  insert_map(&src_ivc, &nval_ivc, get_hashmap_from(&g_neighbours));
 
-  unlock(&g_lock_n);
-  unlock(&g_lock_e);
+  unlock(&g_neighbours);
+  unlock(&g_environs);
 
   data_t *tlv_hello = hello_long(g_myid, nval.id);
 
@@ -338,16 +296,16 @@ bool_t apply_hello_long(ip_port_t src, u_int64_t id_src, u_int64_t id_dest)
   int rc = 0;
   data_t src_ivc = {&src, sizeof(src)};
   neighbour_t nval = {0};
-  lock(&g_lock_n);
-  lock(&g_lock_e);
-  if (contains_map(&src_ivc, g_neighbours))
+  lock(&g_neighbours);
+  lock(&g_environs);
+  if (contains_map(&src_ivc, get_hashmap_from(&g_neighbours)))
   {
-    data_t *val = get_map(&src_ivc, g_neighbours);
+    data_t *val = get_map(&src_ivc, get_hashmap_from(&g_neighbours));
     if (val == NULL)
     {
       debug(D_VOISIN, 1, "apply_hello_long", "val = NULL");
-      unlock(&g_lock_n);
-      unlock(&g_lock_e);
+      unlock(&g_neighbours);
+      unlock(&g_environs);
       freeiovec(val);
       return false;
     }
@@ -356,8 +314,8 @@ bool_t apply_hello_long(ip_port_t src, u_int64_t id_src, u_int64_t id_dest)
     {
       freeiovec(val);
       debug(D_VOISIN, 1, "apply_hello_long", "id_src != nval.id");
-      unlock(&g_lock_n);
-      unlock(&g_lock_e);
+      unlock(&g_neighbours);
+      unlock(&g_environs);
       return false;
     }
     freeiovec(val);
@@ -366,7 +324,7 @@ bool_t apply_hello_long(ip_port_t src, u_int64_t id_src, u_int64_t id_dest)
   else
   {
     nval.id = id_src;
-    remove_map(&src_ivc, g_environs);
+    remove_map(&src_ivc, get_hashmap_from(&g_environs));
     //debug(D_VOISIN, 0, "apply_hello_long", "insert new neighbor");
   }
 
@@ -378,10 +336,10 @@ bool_t apply_hello_long(ip_port_t src, u_int64_t id_src, u_int64_t id_dest)
   }
   nval.long_hello = nval.hello;
   data_t nval_ivc = {&nval, sizeof(nval)};
-  insert_map(&src_ivc, &nval_ivc, g_neighbours);
+  insert_map(&src_ivc, &nval_ivc, get_hashmap_from(&g_neighbours));
 
-  unlock(&g_lock_n);
-  unlock(&g_lock_e);
+  unlock(&g_neighbours);
+  unlock(&g_environs);
   debug(D_VOISIN, 0, "apply_hello_long", "interprétation effectuée");
   return true;
 }
@@ -466,15 +424,15 @@ bool_t apply_tlv_neighbour(data_t *data, size_t *head_read)
   if (length == 18 /* taille tlv_neighbour */)
   {
     data_t ipport = {data->iov_base + *head_read, 18};
-    lock(&g_lock_n);
-    lock(&g_lock_e);
-    if (!contains_map(&ipport, g_neighbours))
+    lock(&g_neighbours);
+    lock(&g_environs);
+    if (!contains_map(&ipport, get_hashmap_from(&g_neighbours)))
     {
       debug(D_VOISIN, 0, "apply_tlv_neighbour", "insert new neighbour");
-      insert_map(&ipport, &ipport, g_environs);
+      insert_map(&ipport, &ipport, get_hashmap_from(&g_environs));
     }
-    unlock(&g_lock_e);
-    unlock(&g_lock_n);
+    unlock(&g_environs);
+    unlock(&g_neighbours);
     *head_read += length;
     debug(D_VOISIN, 0, "apply_tlv_neighbour", "traitement effectué");
     return true;
@@ -531,17 +489,18 @@ bool_t apply_tlv_goaway(ip_port_t dest, data_t *data, size_t *head_read)
   {
     data_t dest_ivc = {&dest, sizeof(ip_port_t)};
     debug(D_VOISIN, 1, "apply_tlv_goaway -> 1", msg);
-    lock(&g_lock_n);
-    lock(&g_lock_e);
-    if (!remove_map(&dest_ivc, g_neighbours) && !remove_map(&dest_ivc, g_environs))
+    lock(&g_neighbours);
+    lock(&g_environs);
+    if (!remove_map(&dest_ivc, get_hashmap_from(&g_neighbours)) 
+        && !remove_map(&dest_ivc, get_hashmap_from(&g_environs)))
     {
-      unlock(&g_lock_n);
-      unlock(&g_lock_e);
+      unlock(&g_neighbours);
+      unlock(&g_environs);
       free(msg);
       return false;
     }
-    unlock(&g_lock_n);
-    unlock(&g_lock_e);
+    unlock(&g_neighbours);
+    unlock(&g_environs);
     free(msg);
     return true;
   }
@@ -562,7 +521,7 @@ bool_t apply_tlv_goaway(ip_port_t dest, data_t *data, size_t *head_read)
 bool_t is_symetric(ip_port_t ipport)
 {
   struct iovec ipport_iovec = {&ipport, sizeof(ip_port_t)};
-  data_t *value = get_map(&ipport_iovec, g_neighbours);
+  data_t *value = get_map(&ipport_iovec, get_hashmap_from(&g_neighbours));
   if (value != NULL)
   {
     neighbour_t tmp_neighbour = {0};
