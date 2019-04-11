@@ -282,7 +282,6 @@ void read_tlv(ip_port_t dest, data_t *tlvs)
     {
 
         type = ((u_int8_t *)tlvs->iov_base)[head_reader];
-        printf("Type => %d\n", type); // TEST
         if (type >= NB_TLV)
         {
             debug_int(D_READER, 0, "read_tlv -> type inconnu de tlv", type);
