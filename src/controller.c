@@ -102,7 +102,7 @@ void launch_program()
             }
             if (FD_ISSET(g_socket, &writefds))
             {
-                debug(D_CONTROL, 1, "launch_program", "fd_isset en ecriture");
+                debug(D_CONTROL, 0, "launch_program", "fd_isset en ecriture");
                 rc = send_buffer_tlv();
                 if (rc == false)
                 {

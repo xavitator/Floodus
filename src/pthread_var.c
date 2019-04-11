@@ -43,13 +43,3 @@ short unlock(pthread_var_t *g_lock) {
 }
 
 
-/**
- * @brief
- * Renvoie la hasmap d'une variable
- *
- * @param h_var la structure contenant la hashmap
- */
-hashmap_t * get_hasmap_from(pthread_var_t *h_var) {
-  return (hashmap_t *) h_var->content;
-}
-

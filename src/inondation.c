@@ -82,9 +82,9 @@ message_t *create_message(ip_port_t dest, u_int64_t id, uint32_t nonce, uint8_t 
         freeiovec(cont_copy);
         return NULL;
     }
-    lock(&g_lock_n);
-    node_t *neighbour = map_to_list(g_neighbours);
-    unlock(&g_lock_n);
+    lock(&g_neighbours);
+    node_t *neighbour = map_to_list(get_hashmap_from(&g_neighbours));
+    unlock(&g_neighbours);
     node_t *tmp = neighbour;
     while (neighbour != NULL)
     {

@@ -90,6 +90,16 @@ bool_t init_neighbours()
 
 /**
  * @brief
+ * Renvoie la hasmap d'une variable
+ *
+ * @param h_var la structure contenant la hashmap
+ */
+hashmap_t * get_hashmap_from(pthread_var_t *h_var) {
+  return (hashmap_t *) h_var->content;
+}
+
+/**
+ * @brief
  * Deplace les données de la hashmap g_neighbors
  * vers g_environ
  * 
