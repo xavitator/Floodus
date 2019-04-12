@@ -22,13 +22,11 @@ u_int64_t g_myid = 0;
  */
 pthread_var_t g_neighbours = {0};
 
-
 /**
  * @brief 
  * Variable encaspulant une hashmap de voisins potentiels
  */
 pthread_var_t g_environs = {0};
-
 
 /**
  * @brief Instancie l'id du user
@@ -47,14 +45,14 @@ void create_user()
  * Initialise les structures d'encapsulation
  * des hasmaps
  */
-static void init_lockers() {
+static void init_lockers()
+{
   //pthread_mutex_t lock_test = PTHREAD_MUTEX_INITIALIZER;
   pthread_mutex_init(&g_neighbours.locker, NULL);
   g_neighbours.content = NULL;
   pthread_mutex_init(&g_environs.locker, NULL);
   g_environs.content = NULL;
 }
-
 
 /**
  * @brief Initialise les variables globales de voisins et de voisins possibles.
@@ -94,8 +92,9 @@ bool_t init_neighbours()
  *
  * @param h_var la structure contenant la hashmap
  */
-hashmap_t * get_hashmap_from(pthread_var_t *h_var) {
-  return (hashmap_t *) h_var->content;
+hashmap_t *get_hashmap_from(pthread_var_t *h_var)
+{
+  return (hashmap_t *)h_var->content;
 }
 
 /**
@@ -140,7 +139,7 @@ static bool_t inform_neighbor(ip_port_t dest, char *msg)
 {
   int rc;
   data_t tlv_go_away;
-  if(!go_away(&tlv_go_away, 2, (uint8_t *)msg, strlen(msg)))
+  if (!go_away(&tlv_go_away, 2, (uint8_t *)msg, strlen(msg)))
   {
     debug(D_VOISIN, 1, "inform_neighbor", "tlv_go_away = NULL");
     return false;
@@ -213,31 +212,28 @@ bool_t apply_hello_court(ip_port_t src, u_int64_t id)
   int rc = 0;
   data_t src_ivc = {&src, sizeof(ip_port_t)};
   neighbour_t nval = {0};
+  data_t nval_ivc = {&nval, sizeof(neighbour_t)};
 
   lock(&g_neighbours);
   lock(&g_environs);
   if (contains_map(&src_ivc, get_hashmap_from(&g_neighbours)))
   {
     debug(D_VOISIN, 0, "apply_hello_court", "update neighbor");
-    data_t *val = get_map(&src_ivc, get_hashmap_from(&g_neighbours));
-    if (val == NULL)
+    rc = get_map(&src_ivc, &nval_ivc, get_hashmap_from(&g_neighbours));
+    if (!rc)
     {
-      debug(D_VOISIN, 1, "apply_hello_court", "val = NULL");
+      debug(D_VOISIN, 1, "apply_hello_court", "rc == false");
       unlock(&g_neighbours);
       unlock(&g_environs);
-      freeiovec(val);
       return false;
     }
-    memmove(&nval, val->iov_base, sizeof(neighbour_t));
     if (id != nval.id)
     {
-      freeiovec(val);
       debug(D_VOISIN, 1, "apply_hello_court", "id != nval.id");
       unlock(&g_neighbours);
       unlock(&g_environs);
       return false;
     }
-    freeiovec(val);
   }
   else
   {
@@ -252,14 +248,13 @@ bool_t apply_hello_court(ip_port_t src, u_int64_t id)
     debug(D_VOISIN, 1, "apply_hello_court", "clock_gettime wrong");
     return false;
   }
-  data_t nval_ivc = {&nval, sizeof(nval)};
   insert_map(&src_ivc, &nval_ivc, get_hashmap_from(&g_neighbours));
 
   unlock(&g_neighbours);
   unlock(&g_environs);
 
   data_t tlv_hello;
-  if(!hello_long(&tlv_hello, g_myid, nval.id)) 
+  if (!hello_long(&tlv_hello, g_myid, nval.id))
   {
     debug(D_VOISIN, 1, "apply_hello_court", "tlv_hello = NULL");
     return false;
@@ -300,29 +295,26 @@ bool_t apply_hello_long(ip_port_t src, u_int64_t id_src, u_int64_t id_dest)
   int rc = 0;
   data_t src_ivc = {&src, sizeof(src)};
   neighbour_t nval = {0};
+  data_t nval_ivc = {&nval, sizeof(neighbour_t)};
   lock(&g_neighbours);
   lock(&g_environs);
   if (contains_map(&src_ivc, get_hashmap_from(&g_neighbours)))
   {
-    data_t *val = get_map(&src_ivc, get_hashmap_from(&g_neighbours));
-    if (val == NULL)
+    rc = get_map(&src_ivc, &nval_ivc, get_hashmap_from(&g_neighbours));
+    if (!rc)
     {
-      debug(D_VOISIN, 1, "apply_hello_long", "val = NULL");
+      debug(D_VOISIN, 1, "apply_hello_long", "rc == false");
       unlock(&g_neighbours);
       unlock(&g_environs);
-      freeiovec(val);
       return false;
     }
-    memmove(&nval, val->iov_base, sizeof(neighbour_t));
     if (id_src != nval.id)
     {
-      freeiovec(val);
       debug(D_VOISIN, 1, "apply_hello_long", "id_src != nval.id");
       unlock(&g_neighbours);
       unlock(&g_environs);
       return false;
     }
-    freeiovec(val);
   }
   else
   {
@@ -337,7 +329,6 @@ bool_t apply_hello_long(ip_port_t src, u_int64_t id_src, u_int64_t id_dest)
     return false;
   }
   nval.long_hello = nval.hello;
-  data_t nval_ivc = {&nval, sizeof(nval)};
   insert_map(&src_ivc, &nval_ivc, get_hashmap_from(&g_neighbours));
 
   unlock(&g_neighbours);
@@ -486,8 +477,7 @@ bool_t apply_tlv_goaway(ip_port_t dest, data_t *data, size_t *head_read)
     debug(D_VOISIN, 1, "apply_tlv_goaway -> 1", msg);
     lock(&g_neighbours);
     lock(&g_environs);
-    if (!remove_map(&dest_ivc, get_hashmap_from(&g_neighbours)) 
-        && !remove_map(&dest_ivc, get_hashmap_from(&g_environs)))
+    if (!remove_map(&dest_ivc, get_hashmap_from(&g_neighbours)) && !remove_map(&dest_ivc, get_hashmap_from(&g_environs)))
     {
       unlock(&g_neighbours);
       unlock(&g_environs);
@@ -516,19 +506,10 @@ bool_t apply_tlv_goaway(ip_port_t dest, data_t *data, size_t *head_read)
 bool_t is_symetric(ip_port_t ipport)
 {
   struct iovec ipport_iovec = {&ipport, sizeof(ip_port_t)};
-  data_t *value = get_map(&ipport_iovec, get_hashmap_from(&g_neighbours));
-  if (value != NULL)
-  {
-    neighbour_t tmp_neighbour = {0};
-    memmove(&tmp_neighbour, value->iov_base, value->iov_len);
-    if (!is_more_than_two(tmp_neighbour.long_hello))
-    {
-      freeiovec(value);
-      return true;
-    }
-  }
-  freeiovec(value);
-  return false;
+  neighbour_t tmp_n = {0};
+  data_t tmp_n_ivc = {&tmp_n, sizeof(neighbour_t)};
+  int rc = get_map(&ipport_iovec, &tmp_n_ivc, get_hashmap_from(&g_neighbours));
+  return rc && !is_more_than_two(tmp_n.long_hello);
 }
 
 /**

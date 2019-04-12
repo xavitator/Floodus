@@ -69,7 +69,7 @@ hashmap_t *init_map(void)
  * @param map hashmap dans lequel on cherche.
  * @return data_t* renvoie une copie du struct iovec correspondant à la valeur de la key, ou NULL si la key n'existe pas.
  */
-data_t *get_map(data_t *key, hashmap_t *map)
+bool_t get_map(data_t *key, data_t *value, hashmap_t *map)
 {
     if (key == NULL || map == NULL)
     {
@@ -77,13 +77,13 @@ data_t *get_map(data_t *key, hashmap_t *map)
             debug(D_HASHMAP, 1, "get_map", "key est NULL");
         if (map == NULL)
             debug(D_HASHMAP, 1, "get_map", "map est NULL");
-        return NULL;
+        return false;
     }
     ssize_t ind = hash(key);
     if (ind < 0)
     {
         debug(D_HASHMAP, 1, "get_map", "problème de hash");
-        return NULL;
+        return false;
     }
     node_t *p = map->content[ind];
     while (p != NULL && compare_iovec(key, p->key) != 0)
@@ -91,16 +91,16 @@ data_t *get_map(data_t *key, hashmap_t *map)
     if (p == NULL)
     {
         debug(D_HASHMAP, 1, "get_map", "node inexistante");
-        return NULL;
+        return false;
     }
-    data_t *value = copy_iovec(p->value);
-    if (value == NULL)
+    if (p->value->iov_len != value->iov_len)
     {
-        debug(D_HASHMAP, 1, "get_map", "copie de la valeur impossible");
-        return NULL;
+        debug(D_HASHMAP, 1, "get_map", "taille non correspondante");
+        return false;
     }
+    memmove(value->iov_base, p->value->iov_base, value->iov_len);
     debug(D_HASHMAP, 0, "get_map", "renvoie de la valeur");
-    return value;
+    return true;
 }
 
 /**

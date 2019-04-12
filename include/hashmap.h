@@ -41,7 +41,7 @@ typedef struct hashmap_t
 } hashmap_t;
 
 hashmap_t *init_map(void);
-data_t *get_map(data_t *key, hashmap_t *map);
+bool_t get_map(data_t *key, data_t *value, hashmap_t *map);
 bool_t insert_map(data_t *key, data_t *value, hashmap_t *map);
 node_t *deep_copy_node(node_t *node);
 node_t *map_to_list(hashmap_t *map);
