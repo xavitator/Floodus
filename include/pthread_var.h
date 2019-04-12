@@ -7,12 +7,13 @@
 #include <string.h>
 
 #include "debug.h"
+#include "hashmap.h"
 
 #define D_PTHREAD 1
 
 typedef struct pthread_var_t {
   pthread_mutex_t locker; // Mutex pour locker les threads
-  void *content; // La variable contenue
+  hashmap_t *content; // La variable contenue
 } pthread_var_t;
 
 short lock(pthread_var_t *g_lock);

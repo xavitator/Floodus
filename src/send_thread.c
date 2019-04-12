@@ -135,7 +135,7 @@ static void *neighbour_sender(void *unused)
     debug_int(D_SEND_THREAD, 0, "neighbour_sender -> remains", remains);
 
     lock(&g_neighbours);
-    node_t *n_list = map_to_list(get_hashmap_from(&g_neighbours));
+    node_t *n_list = map_to_list(g_neighbours.content);
     unlock(&g_neighbours);
 
     send_neighbours(n_list);
@@ -255,7 +255,7 @@ static void *hello_sender(void *unused)
     debug_int(D_SEND_THREAD, 0, "hello_sender -> remains", remains);
 
     lock(&g_neighbours);
-    node_t *n_list = map_to_list(get_hashmap_from(&g_neighbours));
+    node_t *n_list = map_to_list(g_neighbours.content);
     unlock(&g_neighbours);
 
     count = send_hello_long(n_list);
@@ -265,7 +265,7 @@ static void *hello_sender(void *unused)
     if (count < MIN)
     {
       lock(&g_environs);
-      node_t *e_list = map_to_list(get_hashmap_from(&g_environs));
+      node_t *e_list = map_to_list(g_environs.content);
       unlock(&g_environs);
       count = send_hello_short(e_list, MIN - count);
       freedeepnode(e_list);

@@ -83,7 +83,7 @@ message_t *create_message(ip_port_t dest, u_int64_t id, uint32_t nonce, uint8_t 
         return NULL;
     }
     lock(&g_neighbours);
-    node_t *neighbour = map_to_list(get_hashmap_from(&g_neighbours));
+    node_t *neighbour = map_to_list(g_neighbours.content);
     unlock(&g_neighbours);
     node_t *tmp = neighbour;
     while (neighbour != NULL)
