@@ -47,7 +47,6 @@ void create_user()
  */
 static void init_lockers()
 {
-  //pthread_mutex_t lock_test = PTHREAD_MUTEX_INITIALIZER;
   pthread_mutex_init(&g_neighbours.locker, NULL);
   g_neighbours.content = NULL;
   pthread_mutex_init(&g_environs.locker, NULL);
@@ -116,6 +115,7 @@ static bool_t from_neighbours_to_env(ip_port_t ipport)
   debug(D_VOISIN, 0, "from_neighbour_to_env", "déplacement effectué");
   return true;
 }
+
 
 /**
  * Ajoute un GoAway à la liste des envois

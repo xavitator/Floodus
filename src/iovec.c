@@ -31,7 +31,7 @@ void freeiovec(struct iovec *data)
  * @param data struct iovec à copier
  * @return struct iovec* copie du paramêtre
  */
-struct iovec *copy_iovec(struct iovec *data)
+data_t *copy_iovec(struct iovec *data)
 {
     if (data == NULL)
     {
@@ -65,7 +65,7 @@ struct iovec *copy_iovec(struct iovec *data)
  * @param len taille du contenu
  * @return struct iovec* renvoie NULL si on a un problème de malloc, une struct iovec contenant les arguments sinon.
  */
-struct iovec *create_iovec(void *data, size_t len)
+data_t *create_iovec(void *data, size_t len)
 {
     struct iovec *create = malloc(sizeof(struct iovec));
     memset(create, 0, sizeof(struct iovec));

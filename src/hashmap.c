@@ -13,7 +13,7 @@
  * @param key clé à hacher
  * @return ssize_t résulat de la fonction de hachage. Il peut être négatif si la fonction de hachage n'a pas pu aboutir.
  */
-ssize_t hash(data_t *key)
+static ssize_t hash(data_t *key)
 {
     if (key == NULL)
         return -1;

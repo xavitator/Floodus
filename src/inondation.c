@@ -23,7 +23,7 @@ void freemessage(message_t *msg)
  * 
  * @param msg message dont on libère la mémoire et ses suivants
  */
-void freedeepmessage(message_t *msg)
+static void freedeepmessage(message_t *msg)
 {
     message_t *tmp = msg;
     message_t *tmp2 = msg;
@@ -56,7 +56,7 @@ void free_inondation()
  * @param contentlen taille du message envoyé
  * @return message_t* structure construite avec toutes les données correspondantes
  */
-message_t *create_message(ip_port_t dest, u_int64_t id, uint32_t nonce, uint8_t type, data_t *content)
+static message_t *create_message(ip_port_t dest, u_int64_t id, uint32_t nonce, uint8_t type, data_t *content)
 {
     struct timespec tc = {0};
     int rc = 0;
@@ -166,7 +166,7 @@ static bool_t remove_sender(ip_port_t dest, message_t *tmp)
  * @param nonce nonce du data
  * @return le message s'il le contient NULL sinon
  */
-message_t *contains_message(u_int64_t id, uint32_t nonce)
+static message_t *contains_message(u_int64_t id, uint32_t nonce)
 {
     message_t *tmp = g_floods;
     while (tmp != NULL)
@@ -180,12 +180,12 @@ message_t *contains_message(u_int64_t id, uint32_t nonce)
 }
 
 /**
- * @brief Insert le message dans la liste des messages de telle façon à garder l'odre des messages
+ * @brief Insert le message dans la liste des messages de telle façon à garder l'ordre des messages
  * 
  * @param msg message à insérer
  * @return bool_t '1' si l'insertion a eu lieu, '0' sinon.
  */
-bool_t insert_message(message_t *msg)
+static bool_t insert_message(message_t *msg)
 {
     message_t *child = g_floods;
     message_t *father = child;
@@ -292,7 +292,7 @@ bool_t get_nexttime(struct timespec *tm)
  * @param msg message qui a été inondé
  * @return bool_t '1' si l'envoi s'est bien passé, '0' sinon.
  */
-bool_t flood_goaway(message_t *msg)
+static bool_t flood_goaway(message_t *msg)
 {
     node_t *list = map_to_list(msg->recipient);
     node_t *tmp = list;

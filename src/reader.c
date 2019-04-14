@@ -17,7 +17,7 @@ typedef bool_t (*tlv_function_t)(ip_port_t, data_t *, size_t *);
  * @param head_read tête de lecture de la struct iovec 'data'
  * @return bool_t '1' si la lecture a abouti, et la tête de lecture est déplacé sur le prochain tlv. '0' sinon.
  */
-bool_t tlv_call_pad1(ip_port_t dest, data_t *data, size_t *head_read)
+static bool_t tlv_call_pad1(ip_port_t dest, data_t *data, size_t *head_read)
 {
     debug_hex(D_READER, 0, "tlv_call_pad1", &dest, sizeof(dest));
     if (((u_int8_t *)data->iov_base)[*head_read] != 0)
@@ -38,7 +38,7 @@ bool_t tlv_call_pad1(ip_port_t dest, data_t *data, size_t *head_read)
  * @param head_read tête de lecture de la struct iovec 'data'
  * @return bool_t '1' si la lecture a abouti, et la tête de lecture est déplacé sur le prochain tlv. '0' sinon.
  */
-bool_t tlv_call_padn(ip_port_t dest, data_t *data, size_t *head_read)
+static bool_t tlv_call_padn(ip_port_t dest, data_t *data, size_t *head_read)
 {
     debug_hex(D_READER, 0, "tlv_call_padn", &dest, sizeof(dest));
     if (((u_int8_t *)data->iov_base)[*head_read] != 1)
@@ -66,7 +66,7 @@ bool_t tlv_call_padn(ip_port_t dest, data_t *data, size_t *head_read)
  * @param head_read tête de lecture de la struct iovec 'data'
  * @return bool_t '1' si la lecture a abouti, et la tête de lecture est déplacé sur le prochain tlv. '0' sinon.
  */
-bool_t tlv_call_hello(ip_port_t dest, data_t *data, size_t *head_read)
+static bool_t tlv_call_hello(ip_port_t dest, data_t *data, size_t *head_read)
 {
     debug_hex(D_READER, 0, "tlv_call_hello -> données reçues", data->iov_base, data->iov_len);
     debug_hex(D_READER, 0, "tlv_call_hello", &dest, sizeof(dest));
@@ -274,7 +274,7 @@ tlv_function_t tlv_function_call[NB_TLV] = {
  * @param dest Couple ip-port de celui qui a émis les tlvs reçus
  * @param tlvs tlvs reçus
  */
-void read_tlv(ip_port_t dest, data_t *tlvs)
+static void read_tlv(ip_port_t dest, data_t *tlvs)
 {
     size_t head_reader = 0;
     u_int8_t type = 0;

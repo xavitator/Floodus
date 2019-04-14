@@ -38,7 +38,7 @@
  * En cas de ctrl+c stoppe l'ensemble du
  * programme et free les structures.
  */
-void sig_int(int sig) {
+static void sig_int(int sig) {
   if(sig == SIGINT) {
     stop_program();
   }
@@ -75,6 +75,8 @@ int make_demand(struct addrinfo *p)
         debug(D_MAIN, 1, "make_demand -> apply neighbour", " rc = false");
         return rc;
     }
+    free(hs.iov_base);
+    free(new_neighbour.iov_base);
     return rc;
 }
 
@@ -157,6 +159,7 @@ int main(int argc, char *argv[])
         launch_program();
     free_neighbors();
     destroy_thread();
+    free_inondation();
     clear_all();
     return 0;
 }
