@@ -5,12 +5,13 @@ DOCS = doc/
 INCL = include/
 LIB = lib/
 RES = res/
+COVERAGE = coverage.html/
 
 FILES := $(shell find $(SRCDIR) -name '*.c')
 OBJ:= $(FILES:$(SRCDIR)%.c=$(BIN)%.o)
 
 CC = gcc
-FLAGS = -Wall -Wextra -Werror
+FLAGS = -Wall -Wextra -Werror -fprofile-arcs -ftest-coverage
 LDLIBS = -pthread -D_REENTRANT -lm
 
 .PHONY: all
@@ -30,13 +31,15 @@ $(BIN)%.o: $(SRCDIR)%.c
 clean:
 	@printf "[\e[1;34mEn cours\e[0m] Suppression des binaires\n"
 	@rm -rf $(BIN)
+	@rm -rf $(COVERAGE)
+	@rm -rf coverage.info
 	@printf "[\e[1;32mOK\e[0m] Suppression finie\n"
 
 .PHONY: cleandoc
 cleandoc:
 	@printf "[\e[1;34mEn cours\e[0m] Suppression de la documentation\n"
 	@rm -rf $(DOCS)
-	@printf "[\e[1;32mOK\e[0m] Suppression finie\n"
+	@printf "[\e[1;32m)K\e[0m] Suppression finie\n"
 
 .PHONY: cleanall
 cleanall: clean cleandoc
@@ -56,3 +59,12 @@ zip:
 	@printf "[\e[1;34mEn cours\e[0m] Début du zippage\n"
 	@zip -r $(NAME).zip README Makefile $(SRCDIR) documentation $(LIB) $(RES) $(INCL)
 	@printf "[\e[1;32mOK\e[0m] Zippage finie\n"
+
+.PHONY: coverage
+coverage:
+	@printf "[\e[1;34mEn cours\e[0m] Création du rapport de code coverage\n"
+	@rm -rf coverage coverage.info
+	@lcov -c --directory bin --output-file coverage.info
+	@genhtml coverage.info --output-directory $(COVERAGE)
+	@printf "[\e[1;32mOK\e[0m] Rapport dans coverage\n"
+
