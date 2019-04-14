@@ -14,15 +14,15 @@
  *
  * @param g_lock variable contenant le mutex
  */
-short lock(pthread_var_t *g_lock) {
+bool_t lock(pthread_var_t *g_lock) {
   int rc = 0;
   rc = pthread_mutex_lock(&g_lock->locker);
   if(rc)
   {
     debug(D_PTHREAD, 1, "lock -> rc", strerror(rc));
-    return rc;
+    return false;
   }
-  return rc;
+  return true;
 }
 
 /**
@@ -31,7 +31,7 @@ short lock(pthread_var_t *g_lock) {
  *
  * @param g_lock variable contenant le mutex
  */
-short unlock(pthread_var_t *g_lock) {
+bool_t unlock(pthread_var_t *g_lock) {
   int rc = 0;
   rc = pthread_mutex_unlock(&g_lock->locker);
   if(rc)

@@ -7,6 +7,12 @@
 #include "send_thread.h"
 
 /**
+ * Threads pour hello et voisins
+ */
+static pthread_t th1, th2;
+
+
+/**
  * @brief
  * Donne le temps restant nécessaire au sleep 
  * 
@@ -277,6 +283,18 @@ static void *hello_sender(void *unused)
   pthread_exit(NULL);
 }
 
+
+/**
+ * @brief 
+ * Detruit les threads d'envoi
+ */
+void destroy_thread() {
+  debug(D_SEND_THREAD, 0, "destroy_thread", "destruction des threads");
+  pthread_cancel(th1);
+  pthread_cancel(th2);
+}
+
+
 /**
  * @brief
  * Declenche un nouveau thread d'envoi de Hello
@@ -284,18 +302,17 @@ static void *hello_sender(void *unused)
  *
  * @return si les threads ont été lancés
  */
-short init_sender()
+bool_t init_sender()
 {
-  pthread_t th1, th2;
   if (pthread_create(&th1, NULL, hello_sender, NULL))
   {
     debug(D_SEND_THREAD, 1, "pthread", "Can't initialise thread hello sender");
-    return 0;
+    return false;
   }
   if (pthread_create(&th2, NULL, neighbour_sender, NULL))
   {
     debug(D_SEND_THREAD, 1, "pthread", "Can't initialise thread neighbour sender");
-    return 0;
+    return false;
   }
-  return 1;
+  return true;
 }

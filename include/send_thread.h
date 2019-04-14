@@ -16,6 +16,7 @@
 #define SLEEP_NEIGHBOURS 60
 #define SLEEP_HELLO 30
 
-short init_sender(void);
+bool_t init_sender(void);
+void destroy_thread(void);
 
 #endif // H_SEND_THREAD

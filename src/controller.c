@@ -14,6 +14,20 @@
  */
 u_int32_t g_socket = 1;
 
+
+/**
+ * @brief Permet d'arrêter la boucle proprement
+ */
+static bool_t run = true;
+
+/**
+ * @brief Stop la boucle principal
+ */
+void stop_program(void) {
+  run = false;
+}
+
+
 /**
  * @brief Création de la socket d'écriture et de lecture.
  * On s'occupe de rendre la socket non-bloquante.
@@ -75,7 +89,7 @@ void launch_program()
     int nb_fd = 0;
     struct timespec zero = {0, 0};
     struct timespec tm = {0};
-    while (1)
+    while (1 && run)
     {
         fd_set readfds;
         fd_set writefds;

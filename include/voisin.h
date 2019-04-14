@@ -49,8 +49,6 @@ typedef struct neighbour_t
 extern u_int64_t g_myid;
 extern pthread_var_t g_neighbours;
 extern pthread_var_t g_environs;
-extern pthread_mutex_t g_lock_n;
-extern pthread_mutex_t g_lock_e;
 
 void create_user(void);
 bool_t init_neighbours(void);

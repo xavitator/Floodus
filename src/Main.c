@@ -20,6 +20,7 @@
 #include <time.h>
 #include <sys/stat.h>
 #include <fcntl.h>
+#include <signal.h>
 
 #include "TLV.h"
 #include "debug.h"
@@ -30,6 +31,19 @@
 #include "controller.h"
 
 #define D_MAIN 1
+
+
+/**
+ * @brief
+ * En cas de ctrl+c stoppe l'ensemble du
+ * programme et free les structures.
+ */
+void sig_int(int sig) {
+  if(sig == SIGINT) {
+    stop_program();
+  }
+}
+
 
 /**
  * @brief Envoie de hello court à un destinataire contenu dans un addrinfo
@@ -138,8 +152,11 @@ int main(int argc, char *argv[])
     init_sender();
     init_neighbours();
     rc = send_hello(default_dest, port);
+    signal(SIGINT, sig_int);
     if (rc >= 0)
         launch_program();
     free_neighbors();
+    destroy_thread();
+    clear_all();
     return 0;
 }

@@ -51,6 +51,7 @@ void unlock_buff() {
  */
 void clear_all()
 {
+  debug(D_WRITER, 0, "clear_all", "clear buffer");
     lock_buff(&g_lock_buff);
     buffer_node_t *tmp = NULL;
     while (g_write_buf != NULL)

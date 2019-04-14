@@ -16,7 +16,7 @@ typedef struct pthread_var_t {
   hashmap_t *content; // La variable contenue
 } pthread_var_t;
 
-short lock(pthread_var_t *g_lock);
-short unlock(pthread_var_t *g_lock);
+bool_t lock(pthread_var_t *g_lock);
+bool_t unlock(pthread_var_t *g_lock);
 
 #endif // PTHREAD_VAR_H
