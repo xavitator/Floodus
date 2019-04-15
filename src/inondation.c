@@ -210,12 +210,11 @@ static bool_t insert_message(message_t *msg)
 /**
  * @brief Traitement d'un tlv data, et ajout d'une node d'inondation en cas de besoin.
  * 
- * @param sender couple ip-port de celui qui a envoyé le tlv data
+ * @param dest couple ip-port de celui qui a envoyé le tlv data
  * @param id sender_id du message
  * @param nonce nonce du message
  * @param type type du message
- * @param content contenu du message
- * @param contentlen taille du contenu
+ * @param content struct iovec contenant le message et sa taille
  * @return bool_t '1' si le traitement a bien été fait, '0' sinon.
  */
 bool_t add_message(ip_port_t dest, u_int64_t id, uint32_t nonce, uint8_t type, data_t *content)
@@ -328,9 +327,9 @@ bool_t flood_message(message_t *msg)
     node_t *list = map_to_list(msg->recipient);
     node_t *tmp = list;
     int rc = 0;
-    data_t tlv =  {0};
-    if(!data(&tlv, msg->id, msg->nonce, msg->type,
-          (uint8_t *)msg->content->iov_base, msg->content->iov_len))
+    data_t tlv = {0};
+    if (!data(&tlv, msg->id, msg->nonce, msg->type,
+              (uint8_t *)msg->content->iov_base, msg->content->iov_len))
     {
         debug(D_INOND, 1, "flood_message", "erreur data");
         return false;
@@ -425,7 +424,7 @@ static void print_tlv(uint8_t type, data_t content)
 static bool_t send_ack(ip_port_t dest, uint64_t sender_id, u_int32_t nonce)
 {
     data_t ack_iovec = {0};
-    if(!ack(&ack_iovec, sender_id, nonce))
+    if (!ack(&ack_iovec, sender_id, nonce))
     {
         debug(D_INOND, 1, "send_ack", "problème d'envoi de l'acquitement");
         return false;
@@ -444,6 +443,7 @@ static bool_t send_ack(ip_port_t dest, uint64_t sender_id, u_int32_t nonce)
  * @brief Fonction qui vient faire l'action correspondante à un data pour l'inondation.
  * Si la lecture du tlv s'est bien passé, le champs 'head_read' sera modifié pour pointer vers le tlv suivant.
  * 
+ * @param dest couple ip-port correspondant à la source du tlv
  * @param data Structure iovec contenant une suite de tlv.
  * @param head_read tête de lecture sur le tableau contenu dans la struct iovec.
  * @return bool_t renvoie '1' si tout s'est bien passé, '0' si on a rien fait ou s'il y a eu un problème.
@@ -500,6 +500,7 @@ bool_t apply_tlv_data(ip_port_t dest, data_t *data, size_t *head_read)
  * @brief Fonction qui vient faire l'action correspondante à un ack pour l'inondation.
  * Si la lecture du tlv s'est bien passé, le champs 'head_read' sera modifié pour pointer vers le tlv suivant.
  * 
+ * @param dest couple ip-port correspondant à la source du tlv
  * @param data Structure iovec contenant une suite de tlv.
  * @param head_read tête de lecture sur le tableau contenu dans la struct iovec.
  * @return bool_t renvoie '1' si tout s'est bien passé, '0' si on a rien fait ou s'il y a eu un problème.

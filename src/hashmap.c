@@ -66,8 +66,9 @@ hashmap_t *init_map(void)
  * @brief On récupère la valeur associée à 'key'
  * 
  * @param key clé de la valeur recherchée
+ * @param value data qu'on remplie avec la valeur contenu dans la hashmap
  * @param map hashmap dans lequel on cherche.
- * @return data_t* renvoie une copie du struct iovec correspondant à la valeur de la key, ou NULL si la key n'existe pas.
+ * @return bool_t Remplie 'value' avec la valeur trouvée et renvoie '1', '0' si la key n'existe pas.
  */
 bool_t get_map(data_t *key, data_t *value, hashmap_t *map)
 {

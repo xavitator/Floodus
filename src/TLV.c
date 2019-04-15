@@ -15,6 +15,9 @@ static void error(char *obj)
 
 /**
  * @brief Créer une struct iovec pour PDA1
+ * 
+ * @param pad struct iovec à remplir
+ * @return bool_t '1' si le remplissage s'est bien passé, '0' sinon.
  */
 bool_t pad1(data_t *pad)
 {
@@ -41,7 +44,9 @@ bool_t pad1(data_t *pad)
 /**
  * @brief Créer une struct iovec pour PDAN
  *
- * @param La taille du N, en cas de dépassement 253
+ * @param pad struct iovec à remplir
+ * @param N La taille dans le PADN, en cas de dépassement 253
+ * @return bool_t '1' si le remplissage s'est bien passé, '0' sinon.
  */
 bool_t pad_n(data_t *pad, uint8_t N)
 {
@@ -70,7 +75,9 @@ bool_t pad_n(data_t *pad, uint8_t N)
 /**
  * @brief Construit un TLV Hello Court
  *
- * @param source_id l'id de 64 bits de l'émetteur 
+ * @param hello struct iovec à remplir
+ * @param sender_id l'id de 64 bits de l'émetteur 
+ * @return bool_t '1' si le remplissage s'est bien passé, '0' sinon.
  */
 bool_t hello_short(data_t *hello, uint64_t sender_id)
 {
@@ -100,8 +107,10 @@ bool_t hello_short(data_t *hello, uint64_t sender_id)
 /**
  * @brief Construit un TLV Hello Long
  *
- * @param source_id l'id de 64 bits de l'émetteur
+ * @param hello struct iovec à remplir
+ * @param sender_id l'id de 64 bits de l'émetteur
  * @param id l'id de 64 bits du destinataire
+ * @return bool_t '1' si le remplissage s'est bien passé, '0' sinon.
  */
 bool_t hello_long(data_t *hello, uint64_t sender_id, uint64_t id)
 {
@@ -132,10 +141,12 @@ bool_t hello_long(data_t *hello, uint64_t sender_id, uint64_t id)
 /**
  * @brief Construit un Neighbour
  *
- * @param ip l'ip à partager
+ * @param neighbour_i struct iovec à remplir
+ * @param source_ip l'ip à partager
  * @param port le port de l'ip
+ * @return bool_t '1' si le remplissage s'est bien passé, '0' sinon.
  */
-bool_t neighbour(data_t* neighbour_i, uint8_t source_ip[16], uint16_t port)
+bool_t neighbour(data_t *neighbour_i, uint8_t source_ip[16], uint16_t port)
 {
   if (neighbour_i == NULL)
   {
@@ -164,14 +175,16 @@ bool_t neighbour(data_t* neighbour_i, uint8_t source_ip[16], uint16_t port)
 /**
  * @brief Construit un acquitement pour une data
  *
+ * @param data_i struct iovec à remplir
  * @param sender_id l'id de  l'émetteur
  * @param nonce l'apax pour l'identification
  * @param type le type de message (0)
  * @param msg_length la taille du message, prend le min avec 240
  * @param msg le message à envoyer
+ * @return bool_t '1' si le remplissage s'est bien passé, '0' sinon.
  */
-bool_t data(data_t *data_i,uint64_t sender_id, uint32_t nonce,
-    uint8_t type, uint8_t *msg, uint8_t msg_length)
+bool_t data(data_t *data_i, uint64_t sender_id, uint32_t nonce,
+            uint8_t type, uint8_t *msg, uint8_t msg_length)
 {
   if (data_i == NULL)
   {
@@ -202,10 +215,12 @@ bool_t data(data_t *data_i,uint64_t sender_id, uint32_t nonce,
 /**
  * @brief Construit un acquitement pour une data
  *
+ * @param ack_i struct iovec à remplir
  * @param sender_id l'id de l'envoyeur (copie)
  * @param nonce l'apax pour l'acquitement (copie)
+ * @return bool_t '1' si le remplissage s'est bien passé, '0' sinon.
  */
-bool_t ack(data_t * ack_i, uint64_t sender_id, uint32_t nonce)
+bool_t ack(data_t *ack_i, uint64_t sender_id, uint32_t nonce)
 {
   if (ack_i == NULL)
   {
@@ -234,11 +249,13 @@ bool_t ack(data_t * ack_i, uint64_t sender_id, uint32_t nonce)
 /**
  * @brief Construit un TLV go away
  *
+ * @param go_away_i struct iovec à remplir
  * @param code la raison du go away
  * @param msg_length la taille du message, prend le min entre msg_length et 252
  * @param msg le message à joindre
+ * @return bool_t '1' si le remplissage s'est bien passé, '0' sinon.
  */
-bool_t go_away(data_t * go_away_i, uint8_t code, uint8_t *msg, uint8_t msg_length)
+bool_t go_away(data_t *go_away_i, uint8_t code, uint8_t *msg, uint8_t msg_length)
 {
   if (go_away_i == NULL)
   {
@@ -267,8 +284,10 @@ bool_t go_away(data_t * go_away_i, uint8_t code, uint8_t *msg, uint8_t msg_lengt
 /**
  * @brief Construit un TLV de warning
  *
+ * @param warning_i struct iovec à remplir
  * @param msg_length la taille du message, prend le min entre msg_length et 253
  * @param msg le message
+ * @return bool_t '1' si le remplissage s'est bien passé, '0' sinon.
  */
 bool_t warning(data_t *warning_i, uint8_t *msg, uint8_t msg_length)
 {
