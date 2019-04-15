@@ -28,6 +28,10 @@ tmp/
 # executable
 floodus
 
+# coverage's files
+coverage.info
+coverage.html/
+
 # Shared objects (inc. Windows DLLs)
 *.dll
 *.so

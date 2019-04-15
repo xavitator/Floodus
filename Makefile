@@ -39,7 +39,7 @@ clean:
 cleandoc:
 	@printf "[\e[1;34mEn cours\e[0m] Suppression de la documentation\n"
 	@rm -rf $(DOCS)
-	@printf "[\e[1;32m)K\e[0m] Suppression finie\n"
+	@printf "[\e[1;32mOK\e[0m] Suppression finie\n"
 
 .PHONY: cleanall
 cleanall: clean cleandoc
