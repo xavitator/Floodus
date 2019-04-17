@@ -15,8 +15,8 @@
 
 typedef struct iovec data_t;
 
-data_t  *create_iovec(void *content, size_t content_len);
 void freeiovec(data_t *data);
+data_t  *create_iovec(void *content, size_t content_len);
 data_t *copy_iovec(data_t *data);
 int compare_iovec(data_t *data1, data_t *data2);
 void print_iovec(data_t *data);
