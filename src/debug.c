@@ -50,15 +50,15 @@ void debug_and_exit(uint8_t flag, uint8_t error, char *name, const char *msg, in
  * @param error permet de marquer une erreur
  * @param name le nom de la requête
  * @param data le tableau d'octets
- * @param length la taille des données
+ * @param data_len la taille des données
  */
-void debug_hex(uint8_t flag, uint8_t error, char *name, void *data, int length)
+void debug_hex(uint8_t flag, uint8_t error, char *name, void *data, int data_len)
 {
   char *d = (error) ? "\e[1;31m[DEBUG]\e[0m" : "\e[1;32m[DEBUG]\e[0m";
   if (DEBUG && flag)
   {
     fprintf(stderr, "%s Hexa %s : ", d, name);
-    for (int i = 0; i < length; i++)
+    for (int i = 0; i < data_len; i++)
     {
       fprintf(stderr, "%.2x ", ((uint8_t *)data)[i]);
     }
@@ -73,16 +73,16 @@ void debug_hex(uint8_t flag, uint8_t error, char *name, void *data, int length)
  * @param error permet de marquer une erreur 
  * @param name le nom de la requête
  * @param data le tableau d'octets
- * @param length la taille des données
+ * @param data_len la taille des données
  * @param exit_code le code d'erreur
  */
-void debug_hex_and_exit(uint8_t flag, uint8_t error, char *name, void *data, int length, int exit_code)
+void debug_hex_and_exit(uint8_t flag, uint8_t error, char *name, void *data, int data_len, int exit_code)
 {
   char *d = (error) ? "\e[1;31m[DEBUG]\e[0m" : "\e[1;32m[DEBUG]\e[0m";
   if (DEBUG && flag)
   {
     fprintf(stderr, "%s Hexa %s : ", d, name);
-    for (int i = 0; i < length; i++)
+    for (int i = 0; i < data_len; i++)
     {
       fprintf(stderr, "%.2x ", ((uint8_t *)data)[i]);
     }
