@@ -62,7 +62,7 @@ static void initializer(void)
  */
 static void finisher(void)
 {
-    free_neighbors();
+    free_neighbours();
     destroy_thread();
     free_inondation();
     free_writer();

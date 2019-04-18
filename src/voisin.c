@@ -73,7 +73,8 @@ bool_t init_neighbours()
 {
   int rc = 0;
   rc = init_lockers();
-  if(!rc){
+  if (!rc)
+  {
     debug(D_VOISIN, 1, "init_neighbours", "non init des lockers");
     return false;
   }
@@ -83,7 +84,7 @@ bool_t init_neighbours()
   if (g_neighbours.content == NULL)
   {
     unlock(&g_neighbours);
-    debug(D_VOISIN, 1, "init_neighbors", "neighbors = NULL");
+    debug(D_VOISIN, 1, "init_neighbours", "neighbours = NULL");
     return false;
   }
   unlock(&g_neighbours);
@@ -92,20 +93,20 @@ bool_t init_neighbours()
   if (g_environs.content == NULL)
   {
     lock(&g_neighbours);
-    debug(D_VOISIN, 1, "init_neighbors", "environs = NULL");
+    debug(D_VOISIN, 1, "init_neighbours", "environs = NULL");
     freehashmap(g_neighbours.content);
     unlock(&g_neighbours);
     unlock(&g_environs);
     return false;
   }
   unlock(&g_environs);
-  debug(D_VOISIN, 0, "init_neighbors", "init all environments");
+  debug(D_VOISIN, 0, "init_neighbours", "init all environments");
   return true;
 }
 
 /**
  * @brief
- * Deplace les données de la hashmap g_neighbors
+ * Deplace les données de la hashmap g_neighbours
  * vers g_environ
  * 
  * @param ipport l'adresse à déplacer dans la hashmap
@@ -190,7 +191,7 @@ bool_t update_neighbours(node_t *node, char *msg)
  * @brief On libère l'espace mémoire utilisé pour la gestion des voisins
  * 
  */
-void free_neighbors()
+void free_neighbours()
 {
   lock(&g_neighbours);
   freehashmap(g_neighbours.content);
@@ -198,7 +199,7 @@ void free_neighbors()
   lock(&g_environs);
   freehashmap(g_environs.content);
   unlock(&g_environs);
-  debug(D_VOISIN, 0, "free_neighbors", "free env");
+  debug(D_VOISIN, 0, "free_neighbours", "free env");
 }
 
 /**

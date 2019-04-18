@@ -1,7 +1,7 @@
 /**
  * @file send_thread.c Fichier source de send_thread
  * @author Floodus
- * @brief PThread envoyant des Hello et neighbors
+ * @brief PThread envoyant des Hello et neighbours
  */
 
 #include "send_thread.h"
