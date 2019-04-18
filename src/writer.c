@@ -36,22 +36,23 @@ buffer_node_t *g_write_buf = NULL;
  */
 pthread_mutex_t g_lock_buff = PTHREAD_MUTEX_INITIALIZER;
 
-
-void lock_buff() {
-  pthread_mutex_lock(&g_lock_buff);
+void lock_buff()
+{
+    pthread_mutex_lock(&g_lock_buff);
 }
 
-void unlock_buff() {
-  pthread_mutex_unlock(&g_lock_buff);
+void unlock_buff()
+{
+    pthread_mutex_unlock(&g_lock_buff);
 }
 
 /**
  * @brief On nettoie le buffer (on le free)
  * 
  */
-void clear_all()
+void free_writer()
 {
-  debug(D_WRITER, 0, "clear_all", "clear buffer");
+    debug(D_WRITER, 0, "free_writer", "clear buffer");
     lock_buff(&g_lock_buff);
     buffer_node_t *tmp = NULL;
     while (g_write_buf != NULL)

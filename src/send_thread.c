@@ -9,8 +9,7 @@
 /**
  * Threads pour hello et voisins
  */
-static pthread_t th1, th2;
-
+static pthread_t th1 = {0}, th2 = {0};
 
 /**
  * @brief
@@ -61,7 +60,7 @@ static bool_t send_neighbour(ip_port_t *dest, node_t *n_list)
         dest->port != ipport.port)
     {
       data_t tlv_neighbour;
-      if(!neighbour(&tlv_neighbour, ipport.ipv6, ipport.port))
+      if (!neighbour(&tlv_neighbour, ipport.ipv6, ipport.port))
       {
         debug(D_SEND_THREAD, 1, "send_neighbour", "creation de tlv_neighbour impossible");
         node = node->next;
@@ -76,7 +75,7 @@ static bool_t send_neighbour(ip_port_t *dest, node_t *n_list)
         error = true;
         continue;
       }
-     }
+    }
     node = node->next;
   }
   return (error) ? false : true;
@@ -112,7 +111,7 @@ static bool_t send_neighbours(node_t *n_list)
     }
     node = node->next;
   }
- return (error) ? false : true;
+  return (error) ? false : true;
 }
 
 /**
@@ -169,15 +168,15 @@ static int send_hello_short(node_t *e_list, int nb)
     memmove(&ipport, node->value->iov_base, sizeof(ip_port_t));
 
     data_t tlv_hello = {0};
-    if(!hello_short(&tlv_hello, g_myid))
+    if (!hello_short(&tlv_hello, g_myid))
     {
       debug(D_SEND_THREAD, 1, "send_hello_short", "tlv_hello = NULL");
       node = node->next;
       continue;
     }
-  
+
     rc = add_tlv(ipport, &tlv_hello);
-       if (!rc)
+    if (!rc)
     {
       debug_int(D_SEND_THREAD, 1, "send_hello_short -> rc", rc);
       node = node->next;
@@ -208,7 +207,7 @@ static int send_hello_long(node_t *n_list)
     memmove(&ipport, node->key->iov_base, sizeof(ip_port_t));
 
     data_t tlv_hello = {0};
-    if(!hello_long(&tlv_hello, g_myid, content.id))
+    if (!hello_long(&tlv_hello, g_myid, content.id))
     {
       debug(D_SEND_THREAD, 1, "send_hello_long", "tlv_hello = NULL");
       no_send++;
@@ -283,17 +282,16 @@ static void *hello_sender(void *unused)
   pthread_exit(NULL);
 }
 
-
 /**
  * @brief 
  * Detruit les threads d'envoi
  */
-void destroy_thread() {
+void destroy_thread()
+{
   debug(D_SEND_THREAD, 0, "destroy_thread", "destruction des threads");
   pthread_cancel(th1);
   pthread_cancel(th2);
 }
-
 
 /**
  * @brief
@@ -311,6 +309,7 @@ bool_t init_sender()
   }
   if (pthread_create(&th2, NULL, neighbour_sender, NULL))
   {
+    pthread_cancel(th1);
     debug(D_SEND_THREAD, 1, "pthread", "Can't initialise thread neighbour sender");
     return false;
   }

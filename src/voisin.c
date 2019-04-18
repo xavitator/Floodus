@@ -45,12 +45,23 @@ void create_user()
  * Initialise les structures d'encapsulation
  * des hasmaps
  */
-static void init_lockers()
+static bool_t init_lockers()
 {
-  pthread_mutex_init(&g_neighbours.locker, NULL);
+  int rc = pthread_mutex_init(&g_neighbours.locker, NULL);
+  if (rc)
+  {
+    debug(D_VOISIN, 1, "init_lockers -> neighbours", strerror(errno));
+    return false;
+  }
   g_neighbours.content = NULL;
-  pthread_mutex_init(&g_environs.locker, NULL);
+  rc = pthread_mutex_init(&g_environs.locker, NULL);
+  if (rc)
+  {
+    debug(D_VOISIN, 1, "init_lockers -> environs", strerror(errno));
+    return false;
+  }
   g_environs.content = NULL;
+  return true;
 }
 
 /**
@@ -60,12 +71,18 @@ static void init_lockers()
  */
 bool_t init_neighbours()
 {
-  init_lockers();
+  int rc = 0;
+  rc = init_lockers();
+  if(!rc){
+    debug(D_VOISIN, 1, "init_neighbours", "non init des lockers");
+    return false;
+  }
   create_user();
   lock(&g_neighbours);
   g_neighbours.content = init_map();
   if (g_neighbours.content == NULL)
   {
+    unlock(&g_neighbours);
     debug(D_VOISIN, 1, "init_neighbors", "neighbors = NULL");
     return false;
   }
@@ -78,6 +95,7 @@ bool_t init_neighbours()
     debug(D_VOISIN, 1, "init_neighbors", "environs = NULL");
     freehashmap(g_neighbours.content);
     unlock(&g_neighbours);
+    unlock(&g_environs);
     return false;
   }
   unlock(&g_environs);
@@ -115,7 +133,6 @@ static bool_t from_neighbours_to_env(ip_port_t ipport)
   debug(D_VOISIN, 0, "from_neighbour_to_env", "déplacement effectué");
   return true;
 }
-
 
 /**
  * Ajoute un GoAway à la liste des envois

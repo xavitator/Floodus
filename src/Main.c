@@ -32,18 +32,41 @@
 
 #define D_MAIN 1
 
-
 /**
  * @brief
  * En cas de ctrl+c stoppe l'ensemble du
  * programme et free les structures.
  */
-static void sig_int(int sig) {
-  if(sig == SIGINT) {
-    stop_program();
-  }
+static void sig_int(int sig)
+{
+    if (sig == SIGINT)
+    {
+        stop_program();
+    }
 }
 
+/**
+ * @brief Fonction initialisant tout.
+ * 
+ */
+static void initializer(void)
+{
+    init_sender();
+    init_neighbours();
+    signal(SIGINT, sig_int);
+}
+
+/**
+ * @brief Fonction faisant le ménage à la fin du programme.
+ * 
+ */
+static void finisher(void)
+{
+    free_neighbors();
+    destroy_thread();
+    free_inondation();
+    free_writer();
+}
 
 /**
  * @brief Envoie de hello court à un destinataire contenu dans un addrinfo
@@ -54,34 +77,35 @@ static void sig_int(int sig) {
 int make_demand(struct addrinfo *p)
 {
     data_t hs = {0};
-    if(!hello_short(&hs, g_myid))
+    if (!hello_short(&hs, g_myid))
     {
-      debug(D_MAIN, 1, "make_demand -> new_neighbour", "hs erreur");
-      return 0;
+        debug(D_MAIN, 1, "make_demand -> new_neighbour", "hs erreur");
+        return 0;
     }
     ip_port_t ipport = {0};
     ipport.port = ((struct sockaddr_in6 *)p->ai_addr)->sin6_port;
     memmove(ipport.ipv6, &((struct sockaddr_in6 *)p->ai_addr)->sin6_addr, sizeof(ipport.ipv6));
     int rc = send_tlv(ipport, &hs, 1);
-    
+
     data_t new_neighbour = {0};
-    if(!neighbour(&new_neighbour, ipport.ipv6, ipport.port)) {
+    if (!neighbour(&new_neighbour, ipport.ipv6, ipport.port))
+    {
         debug(D_MAIN, 1, "make_demand -> new_neighbour", " new = NULL");
+        free(hs.iov_base);
         return 0;
     }
     size_t head = 1;
     rc = apply_tlv_neighbour(&new_neighbour, &head);
-    if (rc == false) {
+    if (rc == false)
         debug(D_MAIN, 1, "make_demand -> apply neighbour", " rc = false");
-        return rc;
-    }
+
     free(hs.iov_base);
     free(new_neighbour.iov_base);
     return rc;
 }
 
 /**
- * @brief On récupère toutes les infos via getaddrinfo sur la destination et le port passé en arguments.
+ * @brief On récupère toutes les infos via getaddrinfo sur la destination et le port passés en arguments.
  * 
  * @param dest nom dns de la destination
  * @param port port de la destination
@@ -151,15 +175,10 @@ int main(int argc, char *argv[])
         printf("Main : Problème de connexion");
         exit(1);
     }
-    init_sender();
-    init_neighbours();
+    initializer();
     rc = send_hello(default_dest, port);
-    signal(SIGINT, sig_int);
     if (rc >= 0)
         launch_program();
-    free_neighbors();
-    destroy_thread();
-    free_inondation();
-    clear_all();
+    finisher();
     return 0;
 }
