@@ -52,8 +52,9 @@ extern pthread_var_t g_environs;
 
 void create_user(void);
 bool_t init_neighbours(void);
-bool_t update_neighbours(node_t *node, char *msg); 
+bool_t update_neighbours(node_t *node,int code,char *msg); 
 void free_neighbours(void);
+void leave_network();
 bool_t apply_tlv_hello(ip_port_t src, data_t *data, size_t *head_read);
 bool_t apply_tlv_neighbour(data_t *data, size_t *head_read);
 bool_t apply_tlv_goaway(ip_port_t src, data_t *data, size_t *head_read); 
