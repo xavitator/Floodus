@@ -62,10 +62,14 @@ static void initializer(void)
  */
 static void finisher(void)
 {
-    free_neighbours();
-    destroy_thread();
-    free_inondation();
-    free_writer();
+  leave_network();
+  while(!buffer_is_empty()) {
+    send_buffer_tlv();
+  }
+  free_neighbours();
+  destroy_thread();
+  free_inondation();
+  free_writer();
 }
 
 /**

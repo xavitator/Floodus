@@ -99,7 +99,7 @@ static bool_t send_neighbours(node_t *n_list)
     neighbour_t content = {0};
     memmove(&ipport, node->key->iov_base, sizeof(ip_port_t));
     memmove(&content, node->value->iov_base, sizeof(neighbour_t));
-    if (is_more_than_two(content.hello) && !update_neighbours(node, "time out hello"))
+    if (is_more_than_two(content.hello) && !update_neighbours(node, 2, "time out hello"))
     {
       debug(D_SEND_THREAD, 1, "send_neighbour", "error with go_away");
       error = true;

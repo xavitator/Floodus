@@ -283,6 +283,7 @@ bool_t get_nexttime(struct timespec *tm)
         tm->tv_sec = diff_sec;
     }
     return true;
+
 }
 
 /**
@@ -300,7 +301,7 @@ static bool_t flood_goaway(message_t *msg)
     snprintf(message, strlen(message) + 1, "L'utilisateur n'a pas acquité le message [%8.lx,%4.x]", msg->id, msg->nonce);
     while (tmp != NULL)
     {
-        if (update_neighbours(tmp, message) == false)
+      if (update_neighbours(tmp,2, message) == false)
             no_error = false;
         tmp = tmp->next;
     }
