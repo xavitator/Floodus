@@ -197,7 +197,7 @@ static int send_hello_short(node_t *e_list, int nb)
  */
 static int send_hello_long(node_t *n_list)
 {
-  int rc = 0, count = 0, no_send = 0;
+  int rc = 0, count = 0, no_send = 0, away = 0;
   node_t *node = n_list;
   while (node != NULL)
   {
@@ -205,7 +205,13 @@ static int send_hello_long(node_t *n_list)
     neighbour_t content = {0};
     memmove(&content, node->value->iov_base, sizeof(neighbour_t));
     memmove(&ipport, node->key->iov_base, sizeof(ip_port_t));
-
+    if (is_more_than_two(content.hello) && !update_neighbours(node, 2, "time out hello"))
+    {
+      debug(D_SEND_THREAD, 1, "send_hello_long", "voisin non symétrique");
+      away++;
+      node = node->next;
+      continue;
+    }
     data_t tlv_hello = {0};
     if (!hello_long(&tlv_hello, g_myid, content.id))
     {
@@ -226,6 +232,8 @@ static int send_hello_long(node_t *n_list)
     count++;
     node = node->next;
   }
+  if (away > 0)
+    debug_int(D_SEND_THREAD, 1, "send_hello_long -> go_away envoyé", away);
   if (no_send > 0)
     debug_int(D_SEND_THREAD, 1, "send_hello_long -> non envoyé", no_send);
   debug_int(D_SEND_THREAD, 0, "send_hello_long -> envoyé", count);
