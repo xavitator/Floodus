@@ -9,8 +9,6 @@
 
 #define MAX_PER_TLV 1000
 
-extern pthread_mutex_t g_lock_buff;
-
 void free_writer(void);
 bool_t send_tlv(ip_port_t dest, data_t *tlvs, size_t tlvs_len);
 bool_t add_tlv(ip_port_t dest, data_t *tlv);
