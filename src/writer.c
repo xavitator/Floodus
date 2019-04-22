@@ -217,7 +217,7 @@ static bool_t can_add_tlv(ip_port_t dest, data_t *tlv, buffer_node_t *node)
  * @param tlv tlv à envoyer
  * @return bool_t '1' si la node a été ajouté, '0' sinon.
  */
-static bool_t add_next_node(node_t *father, ip_port_t dest, data_t *tlv)
+static bool_t add_next_node(buffer_node_t *father, ip_port_t dest, data_t *tlv)
 {
     buffer_node_t *next_node = malloc(sizeof(buffer_node_t));
     if (next_node == NULL)
