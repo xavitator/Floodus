@@ -32,17 +32,24 @@ pthread_var_t g_environs = {0};
  * @brief Instancie l'id du user
  * 
  */
-void create_user()
+static bool_t create_user()
 {
   int fd, rc;
   fd = open("/dev/random", O_RDONLY);
   if (fd < 0)
-    exit(1);
+  {
+    debug(D_VOISIN, 1, "create_user", "impossible d'ouvrir le fichier random");
+    return false;
+  }
   rc = read(fd, &g_myid, 8);
-  if(rc < 0)
-    exit(1);
+  if (rc < 0)
+  {
+    debug(D_VOISIN, 1, "create_user", "impossible de lire le fichier random");
+    return false;
+  }
   close(fd);
   debug_hex(D_VOISIN, 0, "create_user -> id", &g_myid, sizeof(g_myid));
+  return true;
 }
 
 /**
@@ -82,7 +89,12 @@ bool_t init_neighbours()
     debug(D_VOISIN, 1, "init_neighbours", "non init des lockers");
     return false;
   }
-  create_user();
+  rc = create_user();
+  if (!rc)
+  {
+    debug(D_VOISIN, 1, "init_neighbours", "non création du user");
+    return false;
+  }
   lock(&g_neighbours);
   g_neighbours.content = init_map();
   if (g_neighbours.content == NULL)
@@ -130,6 +142,9 @@ static bool_t from_neighbours_to_env(ip_port_t ipport)
   lock(&g_neighbours);
   if (remove_map(&ipport_ivc, g_neighbours.content) == false)
   {
+    lock(&g_environs);
+    remove_map(&ipport_ivc, g_environs.content);
+    unlock(&g_environs);
     unlock(&g_neighbours);
     debug(D_VOISIN, 1, "from_neighbour_to_env", "suppression de g_neighbours non effectuée");
     return false;
@@ -143,20 +158,20 @@ static bool_t from_neighbours_to_env(ip_port_t ipport)
  * Ajoute un GoAway à la liste des envois
  * 
  * @param dest l'adresse à laquelle envoyer le goaway
+ * @param code code du tlv go_away
  * @param msg le message à envoyer
  * @return true si le tlv go_away a été envoyé
  */
 static bool_t inform_neighbor(ip_port_t dest, int code, char *msg)
 {
-  int rc;
-  data_t tlv_go_away;
+  data_t tlv_go_away = {0};
   if (!go_away(&tlv_go_away, code, (uint8_t *)msg, strlen(msg)))
   {
     debug(D_VOISIN, 1, "inform_neighbor", "tlv_go_away = NULL");
     return false;
   }
-  rc = add_tlv(dest, &tlv_go_away);
-  if (rc == false)
+  int rc = add_tlv(dest, &tlv_go_away);
+  if (!rc)
   {
     debug_int(D_VOISIN, 1, "inform_neighbor -> rc", rc);
   }
@@ -170,6 +185,7 @@ static bool_t inform_neighbor(ip_port_t dest, int code, char *msg)
  * go away.
  * 
  * @param node le node à tester 
+ * @param code code d'envoi du tlv go_away
  * @param msg le message à envoyer
  * @return true en cas de succès
  */
@@ -177,12 +193,12 @@ bool_t update_neighbours(node_t *node, int code, char *msg)
 {
   ip_port_t ipport = {0};
   memmove(&ipport, node->key->iov_base, sizeof(ip_port_t));
-  if (from_neighbours_to_env(ipport) == false)
+  if (!from_neighbours_to_env(ipport))
   {
     debug(D_VOISIN, 1, "update_neighbours", "voisin non déplacé");
     return false;
   }
-  if (inform_neighbor(ipport,code, msg) == false)
+  if (!inform_neighbor(ipport, code, msg))
   {
     debug(D_VOISIN, 1, "update_neighbours", "voisin non informé");
     return false;
@@ -215,7 +231,7 @@ void free_neighbours()
  * @param id id contenu dans le message hello court
  * @return bool_t '1' si tout s'est bien passé, '0' sinon.
  */
-bool_t apply_hello_court(ip_port_t src, u_int64_t id)
+static bool_t apply_hello_court(ip_port_t src, u_int64_t id)
 {
   int rc = 0;
   data_t src_ivc = {&src, sizeof(ip_port_t)};
@@ -245,9 +261,7 @@ bool_t apply_hello_court(ip_port_t src, u_int64_t id)
   }
   else
   {
-    debug(D_VOISIN, 0, "apply_hello_court", "insert new neighbour");
     nval.id = id;
-    remove_map(&src_ivc, g_environs.content);
   }
 
   rc = clock_gettime(CLOCK_MONOTONIC, &nval.hello);
@@ -257,11 +271,12 @@ bool_t apply_hello_court(ip_port_t src, u_int64_t id)
     return false;
   }
   insert_map(&src_ivc, &nval_ivc, g_neighbours.content);
+  remove_map(&src_ivc, g_environs.content);
 
   unlock(&g_neighbours);
   unlock(&g_environs);
 
-  data_t tlv_hello;
+  data_t tlv_hello = {0};
   if (!hello_long(&tlv_hello, g_myid, nval.id))
   {
     debug(D_VOISIN, 1, "apply_hello_court", "tlv_hello = NULL");
@@ -274,6 +289,7 @@ bool_t apply_hello_court(ip_port_t src, u_int64_t id)
     debug_int(D_VOISIN, 1, "apply_hello_court -> rc", rc);
     return rc;
   }
+  debug(D_VOISIN, 0, "apply_hello_court", "interprétation effectuée");
   return true;
 }
 
@@ -288,7 +304,7 @@ bool_t apply_hello_court(ip_port_t src, u_int64_t id)
  * @param id_dest id de celui à qui était destiné ce tlv
  * @return bool_t '1' si tout s'est bien passé, '0' sinon.
  */
-bool_t apply_hello_long(ip_port_t src, u_int64_t id_src, u_int64_t id_dest)
+static bool_t apply_hello_long(ip_port_t src, u_int64_t id_src, u_int64_t id_dest)
 {
   if (id_dest != g_myid)
   {
@@ -323,7 +339,6 @@ bool_t apply_hello_long(ip_port_t src, u_int64_t id_src, u_int64_t id_dest)
   else
   {
     nval.id = id_src;
-    remove_map(&src_ivc, g_environs.content);
   }
 
   rc = clock_gettime(CLOCK_MONOTONIC, &nval.hello);
@@ -334,6 +349,7 @@ bool_t apply_hello_long(ip_port_t src, u_int64_t id_src, u_int64_t id_dest)
   }
   nval.long_hello = nval.hello;
   insert_map(&src_ivc, &nval_ivc, g_neighbours.content);
+  remove_map(&src_ivc, g_environs.content);
 
   unlock(&g_neighbours);
   unlock(&g_environs);
@@ -354,7 +370,7 @@ bool_t apply_tlv_hello(ip_port_t src, data_t *data, size_t *head_read)
 {
   if (*head_read >= data->iov_len)
   {
-    debug(D_VOISIN, 1, "apply_tlv_hello", "head >= data->iov_len");
+    debug(D_VOISIN, 1, "apply_tlv_hello", "head_read >= data->iov_len");
     return false;
   }
   u_int8_t length = 0;
@@ -418,7 +434,7 @@ bool_t apply_tlv_neighbour(data_t *data, size_t *head_read)
     lock(&g_environs);
     if (!contains_map(&ipport, g_neighbours.content))
     {
-      debug(D_VOISIN, 0, "apply_tlv_neighbour", "insert new neighbour");
+      debug(D_VOISIN, 0, "apply_tlv_neighbour", "insert new environ");
       insert_map(&ipport, &ipport, g_environs.content);
     }
     unlock(&g_environs);
@@ -455,6 +471,12 @@ bool_t apply_tlv_goaway(ip_port_t dest, data_t *data, size_t *head_read)
   memmove(&length, data->iov_base + (*head_read), sizeof(u_int8_t));
   *head_read += 1;
 
+  if (length < 1)
+  {
+    debug(D_VOISIN, 1, "apply_tlv_go_away", "taille trop petite");
+    return false;
+  }
+
   u_int8_t code = 0;
   memmove(&code, data->iov_base + (*head_read), sizeof(u_int8_t));
   *head_read += 1;
@@ -464,10 +486,10 @@ bool_t apply_tlv_goaway(ip_port_t dest, data_t *data, size_t *head_read)
   memmove(msg, data->iov_base + *head_read, length);
   msg[length] = '\0';
   *head_read += length;
-  if (code == 0 || code == 2 || code == 3)
+  if (code == 0 || code == 2 || code == 3 || code == 4)
   {
-    debug(D_VOISIN, 1, "apply_tlv_goaway -> 0/2/3", msg);
-    if (from_neighbours_to_env(dest) == false)
+    debug(D_VOISIN, 0, "apply_tlv_goaway -> 0/2/3/4", msg);
+    if (!from_neighbours_to_env(dest))
     {
       free(msg);
       return false;
@@ -478,7 +500,7 @@ bool_t apply_tlv_goaway(ip_port_t dest, data_t *data, size_t *head_read)
   else if (code == 1)
   {
     data_t dest_ivc = {&dest, sizeof(ip_port_t)};
-    debug(D_VOISIN, 1, "apply_tlv_goaway -> 1", msg);
+    debug(D_VOISIN, 0, "apply_tlv_goaway -> 1", msg);
     lock(&g_neighbours);
     lock(&g_environs);
     if (!remove_map(&dest_ivc, g_neighbours.content) && !remove_map(&dest_ivc, g_environs.content))
@@ -486,11 +508,13 @@ bool_t apply_tlv_goaway(ip_port_t dest, data_t *data, size_t *head_read)
       unlock(&g_neighbours);
       unlock(&g_environs);
       free(msg);
+      debug(D_VOISIN, 1, "apply_tlv_goaway", "voisin non existant");
       return false;
     }
     unlock(&g_neighbours);
     unlock(&g_environs);
     free(msg);
+    debug(D_VOISIN, 0, "apply_tlv_goaway", "voisin enlevé");
     return true;
   }
   else
@@ -504,23 +528,24 @@ bool_t apply_tlv_goaway(ip_port_t dest, data_t *data, size_t *head_read)
 /**
  * @brief
  * Envoi d'un TLV Go Away pour prévenir
- * d'un départ du réseau
+ * d'un départ du réseau à tous ses voisins
  */
-void leave_network()
+void leave_network(void)
 {
-  node_t *n_list = map_to_list(g_environs.content);
+  lock(&g_neighbours);
+  node_t *n_list = map_to_list(g_neighbours.content);
   node_t *current = n_list;
   while (current != NULL)
-    {
-      update_neighbours(current, 1, "Ce n'est qu'un au revoir!");
-      current = current->next;
-    }
+  {
+    update_neighbours(current, 1, "Ce n'est qu'un au revoir!");
+    current = current->next;
+  }
   freedeepnode(n_list);
+  unlock(&g_neighbours);
 }
 
-
 /**
- * @brief Renvoie l'ipport correspond à un voisin symétrique
+ * @brief Renvoie si l'ipport correspond à un voisin symétrique
  * 
  * @param ipport couple ip-port du voisin
  * @return bool_t Renvoie true si c'est un voisin symétrique

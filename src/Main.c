@@ -51,8 +51,19 @@ static void sig_int(int sig)
  */
 static void initializer(void)
 {
-    init_sender();
-    init_neighbours();
+    int rc = init_sender();
+    if (!rc)
+    {
+        debug(D_MAIN, 1, "initializer", "initialisation des threads impossible");
+        exit(1);
+    }
+    rc = init_neighbours();
+    if (!rc)
+    {
+        debug(D_MAIN, 1, "initializer", "initialisation des neighbours impossible");
+        destroy_thread();
+        exit(1);
+    }
     signal(SIGINT, sig_int);
 }
 
@@ -62,14 +73,15 @@ static void initializer(void)
  */
 static void finisher(void)
 {
-  leave_network();
-  while(!buffer_is_empty()) {
-    send_buffer_tlv();
-  }
-  free_neighbours();
-  destroy_thread();
-  free_inondation();
-  free_writer();
+    leave_network();
+    while (!buffer_is_empty())
+    {
+        send_buffer_tlv();
+    }
+    free_neighbours();
+    destroy_thread();
+    free_inondation();
+    free_writer();
 }
 
 /**
