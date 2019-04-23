@@ -265,6 +265,7 @@ bool_t tlv_call_warning(ip_port_t dest, data_t *data, size_t *head_read)
     memmove(content, data->iov_base + *head_read, len);
     content[len] = '\0';
     debug(D_READER, 1, "tlv_call_warning -> message", content);
+    free(content);
     *head_read += len;
     debug(D_READER, 0, "tlv_call_warning", "traitement du tlv warning effectué");
     return true;
