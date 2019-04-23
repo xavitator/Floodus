@@ -91,7 +91,7 @@ bool_t send_tlv(ip_port_t dest, data_t *tlvs, size_t tlvs_len)
     memmove(header + 2, &total_tlvs_len, 2);
     header_ivc.iov_base = header;
     header_ivc.iov_len = 4;
-    data_t *content = malloc(tlvs_len + 1);
+    data_t *content = malloc((tlvs_len + 1) * sizeof(data_t));
     if (content == NULL)
     {
         debug(D_WRITER, 1, "send_tlv", "problème de malloc -> content");
