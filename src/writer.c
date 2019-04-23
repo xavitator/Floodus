@@ -243,8 +243,8 @@ static bool_t add_next_node(buffer_node_t *father, ip_port_t dest, data_t *tlv)
         debug(D_WRITER, 0, "add_next_node", "initialisation première next_node du buffer");
         return true;
     }
-    father->next = next_node;
     next_node->next = father->next;
+    father->next = next_node;
     debug(D_WRITER, 0, "add_next_node", "ajout d'une next_node au buffer");
     return true;
 }

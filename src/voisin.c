@@ -175,6 +175,7 @@ static bool_t inform_neighbor(ip_port_t dest, int code, char *msg)
   {
     debug_int(D_VOISIN, 1, "inform_neighbor -> rc", rc);
   }
+  free(tlv_go_away.iov_base);
   return rc;
 }
 
@@ -534,6 +535,7 @@ void leave_network(void)
 {
   lock(&g_neighbours);
   node_t *n_list = map_to_list(g_neighbours.content);
+  unlock(&g_neighbours);
   node_t *current = n_list;
   while (current != NULL)
   {
@@ -541,7 +543,6 @@ void leave_network(void)
     current = current->next;
   }
   freedeepnode(n_list);
-  unlock(&g_neighbours);
 }
 
 /**

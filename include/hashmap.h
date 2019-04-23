@@ -13,7 +13,6 @@
 #include "debug.h"
 
 #define D_HASHMAP 0
-#define BIT_MAPSIZE 12
 #define HASHMAP_SIZE 4096
 
 /**

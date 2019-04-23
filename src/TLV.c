@@ -256,7 +256,7 @@ bool_t go_away(data_t *go_away_i, uint8_t code, uint8_t *msg, uint8_t msg_len)
     error("go_away -> NULL argument");
     return false;
   }
-  uint8_t size = 3 + ((254 - msg_len > 0) ? msg_len : 254);
+  uint8_t size = 3 + ((msg_len < 254) ? msg_len : 254);
   uint8_t *content = malloc(sizeof(uint8_t) * size);
   if (content == NULL)
   {
@@ -265,9 +265,9 @@ bool_t go_away(data_t *go_away_i, uint8_t code, uint8_t *msg, uint8_t msg_len)
   }
   memset(&content, 0, sizeof(uint8_t) * size);
   content[0] = 6;
-  content[1] = msg_len + 1 /* + 1 pour le code */;
+  content[1] = size - 3 + 1 /* + 1 pour le code */;
   content[2] = code;
-  memmove(content + 3, msg, msg_len);
+  memmove(content + 3, msg, size - 3);
   go_away_i->iov_base = content;
   go_away_i->iov_len = size;
   debug_hex(D_TLV, 0, "go_away contruction TLV", go_away_i->iov_base, go_away_i->iov_len);

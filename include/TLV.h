@@ -10,7 +10,7 @@
 #include "debug.h"
 #include "iovec.h"
 
-#define D_TLV 0
+#define D_TLV 1
 #define IPV6_LEN 16
 
 bool_t pad1(data_t *);

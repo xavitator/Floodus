@@ -373,7 +373,7 @@ ssize_t read_msg(void)
     uint16_t len_msg = 0;
     memmove(&len_msg, ((uint8_t *)header_ivc.iov_base) + 2, 2);
     len_msg = ntohs(len_msg);
-    if (len_msg != rc - RDHDRLEN || len_msg != content[1].iov_len)
+    if (len_msg != rc - RDHDRLEN)
     {
         debug(D_READER, 1, "read_msg", "taille lue et taille attendue différente");
         return 0;
@@ -382,6 +382,7 @@ ssize_t read_msg(void)
     ip_port_t ipport = {0};
     memmove(&ipport.port, &((struct sockaddr_in6 *)reader.msg_name)->sin6_port, sizeof(ipport.port));
     memmove(ipport.ipv6, &((struct sockaddr_in6 *)reader.msg_name)->sin6_addr, sizeof(ipport.ipv6));
+    content[1].iov_len = len_msg;
     read_tlv(ipport, &content[1]);
     debug(D_WRITER, 0, "read_msg", "lecture d'un datagramme");
     return rc;

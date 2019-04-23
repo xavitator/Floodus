@@ -194,7 +194,9 @@ int main(int argc, char *argv[])
     initializer();
     rc = send_hello(default_dest, port);
     if (rc >= 0)
+    {
         launch_program();
+    }
     finisher();
     return 0;
 }
