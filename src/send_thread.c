@@ -324,5 +324,7 @@ bool_t init_sender()
     debug(D_SEND_THREAD, 1, "pthread", "Can't initialise thread neighbour sender");
     return false;
   }
+  pthread_detach(th1);
+  pthread_detach(th2);
   return true;
 }
