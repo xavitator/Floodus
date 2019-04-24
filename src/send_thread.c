@@ -68,6 +68,7 @@ static bool_t send_neighbour(ip_port_t *dest, node_t *n_list)
         continue;
       }
       rc = add_tlv(*dest, &tlv_neighbour);
+      free(tlv_neighbour.iov_base);
       if (rc == false)
       {
         debug_int(D_SEND_THREAD, 1, "send_neighbour -> rc", rc);
@@ -176,6 +177,7 @@ static int send_hello_short(node_t *e_list, int nb)
     }
 
     rc = add_tlv(ipport, &tlv_hello);
+    free(tlv_hello.iov_base);
     if (!rc)
     {
       debug_int(D_SEND_THREAD, 1, "send_hello_short -> rc", rc);
@@ -222,6 +224,7 @@ static int send_hello_long(node_t *n_list)
     }
 
     rc = add_tlv(ipport, &tlv_hello);
+    free(tlv_hello.iov_base);
     if (rc == false)
     {
       debug_int(D_SEND_THREAD, 1, "send_hello_long -> rc", rc);

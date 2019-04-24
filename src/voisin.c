@@ -171,11 +171,11 @@ static bool_t inform_neighbor(ip_port_t dest, int code, char *msg)
     return false;
   }
   int rc = add_tlv(dest, &tlv_go_away);
+  free(tlv_go_away.iov_base);
   if (!rc)
   {
     debug_int(D_VOISIN, 1, "inform_neighbor -> rc", rc);
   }
-  free(tlv_go_away.iov_base);
   return rc;
 }
 
@@ -285,6 +285,7 @@ static bool_t apply_hello_court(ip_port_t src, u_int64_t id)
   }
 
   rc = add_tlv(src, &tlv_hello);
+  free(tlv_hello.iov_base);
   if (rc == false)
   {
     debug_int(D_VOISIN, 1, "apply_hello_court -> rc", rc);

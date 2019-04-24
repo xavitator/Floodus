@@ -283,7 +283,6 @@ bool_t get_nexttime(struct timespec *tm)
         tm->tv_sec = diff_sec;
     }
     return true;
-
 }
 
 /**
@@ -301,7 +300,7 @@ static bool_t flood_goaway(message_t *msg)
     snprintf(message, strlen(message) + 1, "L'utilisateur n'a pas acquité le message [%8.lx,%4.x]", msg->id, msg->nonce);
     while (tmp != NULL)
     {
-      if (update_neighbours(tmp,2, message) == false)
+        if (update_neighbours(tmp, 2, message) == false)
             no_error = false;
         tmp = tmp->next;
     }
@@ -351,6 +350,7 @@ bool_t flood_message(message_t *msg)
         }
         tmp = tmp->next;
     }
+    free(tlv.iov_base);
     freedeepnode(list);
     msg->count++;
     double two_pow_c = pow((double)2, (double)msg->count);
@@ -431,6 +431,7 @@ static bool_t send_ack(ip_port_t dest, uint64_t sender_id, u_int32_t nonce)
         return false;
     }
     int rc = add_tlv(dest, &ack_iovec);
+    free(ack_iovec.iov_base);
     if (rc == false)
     {
         debug(D_INOND, 1, "send_ack", "problème d'ajout du tlv ack");

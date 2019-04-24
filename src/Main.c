@@ -102,21 +102,20 @@ int make_demand(struct addrinfo *p)
     ipport.port = ((struct sockaddr_in6 *)p->ai_addr)->sin6_port;
     memmove(ipport.ipv6, &((struct sockaddr_in6 *)p->ai_addr)->sin6_addr, sizeof(ipport.ipv6));
     int rc = send_tlv(ipport, &hs, 1);
+    free(hs.iov_base);
 
     data_t new_neighbour = {0};
     if (!neighbour(&new_neighbour, ipport.ipv6, ipport.port))
     {
         debug(D_MAIN, 1, "make_demand -> new_neighbour", " new = NULL");
-        free(hs.iov_base);
         return 0;
     }
     size_t head = 1;
     rc = apply_tlv_neighbour(&new_neighbour, &head);
+    free(new_neighbour.iov_base);
     if (rc == false)
         debug(D_MAIN, 1, "make_demand -> apply neighbour", " rc = false");
 
-    free(hs.iov_base);
-    free(new_neighbour.iov_base);
     return rc;
 }
 
