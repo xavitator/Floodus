@@ -432,6 +432,7 @@ bool_t apply_tlv_neighbour(data_t *data, size_t *head_read)
   if (length == 18 /* taille tlv_neighbour */)
   {
     data_t ipport = {data->iov_base + *head_read, 18};
+    debug_hex(D_VOISIN,0,"insert_neighbour", data->iov_base+*head_read, 18 );
     lock(&g_neighbours);
     lock(&g_environs);
     if (!contains_map(&ipport, g_neighbours.content))

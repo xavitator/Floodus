@@ -483,14 +483,17 @@ bool_t apply_tlv_data(ip_port_t dest, data_t *data, size_t *head_read)
     *head_read += sizeof(u_int8_t);
     length -= sizeof(u_int8_t);
     data_t content = {data->iov_base + *head_read, length};
-    int rc = add_message(dest, sender_id, nonce, type, &content);
-    *head_read += length;
-    if (rc == false)
-    {
-        debug(D_INOND, 1, "apply_tlv_data", "problème d'ajout du message");
-        return false;
+    bool_t rc = true;
+    if(contains_message(sender_id, nonce) == NULL) {
+      rc = add_message(dest, sender_id, nonce, type, &content);
+      if (rc == false)
+        {
+          debug(D_INOND, 1, "apply_tlv_data", "problème d'ajout du message");
+          return false;
+        }
+      print_tlv(type, content);
     }
-    print_tlv(type, content);
+    *head_read += length;
     rc = send_ack(dest, sender_id, nonce);
     return rc;
 }
