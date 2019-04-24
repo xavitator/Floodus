@@ -89,7 +89,7 @@ static message_t *create_message(ip_port_t dest, u_int64_t id, uint32_t nonce, u
     while (neighbour != NULL)
     {
         neighbour_t voisin = {0};
-        memmove(&voisin, neighbour->value, sizeof(neighbour_t));
+        memmove(&voisin, neighbour->value->iov_base, sizeof(neighbour_t));
         if (is_more_than_two(voisin.long_hello) == false && voisin.id != id && memcmp(&dest, neighbour->key, sizeof(ip_port_t)) != 0)
         {
             insert_map(neighbour->key, neighbour->key, recipient);
@@ -381,8 +381,6 @@ bool_t launch_flood()
         return false;
     }
     rc = 0;
-    printf("tc : %lu %ld\n", tc.tv_sec, tc.tv_nsec);
-    printf("send_time : %lu %ld\n", g_floods->send_time.tv_sec, g_floods->send_time.tv_nsec);
     debug_int(D_INOND, 0, "compare_time -> tc et g_floods", compare_time(tc, g_floods->send_time));
     while (g_floods != NULL && compare_time(tc, g_floods->send_time) >= 0)
     {
@@ -486,13 +484,12 @@ bool_t apply_tlv_data(ip_port_t dest, data_t *data, size_t *head_read)
     length -= sizeof(u_int8_t);
     data_t content = {data->iov_base + *head_read, length};
     int rc = add_message(dest, sender_id, nonce, type, &content);
+    *head_read += length;
     if (rc == false)
     {
-        *head_read += length;
         debug(D_INOND, 1, "apply_tlv_data", "problème d'ajout du message");
         return false;
     }
-    *head_read += length;
     print_tlv(type, content);
     rc = send_ack(dest, sender_id, nonce);
     return rc;
