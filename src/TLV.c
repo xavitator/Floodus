@@ -263,7 +263,7 @@ bool_t go_away(data_t *go_away_i, uint8_t code, uint8_t *msg, uint8_t msg_len)
     error("go_away -> content");
     return false;
   }
-  memset(&content, 0, sizeof(uint8_t) * size);
+  memset(content, 0, sizeof(uint8_t) * size);
   content[0] = 6;
   content[1] = size - 3 + 1 /* + 1 pour le code */;
   content[2] = code;
