@@ -296,7 +296,7 @@ static bool_t flood_goaway(message_t *msg)
     node_t *list = map_to_list(msg->recipient);
     node_t *tmp = list;
     bool_t no_error = true;
-    char *message = "L'utilisateur n'a pas acquité le message [00000000,0000]";
+    char message [] = "L'utilisateur n'a pas acquité le message [00000000,0000]";
     snprintf(message, strlen(message) + 1, "L'utilisateur n'a pas acquité le message [%8.lx,%4.x]", msg->id, msg->nonce);
     while (tmp != NULL)
     {
@@ -320,7 +320,7 @@ bool_t flood_message(message_t *msg)
 {
     if (msg->count > COUNT_INOND)
     {
-        flood_goaway(msg);
+      flood_goaway(msg);
         debug(D_INOND, 0, "flood_message", "envoi des goaway");
         return false;
     }
