@@ -74,12 +74,12 @@ static void initializer(void)
 static void finisher(void)
 {
     leave_network();
+    destroy_thread();
     while (!buffer_is_empty())
     {
         send_buffer_tlv();
     }
     free_neighbours();
-    destroy_thread();
     free_inondation();
     free_writer();
     close_sock();

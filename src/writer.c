@@ -118,6 +118,7 @@ bool_t send_tlv(ip_port_t dest, data_t *tlvs, size_t tlvs_len)
         {
             free(content);
             debug_and_exit(D_WRITER, 1, "send_tlv -> envoi non effectué", strerror(errno), 1);
+            return false;
         }
     }
     for (size_t i = 0; i < tlvs_len + 1; i++)
