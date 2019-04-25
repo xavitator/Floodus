@@ -240,7 +240,6 @@ static bool_t apply_hello_court(ip_port_t src, u_int64_t id)
   data_t nval_ivc = {&nval, sizeof(neighbour_t)};
 
   lock(&g_neighbours);
-  lock(&g_environs);
   if (contains_map(&src_ivc, g_neighbours.content))
   {
     debug(D_VOISIN, 0, "apply_hello_court", "update neighbor");
@@ -249,14 +248,12 @@ static bool_t apply_hello_court(ip_port_t src, u_int64_t id)
     {
       debug(D_VOISIN, 1, "apply_hello_court", "rc == false");
       unlock(&g_neighbours);
-      unlock(&g_environs);
       return false;
     }
     if (id != nval.id)
     {
       debug(D_VOISIN, 1, "apply_hello_court", "id != nval.id");
       unlock(&g_neighbours);
-      unlock(&g_environs);
       return false;
     }
   }
@@ -271,6 +268,7 @@ static bool_t apply_hello_court(ip_port_t src, u_int64_t id)
     debug(D_VOISIN, 1, "apply_hello_court", "clock_gettime wrong");
     return false;
   }
+  lock(&g_environs);
   insert_map(&src_ivc, &nval_ivc, g_neighbours.content);
   remove_map(&src_ivc, g_environs.content);
 

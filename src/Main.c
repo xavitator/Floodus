@@ -82,6 +82,7 @@ static void finisher(void)
     destroy_thread();
     free_inondation();
     free_writer();
+    close_sock();
 }
 
 /**

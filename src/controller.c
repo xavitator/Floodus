@@ -28,6 +28,13 @@ void stop_program(void)
 }
 
 /**
+ * @brief Ferme la socket
+ */
+void close_sock(void) {
+  close(g_socket);
+}
+
+/**
  * @brief Création de la socket d'écriture et de lecture.
  * On s'occupe de rendre la socket non-bloquante.
  * 
@@ -103,7 +110,7 @@ void launch_program()
         FD_ZERO(&readfds);
         FD_ZERO(&writefds);
         FD_SET(g_socket, &readfds);
-        if (buffer_is_empty() == false)
+        if (!buffer_is_empty())
             FD_SET(g_socket, &writefds);
         get_nexttime(&tm);
         if ((nb_fd = pselect(g_socket + 1, &readfds, &writefds, NULL, &tm, NULL)) > 0)

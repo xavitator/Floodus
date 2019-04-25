@@ -18,5 +18,6 @@ extern u_int32_t g_socket;
 int create_socket(uint16_t port);
 void launch_program(void);
 void stop_program(void);
+void close_sock(void);
 
 #endif
