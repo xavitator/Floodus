@@ -43,7 +43,7 @@ bool_t unlock(pthread_var_t *g_lock)
   if (rc)
   {
     debug(D_PTHREAD, 1, "unlock -> rc", strerror(rc));
-    return rc;
+    return false;
   }
-  return rc;
+  return true;
 }
