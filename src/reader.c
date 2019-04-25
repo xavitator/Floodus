@@ -17,9 +17,10 @@ typedef bool_t (*tlv_function_t)(ip_port_t, data_t *, size_t *);
  * @param head_read tête de lecture de la struct iovec 'data'
  * @return bool_t '1' si la lecture a abouti, et la tête de lecture est déplacé sur le prochain tlv. '0' sinon.
  */
-bool_t tlv_call_pad1(ip_port_t dest, data_t *data, size_t *head_read)
+static bool_t tlv_call_pad1(ip_port_t dest, data_t *data, size_t *head_read)
 {
-    debug_hex(D_READER, 0, "tlv_call_pad1", &dest, sizeof(dest));
+    (void)dest; //enlève le warning
+
     if (((u_int8_t *)data->iov_base)[*head_read] != 0)
     {
         debug(D_READER, 1, "tlv_call_pad1", "mauvais type");
@@ -38,9 +39,10 @@ bool_t tlv_call_pad1(ip_port_t dest, data_t *data, size_t *head_read)
  * @param head_read tête de lecture de la struct iovec 'data'
  * @return bool_t '1' si la lecture a abouti, et la tête de lecture est déplacé sur le prochain tlv. '0' sinon.
  */
-bool_t tlv_call_padn(ip_port_t dest, data_t *data, size_t *head_read)
+static bool_t tlv_call_padn(ip_port_t dest, data_t *data, size_t *head_read)
 {
-    debug_hex(D_READER, 0, "tlv_call_padn", &dest, sizeof(dest));
+    (void)dest; //enlève le warning
+
     if (((u_int8_t *)data->iov_base)[*head_read] != 1)
     {
         debug(D_READER, 1, "tlv_call_padn", "mauvais type");
@@ -51,9 +53,10 @@ bool_t tlv_call_padn(ip_port_t dest, data_t *data, size_t *head_read)
     if (*head_read + len >= data->iov_len)
     {
         debug(D_READER, 1, "tlv_call_padn", "taille du message non correspondante");
+        *head_read = data->iov_len;
         return false;
     }
-    *head_read += len;
+    *head_read += len + 1;
     debug(D_READER, 0, "tlv_call_padn", "lecture du padn");
     return true;
 }
@@ -66,10 +69,8 @@ bool_t tlv_call_padn(ip_port_t dest, data_t *data, size_t *head_read)
  * @param head_read tête de lecture de la struct iovec 'data'
  * @return bool_t '1' si la lecture a abouti, et la tête de lecture est déplacé sur le prochain tlv. '0' sinon.
  */
-bool_t tlv_call_hello(ip_port_t dest, data_t *data, size_t *head_read)
+static bool_t tlv_call_hello(ip_port_t dest, data_t *data, size_t *head_read)
 {
-    debug_hex(D_READER, 0, "tlv_call_hello -> données reçues", data->iov_base, data->iov_len);
-    debug_hex(D_READER, 0, "tlv_call_hello", &dest, sizeof(dest));
     if (((u_int8_t *)data->iov_base)[*head_read] != 2)
     {
         debug(D_READER, 1, "tlv_call_hello", "mauvais type");
@@ -80,6 +81,7 @@ bool_t tlv_call_hello(ip_port_t dest, data_t *data, size_t *head_read)
     if (*head_read + len >= data->iov_len)
     {
         debug(D_READER, 1, "tlv_call_hello", "taille du message non correspondante");
+        *head_read = data->iov_len;
         return false;
     }
     bool_t res = apply_tlv_hello(dest, data, head_read);
@@ -102,7 +104,8 @@ bool_t tlv_call_hello(ip_port_t dest, data_t *data, size_t *head_read)
  */
 bool_t tlv_call_neighbour(ip_port_t dest, data_t *data, size_t *head_read)
 {
-    debug_hex(D_READER, 0, "tlv_call_neighbour", &dest, sizeof(dest));
+    (void)dest; //enlève le warning
+
     if (((u_int8_t *)data->iov_base)[*head_read] != 3)
     {
         debug(D_READER, 1, "tlv_call_neighbour", "mauvais type");
@@ -113,6 +116,7 @@ bool_t tlv_call_neighbour(ip_port_t dest, data_t *data, size_t *head_read)
     if (*head_read + len >= data->iov_len)
     {
         debug(D_READER, 1, "tlv_call_neighbour", "taille du message non correspondante");
+        *head_read = data->iov_len;
         return false;
     }
     bool_t res = apply_tlv_neighbour(data, head_read);
@@ -135,7 +139,6 @@ bool_t tlv_call_neighbour(ip_port_t dest, data_t *data, size_t *head_read)
  */
 bool_t tlv_call_data(ip_port_t dest, data_t *data, size_t *head_read)
 {
-    debug_hex(D_READER, 0, "tlv_call_data", &dest, sizeof(dest));
     if (((u_int8_t *)data->iov_base)[*head_read] != 4)
     {
         debug(D_READER, 1, "tlv_call_data", "mauvais type");
@@ -146,6 +149,7 @@ bool_t tlv_call_data(ip_port_t dest, data_t *data, size_t *head_read)
     if (*head_read + len >= data->iov_len)
     {
         debug(D_READER, 1, "tlv_call_data", "taille du message non correspondante");
+        *head_read = data->iov_len;
         return false;
     }
     bool_t res = apply_tlv_data(dest, data, head_read);
@@ -168,7 +172,6 @@ bool_t tlv_call_data(ip_port_t dest, data_t *data, size_t *head_read)
  */
 bool_t tlv_call_ack(ip_port_t dest, data_t *data, size_t *head_read)
 {
-    debug_hex(D_READER, 0, "tlv_call_ack", &dest, sizeof(dest));
     if (((u_int8_t *)data->iov_base)[*head_read] != 5)
     {
         debug(D_READER, 1, "tlv_call_ack", "mauvais type");
@@ -179,6 +182,7 @@ bool_t tlv_call_ack(ip_port_t dest, data_t *data, size_t *head_read)
     if (*head_read + len >= data->iov_len)
     {
         debug(D_READER, 1, "tlv_call_ack", "taille du message non correspondante");
+        *head_read = data->iov_len;
         return false;
     }
     bool_t res = apply_tlv_ack(dest, data, head_read);
@@ -201,7 +205,6 @@ bool_t tlv_call_ack(ip_port_t dest, data_t *data, size_t *head_read)
  */
 bool_t tlv_call_goaway(ip_port_t dest, data_t *data, size_t *head_read)
 {
-    debug_hex(D_READER, 0, "tlv_call_goaway", &dest, sizeof(dest));
     if (((u_int8_t *)data->iov_base)[*head_read] != 6)
     {
         debug(D_READER, 1, "tlv_call_goaway", "mauvais type");
@@ -212,11 +215,17 @@ bool_t tlv_call_goaway(ip_port_t dest, data_t *data, size_t *head_read)
     if (*head_read + len >= data->iov_len)
     {
         debug(D_READER, 1, "tlv_call_goaway", "taille du message non correspondante");
+        *head_read = data->iov_len;
         return false;
     }
     debug_hex(D_READER, 0, "tlv_call_goaway", data->iov_base + *head_read + 1, len);
-    debug(D_READER, 0, "tlv_call_goaway", "traitement du tlv goaway en cours");
-    apply_tlv_goaway(dest, data, head_read);
+    bool_t res = apply_tlv_goaway(dest, data, head_read);
+    if (res == false)
+    {
+        debug(D_READER, 1, "tlv_call_goaway", "problème application du tlv goaway");
+        return res;
+    }
+    debug(D_READER, 0, "tlv_call_goaway", "traitement du tlv goaway effectué");
     return true;
 }
 
@@ -230,7 +239,8 @@ bool_t tlv_call_goaway(ip_port_t dest, data_t *data, size_t *head_read)
  */
 bool_t tlv_call_warning(ip_port_t dest, data_t *data, size_t *head_read)
 {
-    debug_hex(D_READER, 0, "tlv_call_warning", &dest, sizeof(dest));
+    (void)dest; //enlève le warning
+
     if (((u_int8_t *)data->iov_base)[*head_read] != 7)
     {
         debug(D_READER, 1, "tlv_call_warning", "mauvais type");
@@ -241,13 +251,23 @@ bool_t tlv_call_warning(ip_port_t dest, data_t *data, size_t *head_read)
     if (*head_read + len >= data->iov_len)
     {
         debug(D_READER, 1, "tlv_call_warning", "taille du message non correspondante");
+        *head_read = data->iov_len;
         return false;
     }
-    char content[len + 1];
-    memmove(content, data->iov_base + *head_read + 1, len);
+    *head_read += 1;
+    char *content = malloc(len + 1);
+    if (content == NULL)
+    {
+        debug(D_READER, 1, "tlv_call_warning", "impossible d'afficher le message");
+        *head_read += len;
+        return false;
+    }
+    memmove(content, data->iov_base + *head_read, len);
     content[len] = '\0';
-    debug(D_READER, 0, "tlv_call_warning -> message", content);
-    debug(D_READER, 0, "tlv_call_warning", "traitement du tlv warning en cours");
+    debug(D_READER, 1, "tlv_call_warning -> message", content);
+    free(content);
+    *head_read += len;
+    debug(D_READER, 0, "tlv_call_warning", "traitement du tlv warning effectué");
     return true;
 }
 
@@ -274,7 +294,7 @@ tlv_function_t tlv_function_call[NB_TLV] = {
  * @param dest Couple ip-port de celui qui a émis les tlvs reçus
  * @param tlvs tlvs reçus
  */
-void read_tlv(ip_port_t dest, data_t *tlvs)
+static void read_tlv(ip_port_t dest, data_t *tlvs)
 {
     size_t head_reader = 0;
     u_int8_t type = 0;
@@ -285,7 +305,7 @@ void read_tlv(ip_port_t dest, data_t *tlvs)
         {
             debug_int(D_READER, 0, "read_tlv -> type inconnu de tlv", type);
             head_reader += 1;
-            if (head_reader + 1 >= tlvs->iov_len)
+            if (head_reader >= tlvs->iov_len)
                 break;
             head_reader += ((u_int8_t *)tlvs->iov_base)[head_reader];
             continue;
@@ -301,7 +321,7 @@ void read_tlv(ip_port_t dest, data_t *tlvs)
  * 
  * @return ssize_t nombre de données lues, '-1' s'il y a une erreur
  */
-ssize_t read_msg()
+ssize_t read_msg(void)
 {
     // sockaddr_in6 pour le destinataire
     struct sockaddr_in6 recv = {0};
@@ -309,9 +329,9 @@ ssize_t read_msg()
 
     // initialisation du premier struct iovec
     uint8_t header[RDHDRLEN] = {0};
-    struct iovec header_iovec = {0};
-    header_iovec.iov_base = header;
-    header_iovec.iov_len = RDHDRLEN;
+    struct iovec header_ivc = {0};
+    header_ivc.iov_base = header;
+    header_ivc.iov_len = RDHDRLEN;
 
     // initialisation du deuxième struct iovec
     uint8_t req[READBUF] = {0};
@@ -320,7 +340,7 @@ ssize_t read_msg()
     corpus.iov_len = READBUF;
 
     // initialisation du struct msghdr
-    data_t content[2] = {header_iovec, corpus};
+    data_t content[2] = {header_ivc, corpus};
     struct msghdr reader = {0};
     reader.msg_name = &recv;
     reader.msg_namelen = recvlen;
@@ -331,6 +351,7 @@ ssize_t read_msg()
     // attente active si la socket est pas dispo meme après un select
     while (1)
     {
+        debug(D_WRITER, 0, "read_msg", "turn");
         rc = recvmsg(g_socket, &reader, 0);
         if (rc >= 0)
             break;
@@ -342,15 +363,15 @@ ssize_t read_msg()
         }
     }
     // verification des 4 premiers octets
-    header_iovec = content[0];
-    uint8_t expected[] = {93, 2};
-    if (memcmp(header_iovec.iov_base, expected, 2) != 0)
+    header_ivc = content[0];
+    uint8_t expected[2] = {93, 2};
+    if (memcmp(header_ivc.iov_base, expected, 2) != 0)
     {
         debug(D_READER, 0, "read_msg", "les champs magic et version ne correspondent pas");
         return 0;
     }
     uint16_t len_msg = 0;
-    memmove(&len_msg, ((uint8_t *)header_iovec.iov_base) + 2, 2);
+    memmove(&len_msg, ((uint8_t *)header_ivc.iov_base) + 2, 2);
     len_msg = ntohs(len_msg);
     if (len_msg != rc - RDHDRLEN)
     {

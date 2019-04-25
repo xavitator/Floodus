@@ -20,6 +20,7 @@
 #include <time.h>
 #include <sys/stat.h>
 #include <fcntl.h>
+#include <signal.h>
 
 #include "TLV.h"
 #include "debug.h"
@@ -32,6 +33,59 @@
 #define D_MAIN 1
 
 /**
+ * @brief
+ * En cas de ctrl+c stoppe l'ensemble du
+ * programme et free les structures.
+ */
+static void sig_int(int sig)
+{
+    if (sig == SIGINT)
+    {
+        stop_program();
+    }
+}
+
+/**
+ * @brief Fonction initialisant tout.
+ * 
+ */
+static void initializer(void)
+{
+    int rc = init_sender();
+    if (!rc)
+    {
+        debug(D_MAIN, 1, "initializer", "initialisation des threads impossible");
+        exit(1);
+    }
+    rc = init_neighbours();
+    if (!rc)
+    {
+        debug(D_MAIN, 1, "initializer", "initialisation des neighbours impossible");
+        destroy_thread();
+        exit(1);
+    }
+    signal(SIGINT, sig_int);
+}
+
+/**
+ * @brief Fonction faisant le ménage à la fin du programme.
+ * 
+ */
+static void finisher(void)
+{
+    leave_network();
+    destroy_thread();
+    while (!buffer_is_empty())
+    {
+        send_buffer_tlv();
+    }
+    free_neighbours();
+    free_inondation();
+    free_writer();
+    close_sock();
+}
+
+/**
  * @brief Envoie de hello court à un destinataire contenu dans un addrinfo
  * 
  * @param p destinataire
@@ -39,30 +93,35 @@
  */
 int make_demand(struct addrinfo *p)
 {
-    data_t *hs = hello_short(g_myid);
+    data_t hs = {0};
+    if (!hello_short(&hs, g_myid))
+    {
+        debug(D_MAIN, 1, "make_demand -> new_neighbour", "hs erreur");
+        return 0;
+    }
     ip_port_t ipport = {0};
     ipport.port = ((struct sockaddr_in6 *)p->ai_addr)->sin6_port;
     memmove(ipport.ipv6, &((struct sockaddr_in6 *)p->ai_addr)->sin6_addr, sizeof(ipport.ipv6));
-    int rc = send_tlv(&ipport, hs, 1);
-    freeiovec(hs);
+    int rc = send_tlv(ipport, &hs, 1);
+    free(hs.iov_base);
 
-    data_t *new_neighbour = neighbour(ipport.ipv6, ipport.port);
-    if (new_neighbour == NULL) {
+    data_t new_neighbour = {0};
+    if (!neighbour(&new_neighbour, ipport.ipv6, ipport.port))
+    {
         debug(D_MAIN, 1, "make_demand -> new_neighbour", " new = NULL");
         return 0;
     }
     size_t head = 1;
-    rc = apply_tlv_neighbour(new_neighbour, &head);
-    if (rc == false) {
+    rc = apply_tlv_neighbour(&new_neighbour, &head);
+    free(new_neighbour.iov_base);
+    if (rc == false)
         debug(D_MAIN, 1, "make_demand -> apply neighbour", " rc = false");
-        return rc;
-    }
-    freeiovec(new_neighbour);
+
     return rc;
 }
 
 /**
- * @brief On récupère toutes les infos via getaddrinfo sur la destination et le port passé en arguments.
+ * @brief On récupère toutes les infos via getaddrinfo sur la destination et le port passés en arguments.
  * 
  * @param dest nom dns de la destination
  * @param port port de la destination
@@ -84,15 +143,6 @@ int send_hello(char *dest, char *port)
     }
     struct addrinfo *p = r;
 
-    // demande à toutes les interfaces détectées
-    // while (p != NULL)
-    // {
-    //     make_demand(p);
-    //     p = p->ai_next;
-    // }
-    // fin de la demande à toutes les interfaces
-
-    // demande à la première interface
     if (p == NULL)
     {
         debug(D_MAIN, 1, "send_hello", "aucune interface détectée pour cette adresse");
@@ -141,11 +191,12 @@ int main(int argc, char *argv[])
         printf("Main : Problème de connexion");
         exit(1);
     }
-    init_sender();
-    init_neighbors();
+    initializer();
     rc = send_hello(default_dest, port);
     if (rc >= 0)
+    {
         launch_program();
-    free_neighbors();
+    }
+    finisher();
     return 0;
 }

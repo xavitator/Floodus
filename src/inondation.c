@@ -23,7 +23,7 @@ void freemessage(message_t *msg)
  * 
  * @param msg message dont on libère la mémoire et ses suivants
  */
-void freedeepmessage(message_t *msg)
+static void freedeepmessage(message_t *msg)
 {
     message_t *tmp = msg;
     message_t *tmp2 = msg;
@@ -56,7 +56,7 @@ void free_inondation()
  * @param contentlen taille du message envoyé
  * @return message_t* structure construite avec toutes les données correspondantes
  */
-message_t *create_message(ip_port_t sender, u_int64_t id, uint32_t nonce, uint8_t type, data_t *content)
+static message_t *create_message(ip_port_t dest, u_int64_t id, uint32_t nonce, uint8_t type, data_t *content)
 {
     struct timespec tc = {0};
     int rc = 0;
@@ -82,15 +82,15 @@ message_t *create_message(ip_port_t sender, u_int64_t id, uint32_t nonce, uint8_
         freeiovec(cont_copy);
         return NULL;
     }
-    lock(&g_lock_n);
-    node_t *neighbour = map_to_list(g_neighbors);
-    unlock(&g_lock_n);
+    lock(&g_neighbours);
+    node_t *neighbour = map_to_list(g_neighbours.content);
+    unlock(&g_neighbours);
     node_t *tmp = neighbour;
     while (neighbour != NULL)
     {
-        neighbor_t voisin = {0};
-        memmove(&voisin, neighbour->value, sizeof(neighbor_t));
-        if (is_more_than_two(voisin.long_hello) == false && voisin.id != id && memcmp(&sender, neighbour->key, sizeof(ip_port_t)) != 0)
+        neighbour_t voisin = {0};
+        memmove(&voisin, neighbour->value->iov_base, sizeof(neighbour_t));
+        if (is_more_than_two(voisin.long_hello) == false && voisin.id != id && memcmp(&dest, neighbour->key, sizeof(ip_port_t)) != 0)
         {
             insert_map(neighbour->key, neighbour->key, recipient);
         }
@@ -150,9 +150,9 @@ int compare_time(struct timespec ta, struct timespec tb)
 /**
  * Enlève le sender de la liste des voisins 
  */
-static bool_t remove_sender(ip_port_t sender, message_t *tmp)
+static bool_t remove_sender(ip_port_t dest, message_t *tmp)
 {
-    data_t sender_iovec = {&sender, sizeof(sender)};
+    data_t sender_iovec = {&dest, sizeof(dest)};
     int res = remove_map(&sender_iovec, tmp->recipient);
     debug_int(D_INOND, 0, "remove_sender -> l'emetteur est enlevé des inondés", res);
     return res;
@@ -166,7 +166,7 @@ static bool_t remove_sender(ip_port_t sender, message_t *tmp)
  * @param nonce nonce du data
  * @return le message s'il le contient NULL sinon
  */
-message_t *contains_message(u_int64_t id, uint32_t nonce)
+static message_t *contains_message(u_int64_t id, uint32_t nonce)
 {
     message_t *tmp = g_floods;
     while (tmp != NULL)
@@ -180,12 +180,12 @@ message_t *contains_message(u_int64_t id, uint32_t nonce)
 }
 
 /**
- * @brief Insert le message dans la liste des messages de telle façon à garder l'odre des messages
+ * @brief Insert le message dans la liste des messages de telle façon à garder l'ordre des messages
  * 
  * @param msg message à insérer
  * @return bool_t '1' si l'insertion a eu lieu, '0' sinon.
  */
-bool_t insert_message(message_t *msg)
+static bool_t insert_message(message_t *msg)
 {
     message_t *child = g_floods;
     message_t *father = child;
@@ -210,24 +210,16 @@ bool_t insert_message(message_t *msg)
 /**
  * @brief Traitement d'un tlv data, et ajout d'une node d'inondation en cas de besoin.
  * 
- * @param sender couple ip-port de celui qui a envoyé le tlv data
+ * @param dest couple ip-port de celui qui a envoyé le tlv data
  * @param id sender_id du message
  * @param nonce nonce du message
  * @param type type du message
- * @param content contenu du message
- * @param contentlen taille du contenu
+ * @param content struct iovec contenant le message et sa taille
  * @return bool_t '1' si le traitement a bien été fait, '0' sinon.
  */
-bool_t add_message(ip_port_t sender, u_int64_t id, uint32_t nonce, uint8_t type, data_t *content)
+bool_t add_message(ip_port_t dest, u_int64_t id, uint32_t nonce, uint8_t type, data_t *content)
 {
-    message_t *tmp = NULL;
-    if ((tmp = contains_message(id, nonce)) != NULL)
-    {
-        remove_sender(sender, tmp);
-        debug(D_INOND, 0, "add_message", "message en cours d'envoi");
-        return true;
-    }
-    message_t *msg = create_message(sender, id, nonce, type, content);
+    message_t *msg = create_message(dest, id, nonce, type, content);
     if (msg == NULL)
     {
         debug(D_INOND, 1, "add_message", "problème de création d'un message_t");
@@ -244,10 +236,10 @@ bool_t add_message(ip_port_t sender, u_int64_t id, uint32_t nonce, uint8_t type,
  */
 bool_t get_nexttime(struct timespec *tm)
 {
-
+    long one_sec_in_nsec = 1000000000;
     if (g_floods == NULL)
     {
-        tm->tv_sec = 30;
+        tm->tv_sec = 10;
         tm->tv_nsec = 0;
         return true;
     }
@@ -260,8 +252,29 @@ bool_t get_nexttime(struct timespec *tm)
     }
     long diff_sec = g_floods->send_time.tv_sec - tc.tv_sec;
     long diff_nsec = g_floods->send_time.tv_nsec - tc.tv_nsec;
-    tm->tv_sec = (diff_sec > 0) ? diff_sec : 0;
-    tm->tv_nsec = diff_nsec;
+    if (diff_sec < 0)
+    {
+        tm->tv_nsec = 0;
+        tm->tv_sec = 0;
+    }
+    else
+    {
+        if (diff_nsec < 0)
+        {
+            if (diff_sec > 0)
+            {
+                diff_nsec = one_sec_in_nsec + diff_nsec;
+                diff_sec--;
+            }
+            else
+            {
+                diff_sec = 0;
+                diff_nsec = 0;
+            }
+        }
+        tm->tv_nsec = diff_nsec;
+        tm->tv_sec = diff_sec;
+    }
     return true;
 }
 
@@ -271,16 +284,16 @@ bool_t get_nexttime(struct timespec *tm)
  * @param msg message qui a été inondé
  * @return bool_t '1' si l'envoi s'est bien passé, '0' sinon.
  */
-bool_t flood_goaway(message_t *msg)
+static bool_t flood_goaway(message_t *msg)
 {
     node_t *list = map_to_list(msg->recipient);
     node_t *tmp = list;
     bool_t no_error = true;
-    char *message = "L'utilisateur n'a pas acquité le message [00000000,0000]";
+    char message[] = "L'utilisateur n'a pas acquité le message [00000000,0000]";
     snprintf(message, strlen(message) + 1, "L'utilisateur n'a pas acquité le message [%8.lx,%4.x]", msg->id, msg->nonce);
     while (tmp != NULL)
     {
-        if (update_neighbours(tmp, message) == false)
+        if (update_neighbours(tmp, 2, message) == false)
             no_error = false;
         tmp = tmp->next;
     }
@@ -307,14 +320,20 @@ bool_t flood_message(message_t *msg)
     node_t *list = map_to_list(msg->recipient);
     node_t *tmp = list;
     int rc = 0;
-    data_t *tlv = data(msg->id, msg->nonce, msg->type, msg->content->iov_len, (uint8_t *)msg->content->iov_base);
+    data_t tlv = {0};
+    if (!data(&tlv, msg->id, msg->nonce, msg->type,
+              (uint8_t *)msg->content->iov_base, msg->content->iov_len))
+    {
+        debug(D_INOND, 1, "flood_message", "erreur data");
+        return false;
+    }
     while (tmp != NULL)
     {
         ip_port_t dest = {0};
         memmove(&dest, tmp->value->iov_base, sizeof(ip_port_t));
         if (is_symetric(dest))
         {
-            add_tlv(dest, tlv);
+            add_tlv(dest, &tlv);
             rc += 1;
         }
         else
@@ -324,6 +343,7 @@ bool_t flood_message(message_t *msg)
         }
         tmp = tmp->next;
     }
+    free(tlv.iov_base);
     freedeepnode(list);
     msg->count++;
     double two_pow_c = pow((double)2, (double)msg->count);
@@ -340,6 +360,11 @@ bool_t flood_message(message_t *msg)
  */
 bool_t launch_flood()
 {
+    if (g_floods == NULL)
+    {
+        debug(D_INOND, 0, "launch_flood", "floods vide");
+        return true;
+    }
     message_t *msg = NULL;
     struct timespec tc = {0};
     int rc = clock_gettime(CLOCK_MONOTONIC, &tc);
@@ -349,7 +374,8 @@ bool_t launch_flood()
         return false;
     }
     rc = 0;
-    while (g_floods != NULL && compare_time(tc, g_floods->send_time) <= 0)
+    debug_int(D_INOND, 0, "compare_time -> tc et g_floods", compare_time(tc, g_floods->send_time));
+    while (g_floods != NULL && compare_time(tc, g_floods->send_time) >= 0)
     {
         msg = g_floods;
         g_floods = g_floods->next;
@@ -370,12 +396,12 @@ bool_t launch_flood()
 /*
  * Affiche le TLV à l'utilisateur
  */
-static void print_tlv(uint8_t type, data_t *data, size_t *head_read, uint8_t length)
+static void print_tlv(uint8_t type, data_t content)
 {
     if (type == 0)
     {
         // action à faire quand on doit afficher une data à l'utilisateur
-        print_data(data->iov_base + *head_read, length);
+        print_data(content.iov_base, content.iov_len);
     }
 }
 
@@ -389,13 +415,14 @@ static void print_tlv(uint8_t type, data_t *data, size_t *head_read, uint8_t len
  */
 static bool_t send_ack(ip_port_t dest, uint64_t sender_id, u_int32_t nonce)
 {
-    data_t *ack_iovec = ack(sender_id, nonce);
-    if (ack_iovec == NULL)
+    data_t ack_iovec = {0};
+    if (!ack(&ack_iovec, sender_id, nonce))
     {
         debug(D_INOND, 1, "send_ack", "problème d'envoi de l'acquitement");
         return false;
     }
-    int rc = add_tlv(dest, ack_iovec);
+    int rc = add_tlv(dest, &ack_iovec);
+    free(ack_iovec.iov_base);
     if (rc == false)
     {
         debug(D_INOND, 1, "send_ack", "problème d'ajout du tlv ack");
@@ -409,6 +436,7 @@ static bool_t send_ack(ip_port_t dest, uint64_t sender_id, u_int32_t nonce)
  * @brief Fonction qui vient faire l'action correspondante à un data pour l'inondation.
  * Si la lecture du tlv s'est bien passé, le champs 'head_read' sera modifié pour pointer vers le tlv suivant.
  * 
+ * @param dest couple ip-port correspondant à la source du tlv
  * @param data Structure iovec contenant une suite de tlv.
  * @param head_read tête de lecture sur le tableau contenu dans la struct iovec.
  * @return bool_t renvoie '1' si tout s'est bien passé, '0' si on a rien fait ou s'il y a eu un problème.
@@ -448,15 +476,24 @@ bool_t apply_tlv_data(ip_port_t dest, data_t *data, size_t *head_read)
     *head_read += sizeof(u_int8_t);
     length -= sizeof(u_int8_t);
     data_t content = {data->iov_base + *head_read, length};
-    int rc = add_message(dest, sender_id, nonce, type, &content);
-    if (rc == false)
+    bool_t rc = true;
+    message_t *tmp = NULL;
+    if ((tmp = contains_message(sender_id, nonce)) == NULL)
     {
-        *head_read += length;
-        debug(D_INOND, 1, "apply_tlv_data", "problème d'ajout du message");
-        return false;
+        rc = add_message(dest, sender_id, nonce, type, &content);
+        if (rc == false)
+        {
+            debug(D_INOND, 1, "apply_tlv_data", "problème d'ajout du message");
+            return false;
+        }
+        print_tlv(type, content);
+    }
+    else
+    {
+        remove_sender(dest, tmp);
+        debug(D_INOND, 0, "add_message", "message en cours d'envoi");
     }
     *head_read += length;
-    print_tlv(type, data, head_read, length);
     rc = send_ack(dest, sender_id, nonce);
     return rc;
 }
@@ -465,6 +502,7 @@ bool_t apply_tlv_data(ip_port_t dest, data_t *data, size_t *head_read)
  * @brief Fonction qui vient faire l'action correspondante à un ack pour l'inondation.
  * Si la lecture du tlv s'est bien passé, le champs 'head_read' sera modifié pour pointer vers le tlv suivant.
  * 
+ * @param dest couple ip-port correspondant à la source du tlv
  * @param data Structure iovec contenant une suite de tlv.
  * @param head_read tête de lecture sur le tableau contenu dans la struct iovec.
  * @return bool_t renvoie '1' si tout s'est bien passé, '0' si on a rien fait ou s'il y a eu un problème.

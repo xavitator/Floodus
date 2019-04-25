@@ -13,12 +13,7 @@
 #include "debug.h"
 
 #define D_HASHMAP 0
-#define BIT_MAPSIZE 12
 #define HASHMAP_SIZE 4096
-#define false 0
-#define true 1
-
-typedef u_int8_t bool_t;
 
 /**
  * @brief Structure correspondant à une node la hashmap.
@@ -45,7 +40,7 @@ typedef struct hashmap_t
 } hashmap_t;
 
 hashmap_t *init_map(void);
-data_t *get_map(data_t *key, hashmap_t *map);
+bool_t get_map(data_t *key, data_t *value, hashmap_t *map);
 bool_t insert_map(data_t *key, data_t *value, hashmap_t *map);
 node_t *deep_copy_node(node_t *node);
 node_t *map_to_list(hashmap_t *map);

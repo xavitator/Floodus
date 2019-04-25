@@ -1,10 +1,6 @@
 #ifndef _INONDATION_H
 #define _INONDATION_H
 
-#define D_INOND 1
-
-#define COUNT_INOND 5
-
 #include <time.h>
 #include <math.h>
 
@@ -14,6 +10,9 @@
 #include "hashmap.h"
 #include "voisin.h"
 #include "view.h"
+
+#define D_INOND 1
+#define COUNT_INOND 5
 
 typedef struct message_t
 {
@@ -27,11 +26,11 @@ typedef struct message_t
     struct message_t *next;    // message suivant dans la liste
 } message_t;
 
-void free_inondation();
+void free_inondation(void);
 int compare_time(struct timespec ta, struct timespec tb);
-bool_t add_message(ip_port_t sender, u_int64_t id, uint32_t nonce, uint8_t type, data_t *content);
+bool_t add_message(ip_port_t dest, u_int64_t id, uint32_t nonce, uint8_t type, data_t *content);
 bool_t get_nexttime(struct timespec *tm);
-bool_t launch_flood();
+bool_t launch_flood(void);
 bool_t apply_tlv_data(ip_port_t dest, data_t *data, size_t *head_read);
 bool_t apply_tlv_ack(ip_port_t dest, data_t *data, size_t *head_read);
 
