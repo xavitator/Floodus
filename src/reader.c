@@ -119,6 +119,12 @@ bool_t tlv_call_neighbour(ip_port_t dest, data_t *data, size_t *head_read)
         *head_read = data->iov_len;
         return false;
     }
+    if (!is_neighbour(dest))
+    {
+        debug(D_READER, 1, "tlv_call_neighbour", "Source inconnue");
+        *head_read += len;
+        return false;
+    }
     bool_t res = apply_tlv_neighbour(data, head_read);
     if (res == false)
     {
@@ -150,6 +156,12 @@ bool_t tlv_call_data(ip_port_t dest, data_t *data, size_t *head_read)
     {
         debug(D_READER, 1, "tlv_call_data", "taille du message non correspondante");
         *head_read = data->iov_len;
+        return false;
+    }
+    if (!is_neighbour(dest))
+    {
+        debug(D_READER, 1, "tlv_call_data", "Source inconnue");
+        *head_read += len;
         return false;
     }
     bool_t res = apply_tlv_data(dest, data, head_read);

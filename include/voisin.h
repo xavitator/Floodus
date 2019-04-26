@@ -51,13 +51,14 @@ extern pthread_var_t g_neighbours;
 extern pthread_var_t g_environs;
 
 bool_t init_neighbours(void);
-bool_t update_neighbours(node_t *node,int code,char *msg); 
+bool_t update_neighbours(node_t *node, int code, char *msg);
 void free_neighbours(void);
 void leave_network(void);
 bool_t apply_tlv_hello(ip_port_t src, data_t *data, size_t *head_read);
 bool_t apply_tlv_neighbour(data_t *data, size_t *head_read);
-bool_t apply_tlv_goaway(ip_port_t src, data_t *data, size_t *head_read); 
+bool_t apply_tlv_goaway(ip_port_t src, data_t *data, size_t *head_read);
 bool_t is_symetric(ip_port_t ipport);
 bool_t is_more_than_two(struct timespec tm);
+bool_t is_neighbour(ip_port_t ipport);
 
 #endif
