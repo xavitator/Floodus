@@ -12,7 +12,7 @@ OBJ:= $(FILES:$(SRCDIR)%.c=$(BIN)%.o)
 
 CC = gcc
 FLAGS = -Wall -Wextra -Werror -fprofile-arcs -ftest-coverage
-LDLIBS = -pthread -D_REENTRANT -lm
+LDLIBS = -pthread -D_REENTRANT -lm -D_GNU_SOURCE
 
 .PHONY: all
 all:
