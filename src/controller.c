@@ -30,8 +30,9 @@ void stop_program(void)
 /**
  * @brief Ferme la socket
  */
-void close_sock(void) {
-  close(g_socket);
+void close_sock(void)
+{
+    close(g_socket);
 }
 
 /**
@@ -103,6 +104,7 @@ void launch_program()
     int nb_fd = 0;
     struct timespec zero = {0, 0};
     struct timespec tm = {0};
+    int count = 0;
     while (run)
     {
         fd_set readfds;
@@ -132,6 +134,15 @@ void launch_program()
                     debug(D_CONTROL, 0, "launch_program", "envoie d'un message");
             }
         }
+        if (nb_fd < 0 && (errno == ENETDOWN || errno == ENETRESET || errno == ENETUNREACH || errno == ENONET) && count < MAX_NETWRK_LOOP)
+        {
+            count += 1;
+            char tmp[] = "nombre de boucles restant : [0]";
+            snprintf(tmp, strlen(tmp) + 1, "nombre de boucles restant : [%d]", MAX_NETWRK_LOOP - count);
+            debug(D_CONTROL, 1, "launch_program -> problème de réseau", tmp);
+            usleep(30000);
+            continue;
+        }
         if (nb_fd < 0)
         {
             debug(D_CONTROL, 1, "launch_program -> problem du pselect", strerror(errno));
@@ -144,5 +155,6 @@ void launch_program()
             else
                 debug(D_CONTROL, 1, "launch_program", "problème d'inondation");
         }
+        count = 0;
     }
 }
