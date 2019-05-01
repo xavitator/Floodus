@@ -29,6 +29,7 @@
 #include "reader.h"
 #include "send_thread.h"
 #include "controller.h"
+#include "view.h"
 
 #define D_MAIN 1
 
@@ -65,6 +66,7 @@ static void initializer(void)
         exit(1);
     }
     signal(SIGINT, sig_int);
+    init_graph();
 }
 
 /**
@@ -83,6 +85,7 @@ static void finisher(void)
     free_inondation();
     free_writer();
     close_sock();
+    end_graph();
 }
 
 /**

@@ -33,6 +33,7 @@ void restore() {
   wattroff(top_panel, COLOR_PAIR(RED_COL));
   wattroff(top_panel, COLOR_PAIR(GREEN_COL));
   wattroff(top_panel, COLOR_PAIR(BLUE_COL));
+  wrefresh(top_panel);
 }
 
 
@@ -207,6 +208,11 @@ void init_graph() {
 
   sur_len = 6;
   memcpy(surname, "Nobody", sur_len);
+
+  wrefresh(top);
+  wrefresh(bottom);
+  wrefresh(top_panel);
+  wrefresh(bot_panel);
   
 }
 

@@ -17,11 +17,13 @@
  */
 void debug(uint8_t flag, uint8_t error, char *name, const char *msg)
 {
-  char *d = (error) ? "\e[1;31m[DEBUG]\e[0m" : "\e[1;32m[DEBUG]\e[0m";
+  if(error)
+    set_in_red();
+  else
+    set_in_green();
   if (DEBUG && flag)
-  {
-    fprintf(stderr, "%s Str %s : %s\n", d, name, msg);
-  }
+    wprintw(get_panel(), "[Debug] Str %s : %s\n", name, msg);
+  restore();
 }
 
 /**
@@ -35,10 +37,14 @@ void debug(uint8_t flag, uint8_t error, char *name, const char *msg)
  */
 void debug_and_exit(uint8_t flag, uint8_t error, char *name, const char *msg, int exit_code)
 {
-  char *d = (error) ? "\e[1;31m[DEBUG]\e[0m" : "\e[1;32m[DEBUG]\e[0m";
+  if(error)
+    set_in_red();
+  else
+    set_in_green();
   if (DEBUG && flag)
   {
-    fprintf(stderr, "%s Str %s : %s\n", d, name, msg);
+    wprintw(get_panel(), "[Debug] Str %s : %s\n", name, msg);
+    restore();
     exit(exit_code);
   }
 }
@@ -54,16 +60,21 @@ void debug_and_exit(uint8_t flag, uint8_t error, char *name, const char *msg, in
  */
 void debug_hex(uint8_t flag, uint8_t error, char *name, void *data, int data_len)
 {
-  char *d = (error) ? "\e[1;31m[DEBUG]\e[0m" : "\e[1;32m[DEBUG]\e[0m";
+  if(error)
+    set_in_red();
+  else
+    set_in_green();
+
   if (DEBUG && flag)
   {
-    fprintf(stderr, "%s Hexa %s : ", d, name);
+    wprintw(get_panel(), "[Debug] Hexa %s : ", name);
     for (int i = 0; i < data_len; i++)
     {
-      fprintf(stderr, "%.2x ", ((uint8_t *)data)[i]);
+      wprintw(get_panel(), "%.2x ", ((uint8_t *)data)[i]);
     }
-    fprintf(stderr, "\n");
+    wprintw(get_panel(), "\n");
   }
+  restore();
 }
 
 /**
@@ -78,15 +89,20 @@ void debug_hex(uint8_t flag, uint8_t error, char *name, void *data, int data_len
  */
 void debug_hex_and_exit(uint8_t flag, uint8_t error, char *name, void *data, int data_len, int exit_code)
 {
-  char *d = (error) ? "\e[1;31m[DEBUG]\e[0m" : "\e[1;32m[DEBUG]\e[0m";
+  if(error)
+    set_in_red();
+  else
+    set_in_green();
+  
   if (DEBUG && flag)
   {
-    fprintf(stderr, "%s Hexa %s : ", d, name);
+    wprintw(get_panel(), "[Debug] Hexa %s : ", name);
     for (int i = 0; i < data_len; i++)
     {
-      fprintf(stderr, "%.2x ", ((uint8_t *)data)[i]);
+      wprintw(get_panel(), "%.2x ", ((uint8_t *)data)[i]);
     }
-    fprintf(stderr, "\n");
+    wprintw(get_panel(), "\n");
+    restore();
     exit(exit_code);
   }
 }
@@ -101,11 +117,16 @@ void debug_hex_and_exit(uint8_t flag, uint8_t error, char *name, void *data, int
  */
 void debug_int(uint8_t flag, uint8_t error, char *name, int rc)
 {
-  char *d = (error) ? "\e[1;31m[DEBUG]\e[0m" : "\e[1;32m[DEBUG]\e[0m";
+  if(error)
+    set_in_red();
+  else
+    set_in_green();
+  
   if (DEBUG && flag)
   {
-    fprintf(stderr, "%s Int %s: %d\n", d, name, rc);
+    wprintw(get_panel(), "[Debug] Int %s: %d\n", name, rc);
   }
+  restore();
 }
 
 /**
@@ -119,10 +140,15 @@ void debug_int(uint8_t flag, uint8_t error, char *name, int rc)
  */
 void debug_int_and_exit(uint8_t flag, uint8_t error, char *name, int rc, int exit_code)
 {
-  char *d = (error) ? "\e[1;31m[DEBUG]\e[0m" : "\e[1;32m[DEBUG]\e[0m";
+  if(error)
+    set_in_red();
+  else
+    set_in_green();
+  
   if (DEBUG && flag)
   {
-    fprintf(stderr, "%s Int %s : %d\n", d, name, rc);
+    wprintw(get_panel(), "%s Int %s : %d\n", name, rc);
+    restore();
     exit(exit_code);
   }
 }
