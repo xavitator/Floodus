@@ -328,6 +328,7 @@ u_int32_t get_pmtu(ip_port_t dest)
                         &one, sizeof(one));
     if (rc < 0)
     {
+        close(s);
         debug(D_WRITER, 1, "get_pmtu -> setsockopt IPV6_DONTFRAG", strerror(errno));
         return 1000;
     }
@@ -335,6 +336,7 @@ u_int32_t get_pmtu(ip_port_t dest)
                     &one, sizeof(one));
     if (rc < 0)
     {
+        close(s);
         debug(D_WRITER, 1, "get_pmtu -> setsockopt IPV6_MTU_DISCOVER", strerror(errno));
         return 1000;
     }
@@ -345,6 +347,7 @@ u_int32_t get_pmtu(ip_port_t dest)
     rc = connect(s, (struct sockaddr *)&sin6, sizeof(sin6));
     if (rc < 0)
     {
+        close(s);
         debug(D_WRITER, 1, "get_pmtu -> impossible de se connecter", strerror(errno));
         return 1000;
     }
@@ -380,6 +383,7 @@ u_int32_t get_pmtu(ip_port_t dest)
         }
     }
     close(s);
+    pmtu -= 50;
     debug_int(D_WRITER, 0, "get_pmtu", pmtu);
     return pmtu;
 }
@@ -400,6 +404,7 @@ bool_t send_buffer_tlv()
         return false;
     }
     size_t pmtu = get_pmtu(g_write_buf->dest);
+    errno = 0;
     size_t sendlen = 0;
     size_t ind = 0;
     for (; ind < g_write_buf->tlvlen; ind++)

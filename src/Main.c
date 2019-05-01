@@ -71,11 +71,12 @@ static void initializer(void)
  */
 static void finisher(void)
 {
+    int rc = 1;
     leave_network();
     destroy_thread();
-    while (!buffer_is_empty())
+    while (!buffer_is_empty() && rc)
     {
-        send_buffer_tlv();
+        rc = send_buffer_tlv();
     }
     free_neighbours();
     free_inondation();

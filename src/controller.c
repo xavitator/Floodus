@@ -112,6 +112,7 @@ void launch_program()
         FD_ZERO(&readfds);
         FD_ZERO(&writefds);
         FD_SET(g_socket, &readfds);
+        int tmp = 0;
         if (!buffer_is_empty())
             FD_SET(g_socket, &writefds);
         get_nexttime(&tm);
@@ -120,6 +121,8 @@ void launch_program()
             if (FD_ISSET(g_socket, &readfds))
             {
                 rc = (int)read_msg();
+                tmp = (!tmp) ? errno : tmp;
+
                 if (rc < 0)
                     debug(D_CONTROL, 1, "launch_program", "message non lu -> lancer debug reader pour savoir");
                 else
@@ -128,22 +131,25 @@ void launch_program()
             if (FD_ISSET(g_socket, &writefds))
             {
                 rc = send_buffer_tlv();
+                tmp = (!tmp) ? errno : tmp;
+
                 if (!rc)
                     debug(D_CONTROL, 1, "launch_program", "message non envoyé");
                 else
                     debug(D_CONTROL, 0, "launch_program", "envoie d'un message");
             }
         }
-        if (nb_fd < 0 && (errno == ENETDOWN || errno == ENETRESET || errno == ENETUNREACH || errno == ENONET) && count < MAX_NETWRK_LOOP)
+        tmp = (!tmp) ? errno : tmp;
+        if ((tmp == ENETDOWN || tmp == ENETRESET || tmp == ENETUNREACH || tmp == ENONET) && count < MAX_NETWRK_LOOP)
         {
-            count += 1;
             char tmp[] = "nombre de boucles restant : [0]";
             snprintf(tmp, strlen(tmp) + 1, "nombre de boucles restant : [%d]", MAX_NETWRK_LOOP - count);
             debug(D_CONTROL, 1, "launch_program -> problème de réseau", tmp);
-            usleep(30000);
+            sleep(1);
+            count += 1;
             continue;
         }
-        if (nb_fd < 0)
+        if (nb_fd < 0 || tmp != 0)
         {
             debug(D_CONTROL, 1, "launch_program -> problem du pselect", strerror(errno));
             return;
