@@ -52,6 +52,7 @@ static void sig_int(int sig)
  */
 static void initializer(void)
 {
+    printf("test\n");
     int rc = init_sender();
     if (!rc)
     {
@@ -66,7 +67,6 @@ static void initializer(void)
         exit(1);
     }
     signal(SIGINT, sig_int);
-    init_graph();
     handle_input();
 }
 
@@ -88,7 +88,6 @@ static void finisher(void)
     close_sock();
     sleep(2);
     end_graph();
-
 }
 
 /**
@@ -175,6 +174,7 @@ int send_hello(char *dest, char *port)
  */
 int main(int argc, char *argv[])
 {
+    init_graph();
     char *port = "1212";
     char *default_dest = "jch.irif.fr";
     if (argc >= 3)
