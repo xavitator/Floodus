@@ -107,6 +107,30 @@ bool_t send_tlv(ip_port_t dest, data_t *tlvs, size_t tlvs_len)
     msg.msg_namelen = sizeof(struct sockaddr_in6);
     msg.msg_iov = content;
     msg.msg_iovlen = tlvs_len + 1;
+
+    // message ancillaire
+    struct in6_pktinfo info = {0};
+    struct cmsghdr *cmsg;
+
+    data_t dest_ivc = {&dest, sizeof(dest)};
+    data_t info_ivc = {&info, sizeof(info)};
+    int rc = get_map(&dest_ivc, &info_ivc, g_ancillary);
+    if (rc)
+    {
+        debug(D_WRITER, 1, "send_tlv", "ajout du message ancillaire");
+        union {
+            struct cmsghdr hdr;
+            unsigned char cmsgbuf[CMSG_SPACE(sizeof(struct in6_pktinfo))];
+        } u;
+        memset(u.cmsgbuf, 0, sizeof(u.cmsgbuf));
+        msg.msg_control = u.cmsgbuf;
+        msg.msg_controllen = sizeof(u.cmsgbuf);
+        cmsg = CMSG_FIRSTHDR(&msg);
+        cmsg->cmsg_level = IPPROTO_IPV6;
+        cmsg->cmsg_type = IPV6_PKTINFO;
+        cmsg->cmsg_len = CMSG_LEN(sizeof(struct in6_pktinfo));
+        memcpy(CMSG_DATA(cmsg), &info, sizeof(struct in6_pktinfo));
+    }
     while (1)
     {
         debug(D_WRITER, 0, "send_tlv", "écriture du message dans la socket");

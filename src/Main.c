@@ -63,6 +63,7 @@ static void initializer(void)
         exit(1);
     }
     signal(SIGINT, sig_int);
+    init_ancillary();
 }
 
 /**
@@ -78,6 +79,7 @@ static void finisher(void)
     {
         rc = send_buffer_tlv();
     }
+    free_ancillary();
     free_neighbours();
     free_inondation();
     free_writer();

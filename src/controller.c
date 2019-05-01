@@ -44,6 +44,7 @@ void close_sock(void)
  */
 int create_socket(uint16_t port)
 {
+    int one = 1;
     int rc = 0;
     int s = socket(AF_INET6, SOCK_DGRAM, 0);
     if (s < 0)
@@ -88,6 +89,13 @@ int create_socket(uint16_t port)
     {
         close(s);
         debug(D_CONTROL, 1, "create_socket", "changement des modes de la socket impossible");
+        return -4;
+    }
+    rc = setsockopt(s, IPPROTO_IPV6, IPV6_RECVPKTINFO, &one, sizeof(one));
+    if (rc < 0)
+    {
+        close(s);
+        debug(D_CONTROL, 1, "create_socket", "changement des options de la socket impossible pour IPV6_RECVPKTINFO");
         return -4;
     }
     g_socket = s;
