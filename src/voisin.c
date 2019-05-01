@@ -339,6 +339,19 @@ static bool_t apply_hello_long(ip_port_t src, u_int64_t id_src, u_int64_t id_des
   else
   {
     nval.id = id_src;
+    data_t tlv_hello = {0};
+    if(!hello_long(&tlv_hello, g_myid, nval.id))
+    {
+      debug(D_VOISIN, 1, "apply_hello_long", "tlv_hello = NULL");
+      return false;
+    }
+
+    rc = add_tlv(src, &tlv_hello);
+    free(tlv_hello.iov_base);
+    if(!rc) {
+      debug_int(D_VOISIN, 1, "apply_hello_long -> rc", rc);
+      return false;
+    }
   }
 
   rc = clock_gettime(CLOCK_MONOTONIC, &nval.hello);
