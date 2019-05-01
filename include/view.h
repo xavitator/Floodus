@@ -11,7 +11,7 @@
 
 #define D_VIEW 1
 
-#define BUF_LEN 256
+#define BUF_LEN 243
 #define MAX_SURNAME 30
 
 #define COL 0

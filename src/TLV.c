@@ -187,7 +187,7 @@ bool_t data(data_t *data_i, uint64_t dest_id, uint32_t nonce,
     return false;
   }
   msg_len = ((242 - msg_len > 0) ? msg_len : 242);
-  uint8_t size = 13 + msg_len + 2 /* + 2 pour l'entete */;
+  uint32_t size = 13 + msg_len + 2 /* + 2 pour l'entete */;
   uint8_t *content = malloc(sizeof(uint8_t) * size);
   if (content == NULL)
   {

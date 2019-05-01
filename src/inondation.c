@@ -235,14 +235,14 @@ bool_t add_message(ip_port_t dest, u_int64_t id, uint32_t nonce, uint8_t type, d
  * @param contentlen taille du contenu
  * @return bool_t '1' si l'inondation commence, '0' sinon.
  */
-bool_t add_my_message(char *content, size_t contentlen)
+bool_t add_my_message(uint8_t *content, size_t content_len)
 {
     ip_port_t dest = {0};
     srand(time(NULL));
     u_int32_t nonce = rand();
-    u_int8_t type = (contentlen < 220) ? 0 : 220;
-    data_t cont = {content, contentlen};
-    return add_message(dest, g_myid, nonce, type, &cont);
+    u_int8_t type = (content_len <= 242) ? 0 : 220;
+    data_t content_ivc = {content, content_len};
+    return add_message(dest, g_myid, nonce, type, &content_ivc);
 }
 
 /**

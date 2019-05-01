@@ -1,3 +1,4 @@
+#include "inondation.h"
 #include "view.h"
 
 static char buf[BUF_LEN];
@@ -84,7 +85,7 @@ static int get_input(int max)  {
  * @param content_len taille du contenu
  */
 void print_data(u_int8_t *content, u_int8_t content_len) {
-  char *display_msg = malloc(content_len+ 1);
+  uint8_t *display_msg = malloc(content_len+ 1);
   if (display_msg == NULL)
     exit(1);
   memset(display_msg, 0, content_len+1);
@@ -122,9 +123,9 @@ static void send_buffer() {
   content[sur_len+1] = ' ';
   memcpy(content+sur_len+2, buf, pos);
   set_in_blue();
-  print_data(content, BUF_LEN-1);
+  print_data(content, content_len-1);
   restore();
-  // Action data send_content avec content_len-1 => \0;
+  add_my_message(content, content_len-1);
   free(content);
 }
 
@@ -143,6 +144,8 @@ static int handle_cmd () {
     } else if (buf[1] == 's') {
       // Surname
       return 2;
+    } else {
+      return 2;
     }
   }
   return 0;
@@ -157,9 +160,9 @@ int handle_input() {
   int max = BUF_LEN - sur_len - 3;
   if(get_input(max)) {
     int code = handle_cmd();
-
     if(code) {
       empty_buff();
+      print_buff();
       return code;
     } else {
       send_buffer();
