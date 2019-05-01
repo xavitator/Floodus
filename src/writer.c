@@ -117,7 +117,7 @@ bool_t send_tlv(ip_port_t dest, data_t *tlvs, size_t tlvs_len)
             (errno != EWOULDBLOCK && errno != EAGAIN))
         {
             free(content);
-            debug_and_exit(D_WRITER, 1, "send_tlv -> envoi non effectué", strerror(errno), 1);
+            debug(D_WRITER, 1, "send_tlv -> envoi non effectué", strerror(errno));
             return false;
         }
     }
@@ -317,8 +317,71 @@ bool_t buffer_is_empty()
  */
 u_int32_t get_pmtu(ip_port_t dest)
 {
-    debug_hex(D_WRITER, 0, "get_pmtu -> dest", (uint8_t *)&dest, sizeof(dest));
-    return 1000;
+    int one = 1;
+    int s = socket(AF_INET6, SOCK_DGRAM, 0);
+    if (s < 0)
+    {
+        debug(D_WRITER, 1, "get_pmtu -> impossible de créer la socket", strerror(errno));
+        return 1000;
+    }
+    int rc = setsockopt(s, IPPROTO_IPV6, IPV6_DONTFRAG,
+                        &one, sizeof(one));
+    if (rc < 0)
+    {
+        debug(D_WRITER, 1, "get_pmtu -> setsockopt IPV6_DONTFRAG", strerror(errno));
+        return 1000;
+    }
+    rc = setsockopt(s, IPPROTO_IPV6, IPV6_MTU_DISCOVER,
+                    &one, sizeof(one));
+    if (rc < 0)
+    {
+        debug(D_WRITER, 1, "get_pmtu -> setsockopt IPV6_MTU_DISCOVER", strerror(errno));
+        return 1000;
+    }
+    struct sockaddr_in6 sin6 = {0};
+    sin6.sin6_family = AF_INET6;
+    sin6.sin6_port = dest.port;
+    memmove(&sin6.sin6_addr, dest.ipv6, sizeof(dest.ipv6));
+    rc = connect(s, (struct sockaddr *)&sin6, sizeof(sin6));
+    if (rc < 0)
+    {
+        debug(D_WRITER, 1, "get_pmtu -> impossible de se connecter", strerror(errno));
+        return 1000;
+    }
+    u_int32_t pmtu = 2000000;
+    u_int8_t buf[2000000] = {0};
+    rc = send(s, buf, pmtu, 0);
+    if (rc < 0)
+    {
+        if (errno == EMSGSIZE)
+        {
+            struct ip6_mtuinfo mtuinfo;
+            socklen_t infolen = sizeof(mtuinfo);
+            rc = getsockopt(s, IPPROTO_IPV6, IPV6_PATHMTU,
+                            &mtuinfo, &infolen);
+            if (rc >= 0)
+            {
+                /* On met a jour le PMTU */
+                pmtu = mtuinfo.ip6m_mtu;
+            }
+            else
+            {
+                /* On n'a pas réussi à déterminer le PMTU */
+                close(s);
+                debug(D_WRITER, 1, "get_pmtu -> echec de calcul du pmtu", strerror(errno));
+                return 1000;
+            }
+        }
+        else
+        {
+            close(s);
+            debug(D_WRITER, 1, "get_pmtu -> send echec", strerror(errno));
+            return 1000;
+        }
+    }
+    close(s);
+    debug_int(D_WRITER, 0, "get_pmtu", pmtu);
+    return pmtu;
 }
 
 /**
