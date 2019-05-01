@@ -67,6 +67,7 @@ static void initializer(void)
     }
     signal(SIGINT, sig_int);
     init_graph();
+    handle_input();
 }
 
 /**
@@ -85,7 +86,9 @@ static void finisher(void)
     free_inondation();
     free_writer();
     close_sock();
+    sleep(2);
     end_graph();
+
 }
 
 /**

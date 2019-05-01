@@ -160,8 +160,7 @@ int handle_input() {
 
     if(code) {
       empty_buff();
-      //return code
-      exit(0);
+      return code;
     } else {
       send_buffer();
       empty_buff();
@@ -227,16 +226,3 @@ void end_graph() {
   endwin();
 }
 
-
-
-/*int main() {
- 
-  init_graph();
-
-  while(1) {
-    handle_input();
-  }
- 
-  end_graph();
-  return 0;
-  }*/

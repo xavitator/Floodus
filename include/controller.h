@@ -10,6 +10,7 @@
 #include "inondation.h"
 #include "reader.h"
 #include "writer.h"
+#include "view.h"
 
 #define D_CONTROL 1
 
