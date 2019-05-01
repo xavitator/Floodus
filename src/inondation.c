@@ -229,6 +229,23 @@ bool_t add_message(ip_port_t dest, u_int64_t id, uint32_t nonce, uint8_t type, d
 }
 
 /**
+ * @brief Ajout d'un message à inonder que l'utilisateur a écrit
+ * 
+ * @param content contenu du message
+ * @param contentlen taille du contenu
+ * @return bool_t '1' si l'inondation commence, '0' sinon.
+ */
+bool_t add_my_message(char *content, size_t contentlen)
+{
+    ip_port_t dest = {0};
+    srand(time(NULL));
+    u_int32_t nonce = rand();
+    u_int8_t type = (contentlen < 220) ? 0 : 220;
+    data_t cont = {content, contentlen};
+    return add_message(dest, g_myid, nonce, type, &cont);
+}
+
+/**
  * @brief On récupère le temps qu'il reste avant le prochain message à inonder
  * 
  * @param tm struct timespec à remplir
