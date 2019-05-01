@@ -1,14 +1,35 @@
 #ifndef _VIEW_H
 #define _VIEW_H
 
-#define D_VIEW 1
-
-#include <sys/types.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
+#include <curses.h>
+#include <sys/types.h>
+#include <ctype.h>
 
-#include "debug.h"
+
+#define D_VIEW 1
+
+#define BUF_LEN 256
+#define MAX_SURNAME 30
+
+#define COL 0
+#define RED_COL 1
+#define GREEN_COL 2
+#define BLUE_COL 3
+
+
+WINDOW *get_panel(void);
+void set_in_red(void);
+void set_in_green(void);
+void set_in_blue(void);
+void restore(void);
 
 void print_data(u_int8_t *content, u_int8_t content_len);
+int handle_input(void);
+
+void init_graph(void);
+void end_graph(void);
 
 #endif
