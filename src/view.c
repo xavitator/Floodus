@@ -213,6 +213,7 @@ void init_graph() {
   wrefresh(top_panel);
   wrefresh(bot_panel);
   
+  empty_buff();
 }
 
 
