@@ -7,7 +7,7 @@
 
 #define D_WRITER 1
 
-#define MAX_PER_TLV 1000
+#define MAX_PER_TLV 2800
 
 void free_writer(void);
 bool_t send_tlv(ip_port_t dest, data_t *tlvs, size_t tlvs_len);
