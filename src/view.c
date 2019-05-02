@@ -1,4 +1,6 @@
+#include "make_demand.h"
 #include "inondation.h"
+#include "controller.h"
 #include "view.h"
 
 static char buf[BUF_LEN];
@@ -129,15 +131,38 @@ static void send_buffer() {
 }
 
 /**
- * Set 
+ * @brief
+ * Set surname
  */
-void set_surname() {
+static void set_surname() {
   char *new_surname = buf + 3;
   int size = (strlen(new_surname) < MAX_SURNAME)? strlen(new_surname) : (MAX_SURNAME-1) ;
   memset(surname,0,sur_len);
   memcpy(surname, new_surname, size);
   sur_len = size;
 }
+
+/**
+ * @brief
+ * Print intel about the system
+ */
+static void print_intel() {
+  struct sockaddr_in6 sin6 = {0};
+  uint32_t size = sizeof(struct sockaddr_in6);
+  if(getsockname(g_socket,(struct sockaddr*)&sin6,&size) == 0) {
+    char ip_addr[24] = {0};
+    inet_ntop(AF_INET6, &sin6,ip_addr,size);
+    set_in_blue();
+    wprintw(top_panel,"[info]\n|-ip %s", ip_addr);
+    wprintw(top_panel,"\n|-port %u", ntohs(sin6.sin6_port));
+    wprintw(top_panel, "\n|-surname %s\n", surname);
+    restore();
+  }
+
+
+   restore();
+}
+
 
 /**
  * @brief
@@ -148,12 +173,19 @@ static int handle_cmd () {
     if(buf[1] == 'q') {
       return 1;
     } else if (buf[1] == 'c'){
-      // Connect
+      set_in_blue();
+      wprintw(top_panel,"[connect] %s\n", buf+3);
+      restore();
+      try_connect_pair(buf+3);
       return 2;
     } else if (buf[1] == 's') {
       set_surname();
+      set_in_blue();
+      wprintw(top_panel, "[surname] %s", surname);
+      restore();
       return 2;
-    } else {
+    } else if (buf[1] == 'i'){
+      print_intel();
       return 2;
     }
   }

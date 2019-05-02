@@ -7,6 +7,9 @@
 #include <curses.h>
 #include <sys/types.h>
 #include <ctype.h>
+ #include <sys/socket.h>
+#include <netinet/in.h>
+
 
 
 #define D_VIEW 1
