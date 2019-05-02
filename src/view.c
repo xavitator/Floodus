@@ -38,7 +38,6 @@ void restore() {
 }
 
 
-
 /**
  *  ## Gestion du buffer ##
  */
@@ -129,6 +128,16 @@ static void send_buffer() {
   free(content);
 }
 
+/**
+ * Set 
+ */
+void set_surname() {
+  char *new_surname = buf + 3;
+  int size = (strlen(new_surname) < MAX_SURNAME)? strlen(new_surname) : (MAX_SURNAME-1) ;
+  memset(surname,0,sur_len);
+  memcpy(surname, new_surname, size);
+  sur_len = size;
+}
 
 /**
  * @brief
@@ -142,7 +151,7 @@ static int handle_cmd () {
       // Connect
       return 2;
     } else if (buf[1] == 's') {
-      // Surname
+      set_surname();
       return 2;
     } else {
       return 2;
