@@ -117,7 +117,7 @@ bool_t send_tlv(ip_port_t dest, data_t *tlvs, size_t tlvs_len)
     int rc = get_map(&dest_ivc, &info_ivc, g_ancillary);
     if (rc)
     {
-        debug(D_WRITER, 1, "send_tlv", "ajout du message ancillaire");
+        debug(D_WRITER, 0, "send_tlv", "ajout du message ancillaire");
         union {
             struct cmsghdr hdr;
             unsigned char cmsgbuf[CMSG_SPACE(sizeof(struct in6_pktinfo))];

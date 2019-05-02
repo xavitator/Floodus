@@ -476,9 +476,8 @@ ssize_t read_msg(void)
         }
         else
         {
-            print_iovec(&ipport_ivc);
             int rc = insert_map(&ipport_ivc, &info_ivc, g_ancillary);
-            debug_int(D_READER, 1, "read_msg -> ajout d'un message ancillaire", rc);
+            debug_int(D_READER, 0, "read_msg -> ajout d'un message ancillaire", rc);
         }
     }
 

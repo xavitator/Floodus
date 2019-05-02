@@ -141,9 +141,12 @@ static bool_t traitment_220(u_int64_t sender_id, data_t content)
     cont += sizeof(nonce) + sizeof(type) + sizeof(size) + sizeof(ind);
     contlen += sizeof(nonce) + sizeof(type) + sizeof(size) + sizeof(ind);
 
+    u_int8_t key_content[sizeof(u_int64_t) + sizeof(u_int32_t)] = {0};
+    memmove(key_content, &sender_id, sizeof(sender_id));
+    memmove(key_content + sizeof(sender_id), &nonce, sizeof(nonce));
     big_data_t tmp = {0};
     data_t tmp_ivc = {&tmp, sizeof(tmp)};
-    data_t key_ivc = {{sender_id, nonce}, sizeof(sender_id) + sizeof(nonce)};
+    data_t key_ivc = {key_content, sizeof(sender_id) + sizeof(nonce)};
 
     int rc = 0;
 
