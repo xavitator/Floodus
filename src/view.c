@@ -88,7 +88,7 @@ static int get_input(int max)  {
 void print_data(u_int8_t *content, u_int8_t content_len) {
   uint8_t *display_msg = malloc(content_len+ 1);
   if (display_msg == NULL)
-    exit(1);
+    return;
   memset(display_msg, 0, content_len+1);
   memcpy(display_msg, content, content_len);
   
@@ -118,7 +118,7 @@ static void send_buffer() {
   int content_len = pos + sur_len + 3;
   uint8_t *content = malloc(content_len);
   if (content == NULL)
-    exit(0);
+    return;
   memcpy(content, surname, sur_len);
   content[sur_len] = ':';
   content[sur_len+1] = ' ';
