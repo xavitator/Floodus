@@ -122,7 +122,7 @@ bool_t send_tlv(ip_port_t dest, data_t *tlvs, size_t tlvs_len)
             struct cmsghdr hdr;
             unsigned char cmsgbuf[CMSG_SPACE(sizeof(struct in6_pktinfo))];
         } u;
-        memset(u.cmsgbuf, 0, sizeof(u.cmsgbuf));
+        memset(&u, 0, sizeof(u));
         msg.msg_control = u.cmsgbuf;
         msg.msg_controllen = sizeof(u.cmsgbuf);
         cmsg = CMSG_FIRSTHDR(&msg);
@@ -346,6 +346,7 @@ u_int32_t get_pmtu(ip_port_t dest)
     if (s < 0)
     {
         debug(D_WRITER, 1, "get_pmtu -> impossible de créer la socket", strerror(errno));
+        errno = 0;
         return 1000;
     }
     int rc = setsockopt(s, IPPROTO_IPV6, IPV6_DONTFRAG,
@@ -354,6 +355,7 @@ u_int32_t get_pmtu(ip_port_t dest)
     {
         close(s);
         debug(D_WRITER, 1, "get_pmtu -> setsockopt IPV6_DONTFRAG", strerror(errno));
+        errno = 0;
         return 1000;
     }
     rc = setsockopt(s, IPPROTO_IPV6, IPV6_MTU_DISCOVER,
@@ -362,6 +364,7 @@ u_int32_t get_pmtu(ip_port_t dest)
     {
         close(s);
         debug(D_WRITER, 1, "get_pmtu -> setsockopt IPV6_MTU_DISCOVER", strerror(errno));
+        errno = 0;
         return 1000;
     }
     struct sockaddr_in6 sin6 = {0};
@@ -373,10 +376,15 @@ u_int32_t get_pmtu(ip_port_t dest)
     {
         close(s);
         debug(D_WRITER, 1, "get_pmtu -> impossible de se connecter", strerror(errno));
+        errno = 0;
         return 1000;
     }
-    u_int32_t pmtu = 2000000;
-    u_int8_t buf[2000000] = {0};
+    u_int16_t pmtu = USHRT_MAX;
+    u_int8_t buf[USHRT_MAX] = {0};
+    buf[0] = 93;
+    buf[1] = 2;
+    u_int16_t tmp = htons(pmtu - 4);
+    memmove(buf, &tmp, 2);
     rc = send(s, buf, pmtu, 0);
     if (rc < 0)
     {
@@ -396,6 +404,7 @@ u_int32_t get_pmtu(ip_port_t dest)
                 /* On n'a pas réussi à déterminer le PMTU */
                 close(s);
                 debug(D_WRITER, 1, "get_pmtu -> echec de calcul du pmtu", strerror(errno));
+                errno = 0;
                 return 1000;
             }
         }
@@ -403,12 +412,14 @@ u_int32_t get_pmtu(ip_port_t dest)
         {
             close(s);
             debug(D_WRITER, 1, "get_pmtu -> send echec", strerror(errno));
+            errno = 0;
             return 1000;
         }
     }
     close(s);
     pmtu -= 50;
     debug_int(D_WRITER, 0, "get_pmtu", pmtu);
+    errno = 0;
     return pmtu;
 }
 
@@ -428,7 +439,6 @@ bool_t send_buffer_tlv()
         return false;
     }
     size_t pmtu = get_pmtu(g_write_buf->dest);
-    errno = 0;
     size_t sendlen = 0;
     size_t ind = 0;
     for (; ind < g_write_buf->tlvlen; ind++)

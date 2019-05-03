@@ -47,7 +47,7 @@ void free_big_data(void)
 /**
  * @brief On regarde tout le contenu de la hashmap.
  * Si on a terminé de remplir un big_data, on l'affiche et on le supprime.
- * Si le temps pour un big_data est dépassé, on le supprimer
+ * Si le temps pour un big_data est dépassé, on le supprime
  * 
  */
 static void clear_big_data(void)
@@ -63,6 +63,7 @@ static void clear_big_data(void)
     node_t *tmp2 = map_to_list(g_big_data_map);
     for (node_t *base = tmp2; base != NULL; base = base->next)
     {
+        rc = 0;
         memmove(&tmp, (base->value->iov_base), base->value->iov_len);
         if (tmp.read_nb == tmp.contentlen)
         {
@@ -139,7 +140,7 @@ static bool_t traitment_220(u_int64_t sender_id, data_t content)
     memmove(&size, ((u_int8_t *)content.iov_base + sizeof(u_int32_t) + sizeof(type)), sizeof(u_int16_t));
     memmove(&ind, ((u_int8_t *)content.iov_base + sizeof(nonce) + sizeof(type) + sizeof(size)), sizeof(u_int16_t));
     cont += sizeof(nonce) + sizeof(type) + sizeof(size) + sizeof(ind);
-    contlen += sizeof(nonce) + sizeof(type) + sizeof(size) + sizeof(ind);
+    contlen -= sizeof(nonce) + sizeof(type) + sizeof(size) + sizeof(ind);
 
     u_int8_t key_content[sizeof(u_int64_t) + sizeof(u_int32_t)] = {0};
     memmove(key_content, &sender_id, sizeof(sender_id));
@@ -193,11 +194,11 @@ static bool_t traitment_220(u_int64_t sender_id, data_t content)
  */
 bool_t traitment_data(u_int64_t sender_id, uint8_t type, data_t content)
 {
+    int rc = 1;
     if (type == 0)
     {
         // action à faire quand on doit afficher une data à l'utilisateur
         print_data(content.iov_base, content.iov_len);
-        return true;
     }
     if (type == 220)
     {
@@ -206,13 +207,12 @@ bool_t traitment_data(u_int64_t sender_id, uint8_t type, data_t content)
             debug(D_DATA, 1, "traitment_data", "taille du content trop petite");
             return false;
         }
-        int rc = traitment_220(sender_id, content);
+        rc = traitment_220(sender_id, content);
         if (!rc)
             debug(D_DATA, 1, "traitment_data", "traitement du type 220 non effectué");
         else
             debug(D_DATA, 0, "traitment_data", "traitement du type 220 effectué");
-        return rc;
     }
     clear_big_data();
-    return true;
+    return rc;
 }

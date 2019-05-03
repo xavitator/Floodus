@@ -1,6 +1,8 @@
 #ifndef _WRITER_H
 #define _WRITER_H
 
+#include <limits.h>
+
 #include "hashmap.h"
 #include "voisin.h"
 #include "controller.h"

@@ -392,6 +392,7 @@ ssize_t read_msg(void)
         struct cmsghdr hdr;
         unsigned char cmsgbuf[CMSG_SPACE(sizeof(struct in6_pktinfo))];
     } u;
+    memset(&u, 0, sizeof(u));
     struct cmsghdr *cmsg = NULL;
     struct in6_pktinfo *info = NULL;
 
