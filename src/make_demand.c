@@ -6,7 +6,7 @@
  * @param p destinataire
  * @return int boolean disant si tout s'est bien passé
  */
-int make_demand(struct addrinfo *p)
+static int make_demand(struct addrinfo *p)
 {
     data_t hs = {0};
     if (!hello_short(&hs, g_myid))
@@ -17,9 +17,12 @@ int make_demand(struct addrinfo *p)
     ip_port_t ipport = {0};
     ipport.port = ((struct sockaddr_in6 *)p->ai_addr)->sin6_port;
     memmove(ipport.ipv6, &((struct sockaddr_in6 *)p->ai_addr)->sin6_addr, sizeof(ipport.ipv6));
-    int rc = send_tlv(ipport, &hs, 1);
+    int rc = add_tlv(ipport, &hs);
     free(hs.iov_base);
-
+    if(!rc) {
+      debug(D_MAKE, 1, "make_demand -> add_tlv", "can't send");
+      return 0;
+    }
     data_t new_neighbour = {0};
     if (!neighbour(&new_neighbour, ipport.ipv6, ipport.port))
     {
@@ -81,40 +84,25 @@ int send_hello(char *dest, char *port)
 void try_connect_pair(char *content) {
   int i = 0;
 
-  char *dest = malloc(45);
-  if(dest == NULL)
-    return;
-  char *port = malloc(6);
-  if(port == NULL) {
-    free(dest);
-    return;
-  }
+  char dest[41] = {0};
+  char port[6];
 
-  memset(dest,0,45);
-  memset(port,0,6);
-  
   while(content[i] != '\0' && content[i] != ' ')
     i++;
   
-  if(content[i] == '\0') {
-    free(dest);
-    free(port);
-    return;
-  }
+  if(content[i] == '\0')return;
   
   if(i < 40) {
     memcpy(dest, content, i);
     content = content+i+1;
     i = 0;
 
-    while(content[i] != '\0')
+    while(content[i] != '\0' && content[i] != ' ')
       i++;
   
     if(i < 6) {
       memcpy(port, content,i);
+      send_hello(dest, port);
     }
   }
-  send_hello(dest, port);
-  free(dest);
-  free(port);
 }

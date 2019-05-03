@@ -304,7 +304,6 @@ bool_t buffer_is_empty()
 {
     lock_buff();
     bool_t res = (g_write_buf == NULL);
-    //debug_int(D_WRITER, 0, "buffer_is_empty", res);
     unlock_buff();
     return res;
 }

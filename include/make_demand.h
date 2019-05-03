@@ -21,7 +21,6 @@
 
 #define D_MAKE 1
 
-int make_demand(struct addrinfo *p);
 int send_hello(char *dest, char *port);
 void try_connect_pair(char *content);
 
