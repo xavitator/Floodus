@@ -121,19 +121,20 @@ void launch_program()
         FD_ZERO(&writefds);
         FD_SET(g_socket, &readfds);
         FD_SET(STDIN_FILENO, &readfds);
-      
-      int tmp = 0;
+
+        int tmp = 0;
         if (!buffer_is_empty())
             FD_SET(g_socket, &writefds);
         get_nexttime(&tm);
         if ((nb_fd = pselect(g_socket + 1, &readfds, &writefds, NULL, &tm, NULL)) > 0)
         {
-          if(FD_ISSET(STDIN_FILENO, &readfds)) {
-            int code = handle_input();
-            if(code == 1)
-              run = false;
-          }
-          
+            if (FD_ISSET(STDIN_FILENO, &readfds))
+            {
+                int code = handle_input();
+                if (code == 1)
+                    run = false;
+            }
+
             if (FD_ISSET(g_socket, &readfds))
             {
                 rc = (int)read_msg();
@@ -160,7 +161,7 @@ void launch_program()
         {
             char ch[] = "nombre de boucles restant : [0]";
             snprintf(ch, strlen(ch) + 1, "nombre de boucles restant : [%d]", MAX_NETWRK_LOOP - count);
-            debug(D_CONTROL, 1, "launch_program -> problème de réseau", tmp);
+            debug(D_CONTROL, 1, "launch_program -> problème de réseau", ch);
             sleep(1);
             count += 1;
             continue;
