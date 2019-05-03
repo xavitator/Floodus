@@ -13,7 +13,7 @@ OBJ:= $(FILES:$(SRCDIR)%.c=$(BIN)%.o)
 CC = gcc
 NCURSES = $(shell pkg-config ncurses --libs)
 FLAGS = -Wall -Wextra -Werror -fprofile-arcs -ftest-coverage
-LDLIBS = -pthread -D_REENTRANT -lm $(NCURSES)
+LDLIBS = -pthread -D_REENTRANT -lm -D_GNU_SOURCE $(NCURSES)
 
 .PHONY: all
 all:

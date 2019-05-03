@@ -107,6 +107,30 @@ bool_t send_tlv(ip_port_t dest, data_t *tlvs, size_t tlvs_len)
     msg.msg_namelen = sizeof(struct sockaddr_in6);
     msg.msg_iov = content;
     msg.msg_iovlen = tlvs_len + 1;
+
+    // message ancillaire
+    struct in6_pktinfo info = {0};
+    struct cmsghdr *cmsg;
+
+    data_t dest_ivc = {&dest, sizeof(dest)};
+    data_t info_ivc = {&info, sizeof(info)};
+    int rc = get_map(&dest_ivc, &info_ivc, g_ancillary);
+    if (rc)
+    {
+        debug(D_WRITER, 0, "send_tlv", "ajout du message ancillaire");
+        union {
+            struct cmsghdr hdr;
+            unsigned char cmsgbuf[CMSG_SPACE(sizeof(struct in6_pktinfo))];
+        } u;
+        memset(&u, 0, sizeof(u));
+        msg.msg_control = u.cmsgbuf;
+        msg.msg_controllen = sizeof(u.cmsgbuf);
+        cmsg = CMSG_FIRSTHDR(&msg);
+        cmsg->cmsg_level = IPPROTO_IPV6;
+        cmsg->cmsg_type = IPV6_PKTINFO;
+        cmsg->cmsg_len = CMSG_LEN(sizeof(struct in6_pktinfo));
+        memcpy(CMSG_DATA(cmsg), &info, sizeof(struct in6_pktinfo));
+    }
     while (1)
     {
         debug(D_WRITER, 0, "send_tlv", "écriture du message dans la socket");
@@ -117,7 +141,7 @@ bool_t send_tlv(ip_port_t dest, data_t *tlvs, size_t tlvs_len)
             (errno != EWOULDBLOCK && errno != EAGAIN))
         {
             free(content);
-            debug_and_exit(D_WRITER, 1, "send_tlv -> envoi non effectué", strerror(errno), 1);
+            debug(D_WRITER, 1, "send_tlv -> envoi non effectué", strerror(errno));
             return false;
         }
     }
@@ -316,8 +340,86 @@ bool_t buffer_is_empty()
  */
 u_int32_t get_pmtu(ip_port_t dest)
 {
-    debug_hex(D_WRITER, 0, "get_pmtu -> dest", (uint8_t *)&dest, sizeof(dest));
-    return 1000;
+    int one = 1;
+    int s = socket(AF_INET6, SOCK_DGRAM, 0);
+    if (s < 0)
+    {
+        debug(D_WRITER, 1, "get_pmtu -> impossible de créer la socket", strerror(errno));
+        errno = 0;
+        return 1000;
+    }
+    int rc = setsockopt(s, IPPROTO_IPV6, IPV6_DONTFRAG,
+                        &one, sizeof(one));
+    if (rc < 0)
+    {
+        close(s);
+        debug(D_WRITER, 1, "get_pmtu -> setsockopt IPV6_DONTFRAG", strerror(errno));
+        errno = 0;
+        return 1000;
+    }
+    rc = setsockopt(s, IPPROTO_IPV6, IPV6_MTU_DISCOVER,
+                    &one, sizeof(one));
+    if (rc < 0)
+    {
+        close(s);
+        debug(D_WRITER, 1, "get_pmtu -> setsockopt IPV6_MTU_DISCOVER", strerror(errno));
+        errno = 0;
+        return 1000;
+    }
+    struct sockaddr_in6 sin6 = {0};
+    sin6.sin6_family = AF_INET6;
+    sin6.sin6_port = dest.port;
+    memmove(&sin6.sin6_addr, dest.ipv6, sizeof(dest.ipv6));
+    rc = connect(s, (struct sockaddr *)&sin6, sizeof(sin6));
+    if (rc < 0)
+    {
+        close(s);
+        debug(D_WRITER, 1, "get_pmtu -> impossible de se connecter", strerror(errno));
+        errno = 0;
+        return 1000;
+    }
+    u_int16_t pmtu = USHRT_MAX;
+    u_int8_t buf[USHRT_MAX] = {0};
+    buf[0] = 93;
+    buf[1] = 2;
+    u_int16_t tmp = htons(pmtu - 4);
+    memmove(buf, &tmp, 2);
+    rc = send(s, buf, pmtu, 0);
+    if (rc < 0)
+    {
+        if (errno == EMSGSIZE)
+        {
+            struct ip6_mtuinfo mtuinfo;
+            socklen_t infolen = sizeof(mtuinfo);
+            rc = getsockopt(s, IPPROTO_IPV6, IPV6_PATHMTU,
+                            &mtuinfo, &infolen);
+            if (rc >= 0)
+            {
+                /* On met a jour le PMTU */
+                pmtu = mtuinfo.ip6m_mtu;
+            }
+            else
+            {
+                /* On n'a pas réussi à déterminer le PMTU */
+                close(s);
+                debug(D_WRITER, 1, "get_pmtu -> echec de calcul du pmtu", strerror(errno));
+                errno = 0;
+                return 1000;
+            }
+        }
+        else
+        {
+            close(s);
+            debug(D_WRITER, 1, "get_pmtu -> send echec", strerror(errno));
+            errno = 0;
+            return 1000;
+        }
+    }
+    close(s);
+    pmtu -= 50;
+    debug_int(D_WRITER, 0, "get_pmtu", pmtu);
+    errno = 0;
+    return pmtu;
 }
 
 /**

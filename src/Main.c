@@ -5,8 +5,6 @@
  * 
  */
 
-#define _GNU_SOURCE
-
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
@@ -67,6 +65,23 @@ static void initializer(void)
         destroy_thread();
         exit(1);
     }
+    rc = init_ancillary();
+    if (!rc)
+    {
+        debug(D_MAIN, 1, "initializer", "initialisation des ancillaires impossible");
+        destroy_thread();
+        free_neighbours();
+        exit(1);
+    }
+    rc = init_big_data();
+    if (!rc)
+    {
+        debug(D_MAIN, 1, "initializer", "initialisation des big_data impossible");
+        destroy_thread();
+        free_neighbours();
+        free_ancillary();
+        exit(1);
+    }
     signal(SIGINT, sig_int);
     handle_input();
 }
@@ -77,12 +92,15 @@ static void initializer(void)
  */
 static void finisher(void)
 {
+    int rc = 1;
     leave_network();
     destroy_thread();
-    while (!buffer_is_empty())
+    while (!buffer_is_empty() && rc)
     {
-        send_buffer_tlv();
+        rc = send_buffer_tlv();
     }
+    free_ancillary();
+    free_big_data();
     free_neighbours();
     free_inondation();
     free_writer();

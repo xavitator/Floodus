@@ -443,7 +443,7 @@ bool_t apply_tlv_neighbour(data_t *data, size_t *head_read)
   if (length == 18 /* taille tlv_neighbour */)
   {
     data_t ipport = {data->iov_base + *head_read, 18};
-    debug_hex(D_VOISIN,0,"insert_neighbour", data->iov_base+*head_read, 18 );
+    debug_hex(D_VOISIN, 0, "insert_neighbour", data->iov_base + *head_read, 18);
     lock(&g_neighbours);
     lock(&g_environs);
     if (!contains_map(&ipport, g_neighbours.content))
@@ -589,4 +589,19 @@ bool_t is_more_than_two(struct timespec tm)
     return false;
   }
   return (tv_current.tv_sec - tm.tv_sec > 120);
+}
+
+/**
+ * @brief On renvoie si un couple ip-port correspond à un voisin.
+ * 
+ * @param ipport ip-port
+ * @return bool_t '1' si oui, '0' sinon.
+ */
+bool_t is_neighbour(ip_port_t ipport)
+{
+  lock(&g_neighbours);
+  data_t ipport_ivc = {&ipport, sizeof(ip_port_t)};
+  int rc = contains_map(&ipport_ivc, g_neighbours.content);
+  unlock(&g_neighbours);
+  return rc;
 }

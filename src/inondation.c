@@ -410,18 +410,6 @@ bool_t launch_flood()
     return true;
 }
 
-/*
- * Affiche le TLV à l'utilisateur
- */
-static void print_tlv(uint8_t type, data_t content)
-{
-    if (type == 0)
-    {
-        // action à faire quand on doit afficher une data à l'utilisateur
-        print_data(content.iov_base, content.iov_len);
-    }
-}
-
 /**
  * @brief Envoie d'un acquittement pour le message reçu.
  * 
@@ -501,9 +489,12 @@ bool_t apply_tlv_data(ip_port_t dest, data_t *data, size_t *head_read)
         if (rc == false)
         {
             debug(D_INOND, 1, "apply_tlv_data", "problème d'ajout du message");
+            *head_read += length;
             return false;
         }
-        print_tlv(type, content);
+        rc = traitment_data(sender_id, type, content);
+        if (!rc)
+            debug(D_INOND, 1, "apply_tlv_data", "problème de traitement du message");
     }
     else
     {

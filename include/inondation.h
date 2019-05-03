@@ -9,7 +9,7 @@
 #include "TLV.h"
 #include "hashmap.h"
 #include "voisin.h"
-#include "view.h"
+#include "data.h"
 
 #define D_INOND 1
 #define COUNT_INOND 5
