@@ -10,6 +10,15 @@
 typedef bool_t (*tlv_function_t)(ip_port_t, data_t *, size_t *);
 
 /**
+ * @brief Hashmap contenant les messages ancillaires
+ * 
+ * clé : ip_port_t du destinataire
+ * valeur : contenu du message ancillaire en in6_addr
+ * 
+ */
+hashmap_t *g_ancillary = NULL;
+
+/**
  * @brief Fonction appelé lors de la lecture d'un tlv 'pad1'
  * 
  * @param dest couple ip-port de celui qui a envoyé le tlv
@@ -119,6 +128,12 @@ bool_t tlv_call_neighbour(ip_port_t dest, data_t *data, size_t *head_read)
         *head_read = data->iov_len;
         return false;
     }
+    if (!is_neighbour(dest))
+    {
+        debug(D_READER, 1, "tlv_call_neighbour", "Source inconnue");
+        *head_read += len;
+        return false;
+    }
     bool_t res = apply_tlv_neighbour(data, head_read);
     if (res == false)
     {
@@ -150,6 +165,12 @@ bool_t tlv_call_data(ip_port_t dest, data_t *data, size_t *head_read)
     {
         debug(D_READER, 1, "tlv_call_data", "taille du message non correspondante");
         *head_read = data->iov_len;
+        return false;
+    }
+    if (!is_neighbour(dest))
+    {
+        debug(D_READER, 1, "tlv_call_data", "Source inconnue");
+        *head_read += len;
         return false;
     }
     bool_t res = apply_tlv_data(dest, data, head_read);
@@ -289,6 +310,33 @@ tlv_function_t tlv_function_call[NB_TLV] = {
 };
 
 /**
+ * @brief Initialisation de g_ancillary
+ * 
+ * @return bool_t '1' si init bien passé, '0' sinon.
+ */
+bool_t init_ancillary(void)
+{
+    g_ancillary = init_map();
+    if (g_ancillary == NULL)
+    {
+        debug(D_READER, 1, "init_ancillary", "impossible d'init g_ancillary");
+        return false;
+    }
+    debug(D_READER, 0, "init_ancillary", "init g_ancillary");
+    return true;
+}
+
+/**
+ * @brief Free de g_ancillary
+ * 
+ */
+void free_ancillary(void)
+{
+    freehashmap(g_ancillary);
+    g_ancillary = NULL;
+}
+
+/**
  * @brief Lecture d'une suite de tlvs
  * 
  * @param dest Couple ip-port de celui qui a émis les tlvs reçus
@@ -339,6 +387,15 @@ ssize_t read_msg(void)
     corpus.iov_base = req;
     corpus.iov_len = READBUF;
 
+    //initialisation message de control
+    union {
+        struct cmsghdr hdr;
+        unsigned char cmsgbuf[CMSG_SPACE(sizeof(struct in6_pktinfo))];
+    } u;
+    memset(&u, 0, sizeof(u));
+    struct cmsghdr *cmsg = NULL;
+    struct in6_pktinfo *info = NULL;
+
     // initialisation du struct msghdr
     data_t content[2] = {header_ivc, corpus};
     struct msghdr reader = {0};
@@ -346,6 +403,8 @@ ssize_t read_msg(void)
     reader.msg_namelen = recvlen;
     reader.msg_iov = content;
     reader.msg_iovlen = 2;
+    reader.msg_control = (struct cmsghdr *)u.cmsgbuf;
+    reader.msg_controllen = sizeof(u.cmsgbuf);
 
     ssize_t rc = 0;
     // attente active si la socket est pas dispo meme après un select
@@ -378,11 +437,51 @@ ssize_t read_msg(void)
         debug(D_READER, 1, "read_msg", "taille lue et taille attendue différente");
         return 0;
     }
+    //traitement message ancillaire
+    cmsg = CMSG_FIRSTHDR(&reader);
+    while (cmsg != NULL)
+    {
+        if ((cmsg->cmsg_level == IPPROTO_IPV6) &&
+            (cmsg->cmsg_type == IPV6_PKTINFO))
+        {
+            info = (struct in6_pktinfo *)CMSG_DATA(cmsg);
+            break;
+        }
+        cmsg = CMSG_NXTHDR(&reader, cmsg);
+    }
+
     // traitement des données reçues
     ip_port_t ipport = {0};
     memmove(&ipport.port, &((struct sockaddr_in6 *)reader.msg_name)->sin6_port, sizeof(ipport.port));
     memmove(ipport.ipv6, &((struct sockaddr_in6 *)reader.msg_name)->sin6_addr, sizeof(ipport.ipv6));
     content[1].iov_len = len_msg;
+
+    if (info == NULL)
+    {
+        debug(D_READER, 1, "read_msg", "IPV6_PKTINFO non trouvé");
+    }
+    else
+    {
+        data_t ipport_ivc = {&ipport, sizeof(ip_port_t)};
+        data_t info_ivc = {info, sizeof(struct in6_pktinfo)};
+        struct in6_pktinfo info_cmp = {0};
+        data_t info_cmp_ivc = {&info_cmp, sizeof(info_cmp)};
+        if (get_map(&ipport_ivc, &info_cmp_ivc, g_ancillary))
+        {
+            if (compare_iovec(&info_ivc, &info_cmp_ivc) != 0)
+            {
+                debug(D_READER, 1, "read_msg", "Mauvaise provenance par rapport à l'envoi");
+                debug(D_WRITER, 0, "read_msg", "lecture d'un datagramme");
+                return rc;
+            }
+        }
+        else
+        {
+            int rc = insert_map(&ipport_ivc, &info_ivc, g_ancillary);
+            debug_int(D_READER, 0, "read_msg -> ajout d'un message ancillaire", rc);
+        }
+    }
+
     read_tlv(ipport, &content[1]);
     debug(D_WRITER, 0, "read_msg", "lecture d'un datagramme");
     return rc;

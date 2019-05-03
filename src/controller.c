@@ -30,8 +30,9 @@ void stop_program(void)
 /**
  * @brief Ferme la socket
  */
-void close_sock(void) {
-  close(g_socket);
+void close_sock(void)
+{
+    close(g_socket);
 }
 
 /**
@@ -43,6 +44,7 @@ void close_sock(void) {
  */
 int create_socket(uint16_t port)
 {
+    int one = 1;
     int rc = 0;
     int s = socket(AF_INET6, SOCK_DGRAM, 0);
     if (s < 0)
@@ -89,6 +91,13 @@ int create_socket(uint16_t port)
         debug(D_CONTROL, 1, "create_socket", "changement des modes de la socket impossible");
         return -4;
     }
+    rc = setsockopt(s, IPPROTO_IPV6, IPV6_RECVPKTINFO, &one, sizeof(one));
+    if (rc < 0)
+    {
+        close(s);
+        debug(D_CONTROL, 1, "create_socket", "changement des options de la socket impossible pour IPV6_RECVPKTINFO");
+        return -4;
+    }
     g_socket = s;
     return 0;
 }
@@ -103,6 +112,7 @@ void launch_program()
     int nb_fd = 0;
     struct timespec zero = {0, 0};
     struct timespec tm = {0};
+    int count = 0;
     while (run)
     {
         fd_set readfds;
@@ -110,6 +120,7 @@ void launch_program()
         FD_ZERO(&readfds);
         FD_ZERO(&writefds);
         FD_SET(g_socket, &readfds);
+        int tmp = 0;
         if (!buffer_is_empty())
             FD_SET(g_socket, &writefds);
         get_nexttime(&tm);
@@ -118,6 +129,8 @@ void launch_program()
             if (FD_ISSET(g_socket, &readfds))
             {
                 rc = (int)read_msg();
+                tmp = (!tmp) ? errno : tmp;
+
                 if (rc < 0)
                     debug(D_CONTROL, 1, "launch_program", "message non lu -> lancer debug reader pour savoir");
                 else
@@ -126,13 +139,25 @@ void launch_program()
             if (FD_ISSET(g_socket, &writefds))
             {
                 rc = send_buffer_tlv();
+                tmp = (!tmp) ? errno : tmp;
+
                 if (!rc)
                     debug(D_CONTROL, 1, "launch_program", "message non envoyé");
                 else
                     debug(D_CONTROL, 0, "launch_program", "envoie d'un message");
             }
         }
-        if (nb_fd < 0)
+        tmp = (!tmp) ? errno : tmp;
+        if ((tmp == ENETDOWN || tmp == ENETRESET || tmp == ENETUNREACH || tmp == ENONET) && count < MAX_NETWRK_LOOP)
+        {
+            char ch[] = "nombre de boucles restant : [0]";
+            snprintf(ch, strlen(ch) + 1, "nombre de boucles restant : [%d]", MAX_NETWRK_LOOP - count);
+            debug(D_CONTROL, 1, "launch_program -> problème de réseau", tmp);
+            sleep(1);
+            count += 1;
+            continue;
+        }
+        if (nb_fd < 0 || tmp != 0)
         {
             debug(D_CONTROL, 1, "launch_program -> problem du pselect", strerror(errno));
             return;
@@ -144,5 +169,6 @@ void launch_program()
             else
                 debug(D_CONTROL, 1, "launch_program", "problème d'inondation");
         }
+        count = 0;
     }
 }

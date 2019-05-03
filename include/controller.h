@@ -13,6 +13,8 @@
 
 #define D_CONTROL 1
 
+#define MAX_NETWRK_LOOP 5
+
 extern u_int32_t g_socket;
 
 int create_socket(uint16_t port);
