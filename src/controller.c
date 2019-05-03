@@ -120,12 +120,20 @@ void launch_program()
         FD_ZERO(&readfds);
         FD_ZERO(&writefds);
         FD_SET(g_socket, &readfds);
-        int tmp = 0;
+        FD_SET(STDIN_FILENO, &readfds);
+      
+      int tmp = 0;
         if (!buffer_is_empty())
             FD_SET(g_socket, &writefds);
         get_nexttime(&tm);
         if ((nb_fd = pselect(g_socket + 1, &readfds, &writefds, NULL, &tm, NULL)) > 0)
         {
+          if(FD_ISSET(STDIN_FILENO, &readfds)) {
+            int code = handle_input();
+            if(code == 1)
+              run = false;
+          }
+          
             if (FD_ISSET(g_socket, &readfds))
             {
                 rc = (int)read_msg();

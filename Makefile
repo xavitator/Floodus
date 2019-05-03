@@ -11,8 +11,9 @@ FILES := $(shell find $(SRCDIR) -name '*.c')
 OBJ:= $(FILES:$(SRCDIR)%.c=$(BIN)%.o)
 
 CC = gcc
+NCURSES = $(shell pkg-config ncurses --libs)
 FLAGS = -Wall -Wextra -Werror -fprofile-arcs -ftest-coverage
-LDLIBS = -pthread -D_REENTRANT -lm -D_GNU_SOURCE
+LDLIBS = -pthread -D_REENTRANT -lm -D_GNU_SOURCE $(NCURSES)
 
 .PHONY: all
 all:
@@ -25,7 +26,7 @@ $(NAME): $(OBJ)
 
 $(BIN)%.o: $(SRCDIR)%.c
 	@mkdir -p $(dir $@)
-	$(CC) -c $(FLAGS) $(LDLIBS) -I $(INCL) -o $@ $<
+	$(CC) -c $(FLAGS) -I $(INCL) -o $@ $< $(LDLIBS)
  
 .PHONY: clean
 clean:

@@ -7,6 +7,8 @@
 #include <stdlib.h>
 #include <errno.h>
 
+#include "view.h"
+
 #define DEBUG 1
 
 #define false 0

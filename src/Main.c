@@ -27,13 +27,15 @@
 #include "reader.h"
 #include "send_thread.h"
 #include "controller.h"
+#include "view.h"
+#include "make_demand.h"
 
 #define D_MAIN 1
 
 /**
  * @brief
  * En cas de ctrl+c stoppe l'ensemble du
- * programme et free les structures.
+ * programme et free les structures
  */
 static void sig_int(int sig)
 {
@@ -49,6 +51,7 @@ static void sig_int(int sig)
  */
 static void initializer(void)
 {
+    printf("test\n");
     int rc = init_sender();
     if (!rc)
     {
@@ -80,6 +83,7 @@ static void initializer(void)
         exit(1);
     }
     signal(SIGINT, sig_int);
+    handle_input();
 }
 
 /**
@@ -101,77 +105,7 @@ static void finisher(void)
     free_inondation();
     free_writer();
     close_sock();
-}
-
-/**
- * @brief Envoie de hello court à un destinataire contenu dans un addrinfo
- * 
- * @param p destinataire
- * @return int boolean disant si tout s'est bien passé
- */
-int make_demand(struct addrinfo *p)
-{
-    data_t hs = {0};
-    if (!hello_short(&hs, g_myid))
-    {
-        debug(D_MAIN, 1, "make_demand -> new_neighbour", "hs erreur");
-        return 0;
-    }
-    ip_port_t ipport = {0};
-    ipport.port = ((struct sockaddr_in6 *)p->ai_addr)->sin6_port;
-    memmove(ipport.ipv6, &((struct sockaddr_in6 *)p->ai_addr)->sin6_addr, sizeof(ipport.ipv6));
-    int rc = send_tlv(ipport, &hs, 1);
-    free(hs.iov_base);
-
-    data_t new_neighbour = {0};
-    if (!neighbour(&new_neighbour, ipport.ipv6, ipport.port))
-    {
-        debug(D_MAIN, 1, "make_demand -> new_neighbour", " new = NULL");
-        return 0;
-    }
-    size_t head = 1;
-    rc = apply_tlv_neighbour(&new_neighbour, &head);
-    free(new_neighbour.iov_base);
-    if (rc == false)
-        debug(D_MAIN, 1, "make_demand -> apply neighbour", " rc = false");
-
-    return rc;
-}
-
-/**
- * @brief On récupère toutes les infos via getaddrinfo sur la destination et le port passés en arguments.
- * 
- * @param dest nom dns de la destination
- * @param port port de la destination
- * @return int '0' si ca s'est bien passé, '-1' sinon.
- */
-int send_hello(char *dest, char *port)
-{
-    struct addrinfo h = {0};
-    struct addrinfo *r = {0};
-    int rc = 0;
-    h.ai_family = AF_INET6;
-    h.ai_socktype = SOCK_DGRAM;
-    h.ai_flags = AI_V4MAPPED | AI_ALL;
-    rc = getaddrinfo(dest, port, &h, &r);
-    if (rc < 0)
-    {
-        debug(D_MAIN, 1, "send_hello -> rc", gai_strerror(rc));
-        return -1;
-    }
-    struct addrinfo *p = r;
-
-    if (p == NULL)
-    {
-        debug(D_MAIN, 1, "send_hello", "aucune interface détectée pour cette adresse");
-        return -1;
-    }
-    make_demand(p);
-    // fin de la demande à la première interface
-
-    freeaddrinfo(r);
-    debug(D_MAIN, 0, "send_hello", "demande effectuée pour getaddrinfo");
-    return 0;
+    end_graph();
 }
 
 /**
@@ -187,6 +121,7 @@ int send_hello(char *dest, char *port)
  */
 int main(int argc, char *argv[])
 {
+    init_graph();
     char *port = "1212";
     char *default_dest = "jch.irif.fr";
     if (argc >= 3)
