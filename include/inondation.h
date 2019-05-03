@@ -29,7 +29,6 @@ typedef struct message_t
 void free_inondation(void);
 int compare_time(struct timespec ta, struct timespec tb);
 bool_t add_message(ip_port_t dest, u_int64_t id, uint32_t nonce, uint8_t type, data_t *content);
-bool_t add_my_message(uint8_t *content, size_t contentlen);
 bool_t get_nexttime(struct timespec *tm);
 bool_t launch_flood(void);
 bool_t apply_tlv_data(ip_port_t dest, data_t *data, size_t *head_read);
