@@ -99,7 +99,7 @@ static bool_t add_new_big_data(data_t key, u_int8_t type, u_int16_t contentlen)
         debug(D_DATA, 1, "add_new_big_data", "can't get clockgetime");
         return false;
     }
-    data.end_tm.tv_sec += 300 /* 5 min */;
+    data.end_tm.tv_sec += FIVE_MIN_SEC /* 5 min */;
     data.contentlen = contentlen;
     data.type = type;
     data.content = malloc(contentlen);
@@ -135,14 +135,14 @@ static bool_t traitment_220(u_int64_t sender_id, data_t content)
     u_int16_t ind = 0;
     u_int8_t *cont = content.iov_base;
     u_int8_t contlen = content.iov_len;
-    memmove(&nonce, content.iov_base, sizeof(u_int32_t));
-    type = *((u_int8_t *)content.iov_base + sizeof(u_int32_t));
-    memmove(&size, ((u_int8_t *)content.iov_base + sizeof(u_int32_t) + sizeof(type)), sizeof(u_int16_t));
-    memmove(&ind, ((u_int8_t *)content.iov_base + sizeof(nonce) + sizeof(type) + sizeof(size)), sizeof(u_int16_t));
+    memmove(&nonce, content.iov_base, sizeof(nonce));
+    type = *((u_int8_t *)content.iov_base + sizeof(nonce));
+    memmove(&size, ((u_int8_t *)content.iov_base + sizeof(nonce) + sizeof(type)), sizeof(size));
+    memmove(&ind, ((u_int8_t *)content.iov_base + sizeof(nonce) + sizeof(type) + sizeof(size)), sizeof(ind));
     cont += sizeof(nonce) + sizeof(type) + sizeof(size) + sizeof(ind);
     contlen -= sizeof(nonce) + sizeof(type) + sizeof(size) + sizeof(ind);
 
-    u_int8_t key_content[sizeof(u_int64_t) + sizeof(u_int32_t)] = {0};
+    u_int8_t key_content[sizeof(sender_id) + sizeof(nonce)] = {0};
     memmove(key_content, &sender_id, sizeof(sender_id));
     memmove(key_content + sizeof(sender_id), &nonce, sizeof(nonce));
     big_data_t tmp = {0};

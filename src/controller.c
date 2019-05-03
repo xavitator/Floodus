@@ -150,8 +150,8 @@ void launch_program()
         tmp = (!tmp) ? errno : tmp;
         if ((tmp == ENETDOWN || tmp == ENETRESET || tmp == ENETUNREACH || tmp == ENONET) && count < MAX_NETWRK_LOOP)
         {
-            char tmp[] = "nombre de boucles restant : [0]";
-            snprintf(tmp, strlen(tmp) + 1, "nombre de boucles restant : [%d]", MAX_NETWRK_LOOP - count);
+            char ch[] = "nombre de boucles restant : [0]";
+            snprintf(ch, strlen(ch) + 1, "nombre de boucles restant : [%d]", MAX_NETWRK_LOOP - count);
             debug(D_CONTROL, 1, "launch_program -> problème de réseau", tmp);
             sleep(1);
             count += 1;

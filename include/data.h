@@ -8,6 +8,8 @@
 
 #define D_DATA 1
 
+#define FIVE_MIN_SEC 300
+
 typedef struct big_data_t
 {
     u_int8_t *content;
