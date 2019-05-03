@@ -87,8 +87,10 @@ static int get_input(int max)  {
  */
 void print_data(u_int8_t *content, u_int8_t content_len) {
   uint8_t *display_msg = malloc(content_len+ 1);
-  if (display_msg == NULL)
+  if (display_msg == NULL) {
+    stop_program();
     return;
+  }
   memset(display_msg, 0, content_len+1);
   memcpy(display_msg, content, content_len);
   
@@ -175,8 +177,11 @@ static int handle_cmd () {
     } else if (buf[1] == 'c'){
       set_in_blue();
       wprintw(top_panel,"[connect] %s\n", buf+3);
+      if(!try_connect_pair(buf+3)) {
+        set_in_red();
+        wprintw(top_panel, "[error] can't reach peer\n");
+      }
       restore();
-      try_connect_pair(buf+3);
       return 2;
     } else if (buf[1] == 's') {
       set_surname();

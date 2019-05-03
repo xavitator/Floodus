@@ -22,6 +22,6 @@
 #define D_MAKE 1
 
 int send_hello(char *dest, char *port);
-void try_connect_pair(char *content);
+int try_connect_pair(char *content);
 
 #endif //_MAKE_DEMAND_H

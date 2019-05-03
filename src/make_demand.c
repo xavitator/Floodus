@@ -81,7 +81,7 @@ int send_hello(char *dest, char *port)
  * @brief 
  * Envoie un hello à un pair proche
  */
-void try_connect_pair(char *content) {
+int try_connect_pair(char *content) {
   int i = 0;
 
   char dest[41] = {0};
@@ -90,7 +90,8 @@ void try_connect_pair(char *content) {
   while(content[i] != '\0' && content[i] != ' ')
     i++;
   
-  if(content[i] == '\0')return;
+  if(content[i] == '\0')
+    return 0;
   
   if(i < 40) {
     memcpy(dest, content, i);
@@ -99,10 +100,12 @@ void try_connect_pair(char *content) {
 
     while(content[i] != '\0' && content[i] != ' ')
       i++;
-  
+    
     if(i < 6) {
       memcpy(port, content,i);
-      send_hello(dest, port);
+      if(send_hello(dest, port) < 0)
+          return 0;
     }
   }
+  return 1;
 }
