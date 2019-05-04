@@ -57,7 +57,7 @@ int send_hello(char *dest, char *port)
   rc = getaddrinfo(dest, port, &h, &r);
   if (rc < 0)
   {
-    debug(D_MAKE, 1, "send_hello -> rc", gai_strerror(rc));
+    debug_int(D_MAKE, 1, "send_hello -> rc", rc);
     return -1;
   }
   struct addrinfo *p = r;
