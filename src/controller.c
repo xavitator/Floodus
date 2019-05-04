@@ -156,11 +156,16 @@ void launch_program()
                     debug(D_CONTROL, 0, "launch_program", "envoie d'un message");
             }
         }
-        tmp = (!tmp) ? errno : tmp;
+        tmp = (!tmp && errno != ENOENT) ? errno : tmp;
         if ((tmp == ENETDOWN || tmp == ENETRESET || tmp == ENETUNREACH || tmp == ENONET) && count < MAX_NETWRK_LOOP)
         {
             char ch[] = "nombre de boucles restant : [0]";
             snprintf(ch, strlen(ch) + 1, "nombre de boucles restant : [%d]", MAX_NETWRK_LOOP - count);
+            
+            set_in_red();
+            wprintw(get_panel(), "[intel] Try reach network %i\n", count);
+            restore();
+
             debug(D_CONTROL, 1, "launch_program -> problème de réseau", ch);
             sleep(1);
             count += 1;
