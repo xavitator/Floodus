@@ -156,6 +156,44 @@ static void set_surname()
   sur_len = size;
 }
 
+
+/**
+ * @brief
+ * Affiche les interfaces et leur ip4 ou 6
+ */
+static void print_my_ips() {
+  struct ifaddrs *ifaddr, *p_ifaddr;
+  struct sockaddr_in6 sin6 = {0};
+  struct sockaddr_in sin4 = {0};
+  char ip[INET6_ADDRSTRLEN] = {0};
+
+  getifaddrs(&p_ifaddr);
+  ifaddr = p_ifaddr;
+  while(ifaddr != NULL) {
+    if(ifaddr->ifa_addr->sa_family == AF_INET6)
+    {
+      sin6 = *((struct sockaddr_in6 *) ifaddr->ifa_addr);
+      getnameinfo((struct sockaddr *)&sin6,
+          sizeof(struct sockaddr_in6), ip,
+          INET6_ADDRSTRLEN, NULL, 0, NI_NUMERICHOST);
+     
+      wprintw(top_panel, "   |- %s => ip6: %s\n", ifaddr->ifa_name, ip);
+    } 
+    else if(ifaddr->ifa_addr->sa_family == AF_INET) {
+     sin4 = *((struct sockaddr_in *) ifaddr->ifa_addr);
+      getnameinfo((struct sockaddr *)&sin4,
+          sizeof(struct sockaddr_in), ip,
+          INET6_ADDRSTRLEN, NULL, 0, NI_NUMERICHOST);
+     
+      wprintw(top_panel, "   |- %s => ip4: %s\n", ifaddr->ifa_name, ip);
+    }
+
+    ifaddr = ifaddr->ifa_next;
+  }
+  
+  freeifaddrs(p_ifaddr);
+}
+
 /**
  * @brief
  * Print intel about the system
@@ -166,12 +204,11 @@ static void print_intel()
   uint32_t size = sizeof(struct sockaddr_in6);
   if (getsockname(g_socket, (struct sockaddr *)&sin6, &size) == 0)
   {
-    char ip_addr[24] = {0};
-    inet_ntop(AF_INET6, &sin6, ip_addr, size);
-    set_in_blue();
-    wprintw(top_panel, "[info]\n|-ip %s", ip_addr);
-    wprintw(top_panel, "\n|-port %u", ntohs(sin6.sin6_port));
-    wprintw(top_panel, "\n|-surname %s\n", surname);
+   set_in_blue();
+    wprintw(top_panel, "[info]\n|-ip\n");
+    print_my_ips();
+    wprintw(top_panel, "|-port => %u\n", ntohs(sin6.sin6_port));
+    wprintw(top_panel, "|-surname => %s\n", surname);
     restore();
   }
 
