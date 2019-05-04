@@ -140,6 +140,8 @@ bool_t send_tlv(ip_port_t dest, data_t *tlvs, size_t tlvs_len)
         if (errno == EINTR ||
             (errno != EWOULDBLOCK && errno != EAGAIN))
         {
+            if (errno == EINVAL)
+                errno = ENETDOWN;
             free(content);
             debug(D_WRITER, 1, "send_tlv -> envoi non effectué", strerror(errno));
             return false;
@@ -152,7 +154,7 @@ bool_t send_tlv(ip_port_t dest, data_t *tlvs, size_t tlvs_len)
         debug_hex(D_WRITER, 0, buf, content[i].iov_base, content[i].iov_len);
     }
     free(content);
-    debug(D_WRITER, 0, "send_tlv", "demande envoyée");
+    debug_int(D_WRITER, 0, "send_tlv -> demande envoyée", rc);
     return true;
 }
 
