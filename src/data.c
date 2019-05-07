@@ -10,6 +10,12 @@
 hashmap_t *g_big_data_map = NULL;
 
 /**
+ * @brief Variable pour le nonce des messages qu'on envoie
+ * 
+ */
+u_int32_t g_nonce = 0;
+
+/**
  * @brief Initialisation de g_big_data_map
  * 
  * @return bool_t '1' si init bien passé, '0' sinon.
@@ -138,7 +144,9 @@ static bool_t traitment_220(u_int64_t sender_id, data_t content)
     memmove(&nonce, content.iov_base, sizeof(nonce));
     type = *((u_int8_t *)content.iov_base + sizeof(nonce));
     memmove(&size, ((u_int8_t *)content.iov_base + sizeof(nonce) + sizeof(type)), sizeof(size));
+    size = ntohs(size);
     memmove(&ind, ((u_int8_t *)content.iov_base + sizeof(nonce) + sizeof(type) + sizeof(size)), sizeof(ind));
+    ind = ntohs(ind);
     cont += sizeof(nonce) + sizeof(type) + sizeof(size) + sizeof(ind);
     contlen -= sizeof(nonce) + sizeof(type) + sizeof(size) + sizeof(ind);
 
@@ -181,6 +189,73 @@ static bool_t traitment_220(u_int64_t sender_id, data_t content)
     }
     debug(D_DATA, 0, "traitment_220", "traitement du data 220");
     return true;
+}
+
+/**
+ * @brief Envoi de big_data sur le réseau par l'utilisateur (découpe en plusieurs TLV data de type 220)
+ * 
+ * @param content contenu du message
+ * @param content_len taille du message
+ * @return bool_t '1' si tous les messages ont été mis dans la liste d'envoi, '0' sinon.
+ */
+bool_t send_big_data(u_int8_t *content, size_t content_len)
+{
+    u_int32_t nonce_msg = g_nonce;
+    u_int16_t len_msg = htons(content_len);
+    g_nonce++;
+    int bonus = (content_len % MAX_SZ_220 == 0) ? 0 : 1;
+    int count = 0;
+    ip_port_t dest = {0};
+    u_int8_t cont[242] = {0};
+    memmove(cont, &nonce_msg, sizeof(nonce_msg));
+    /* on cache ici que le type du big message est 0 par le +1 dans le memmove */
+    memmove(cont + 1 + sizeof(nonce_msg), &len_msg, sizeof(len_msg));
+    for (size_t i = 0; i < content_len / MAX_SZ_220 + bonus; i++, g_nonce++, count++)
+    {
+        u_int16_t ind = htons(i * MAX_SZ_220);
+        memmove(cont + 1 + sizeof(nonce_msg) + sizeof(len_msg), &ind, sizeof(ind));
+        size_t tmp_len = (content_len - i * MAX_SZ_220 < MAX_SZ_220) ? content_len - i * MAX_SZ_220 : MAX_SZ_220;
+        memmove(cont + 9, content + i * MAX_SZ_220, tmp_len);
+        data_t tmp = {cont, tmp_len + 9};
+        if (!add_message(dest, g_myid, g_nonce, 220, &tmp))
+        {
+            debug(D_DATA, 1, "send_big_data", "echec envoi data type 220");
+            return false;
+        }
+    }
+    debug_int(D_DATA, 0, "send_big_data -> envoi data type 220", count);
+    return true;
+}
+
+/**
+ * @brief Ajout d'un message à inonder que l'utilisateur a écrit
+ * 
+ * @param content contenu du message
+ * @param contentlen taille du contenu
+ * @return bool_t '1' si l'inondation commence, '0' sinon.
+ */
+bool_t add_my_message(uint8_t *content, size_t content_len)
+{
+    int rc = 1;
+    if (content_len <= 242)
+    {
+        g_nonce++;
+        ip_port_t dest = {0};
+        u_int32_t nonce = g_nonce;
+        data_t content_ivc = {content, content_len};
+        rc = add_message(dest, g_myid, nonce, 0, &content_ivc);
+        if (rc)
+            debug(D_DATA, 0, "add_my_message", "envoi data type 0");
+        else
+            debug(D_DATA, 1, "add_my_message", "echec envoi data type 0");
+        return rc;
+    }
+    rc = send_big_data(content, content_len);
+    if (rc)
+        debug(D_DATA, 0, "add_my_message", "envoi data type 220");
+    else
+        debug(D_DATA, 1, "add_my_message", "echec envoi data type 220");
+    return rc;
 }
 
 /**
