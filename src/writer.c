@@ -383,7 +383,7 @@ u_int32_t get_pmtu(ip_port_t dest)
     buf[0] = 93;
     buf[1] = 2;
     u_int16_t tmp = htons(pmtu - 4);
-    memmove(buf, &tmp, 2);
+    memmove(buf+2, &tmp, 2);
     rc = send(s, buf, pmtu, 0);
     if (rc < 0)
     {
