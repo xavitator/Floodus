@@ -231,7 +231,7 @@ bool_t send_big_data(u_int8_t *content, size_t content_len)
  * @brief Ajout d'un message à inonder que l'utilisateur a écrit
  * 
  * @param content contenu du message
- * @param contentlen taille du contenu
+ * @param content_len taille du contenu
  * @return bool_t '1' si l'inondation commence, '0' sinon.
  */
 bool_t add_my_message(uint8_t *content, size_t content_len)

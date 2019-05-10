@@ -3,8 +3,6 @@ SRCDIR = src/
 BIN = bin/
 DOCS = doc/
 INCL = include/
-LIB = lib/
-RES = res/
 COVERAGE = coverage.html/
 
 FILES := $(shell find $(SRCDIR) -name '*.c')
@@ -58,7 +56,7 @@ doc: cleandoc
 .PHONY: zip
 zip:
 	@printf "[\e[1;34mEn cours\e[0m] Début du zippage\n"
-	@zip -r $(NAME).zip README Makefile $(SRCDIR) documentation $(LIB) $(RES) $(INCL)
+	@zip -r MARAIS_DURAND_$(NAME).zip README Makefile $(SRCDIR) documentation $(INCL) MARAIS_DURAND_rapport.pdf
 	@printf "[\e[1;32mOK\e[0m] Zippage finie\n"
 
 .PHONY: coverage

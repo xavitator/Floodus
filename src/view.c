@@ -156,12 +156,12 @@ static void set_surname()
   sur_len = size;
 }
 
-
 /**
  * @brief
  * Affiche les interfaces et leur ip4 ou 6
  */
-static void print_my_ips() {
+static void print_my_ips()
+{
   struct ifaddrs *ifaddr, *p_ifaddr;
   struct sockaddr_in6 sin6 = {0};
   struct sockaddr_in sin4 = {0};
@@ -169,28 +169,34 @@ static void print_my_ips() {
 
   getifaddrs(&p_ifaddr);
   ifaddr = p_ifaddr;
-  while(ifaddr != NULL) {
-    if(ifaddr->ifa_addr->sa_family == AF_INET6)
+  while (ifaddr != NULL)
+  {
+    if (ifaddr->ifa_addr == NULL)
     {
-      sin6 = *((struct sockaddr_in6 *) ifaddr->ifa_addr);
+      ifaddr = ifaddr->ifa_next;
+      continue;
+    }
+    if (ifaddr->ifa_addr->sa_family == AF_INET6)
+    {
+      sin6 = *((struct sockaddr_in6 *)ifaddr->ifa_addr);
       getnameinfo((struct sockaddr *)&sin6,
-          sizeof(struct sockaddr_in6), ip,
-          INET6_ADDRSTRLEN, NULL, 0, NI_NUMERICHOST);
-     
+                  sizeof(struct sockaddr_in6), ip,
+                  INET6_ADDRSTRLEN, NULL, 0, NI_NUMERICHOST);
+
       wprintw(top_panel, "   |- %s => ip6: %s\n", ifaddr->ifa_name, ip);
-    } 
-    else if(ifaddr->ifa_addr->sa_family == AF_INET) {
-     sin4 = *((struct sockaddr_in *) ifaddr->ifa_addr);
+    }
+    else if (ifaddr->ifa_addr->sa_family == AF_INET)
+    {
+      sin4 = *((struct sockaddr_in *)ifaddr->ifa_addr);
       getnameinfo((struct sockaddr *)&sin4,
-          sizeof(struct sockaddr_in), ip,
-          INET6_ADDRSTRLEN, NULL, 0, NI_NUMERICHOST);
-     
+                  sizeof(struct sockaddr_in), ip,
+                  INET6_ADDRSTRLEN, NULL, 0, NI_NUMERICHOST);
+
       wprintw(top_panel, "   |- %s => ip4: %s\n", ifaddr->ifa_name, ip);
     }
 
     ifaddr = ifaddr->ifa_next;
   }
-  
   freeifaddrs(p_ifaddr);
 }
 
@@ -204,7 +210,7 @@ static void print_intel()
   uint32_t size = sizeof(struct sockaddr_in6);
   if (getsockname(g_socket, (struct sockaddr *)&sin6, &size) == 0)
   {
-   set_in_blue();
+    set_in_blue();
     wprintw(top_panel, "[info]\n|-ip\n");
     print_my_ips();
     wprintw(top_panel, "|-port => %u\n", ntohs(sin6.sin6_port));
@@ -340,4 +346,5 @@ void end_graph()
   delwin(bottom);
   delwin(bot_panel);
   endwin();
+  reset_shell_mode();
 }

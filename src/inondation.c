@@ -48,12 +48,11 @@ void free_inondation()
 /**
  * @brief On crée un objet de type message_t
  * 
- * @param sender couple ip-port de celui qui a envoyé le tlv data reçu
+ * @param dest couple ip-port de celui qui a envoyé le tlv data reçu
  * @param id id de l'originaire du message
  * @param nonce nonce du message envoyé
  * @param type type du message
- * @param content contenu du message envoyé
- * @param contentlen taille du message envoyé
+ * @param content struct iovec du contenu du message envoyé
  * @return message_t* structure construite avec toutes les données correspondantes
  */
 static message_t *create_message(ip_port_t dest, u_int64_t id, uint32_t nonce, uint8_t type, data_t *content)
