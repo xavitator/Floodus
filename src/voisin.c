@@ -224,6 +224,35 @@ void free_neighbours()
 }
 
 /**
+ * @brief On vérifie si l'adresse ip et le port qu'on reçoit en tant que voisin possible est dans un bon format
+ * 
+ * @param dest couple ip_port_t à tester
+ * @return bool_t '1' si l'adresse est bonne, '0' sinon.
+ */
+static bool_t trust_neighbour(ip_port_t *dest)
+{
+  int s = socket(AF_INET6, SOCK_DGRAM, 0);
+  if (s < 0)
+  {
+    debug(D_WRITER, 1, "trust_neighbour -> impossible de créer la socket", strerror(errno));
+    return false;
+  }
+  struct sockaddr_in6 sin6 = {0};
+  sin6.sin6_family = AF_INET6;
+  sin6.sin6_port = dest->port;
+  memmove(&sin6.sin6_addr, dest->ipv6, sizeof(dest->ipv6));
+  int rc = connect(s, (struct sockaddr *)&sin6, sizeof(sin6));
+  close(s);
+  if (rc < 0)
+  {
+    debug(D_WRITER, 1, "trust_neighbour -> impossible de se connect", strerror(errno));
+    return false;
+  }
+  debug(D_WRITER, 0, "trust_neighbour", "voisin de confiance");
+  return true;
+}
+
+/**
  * @brief Fonction qui fait les actions correspondantes à la réception d'un hello court.
  * Si 'src' correspond à un élément dans les voisins, on met à jour le temps de réception du dernier hello.
  * Sinon, on ajoute l'utilisateur dans la table des voisins possibles.
@@ -340,7 +369,7 @@ static bool_t apply_hello_long(ip_port_t src, u_int64_t id_src, u_int64_t id_des
   {
     nval.id = id_src;
     data_t tlv_hello = {0};
-    if(!hello_long(&tlv_hello, g_myid, nval.id))
+    if (!hello_long(&tlv_hello, g_myid, nval.id))
     {
       debug(D_VOISIN, 1, "apply_hello_long", "tlv_hello = NULL");
       return false;
@@ -348,7 +377,8 @@ static bool_t apply_hello_long(ip_port_t src, u_int64_t id_src, u_int64_t id_des
 
     rc = add_tlv(src, &tlv_hello);
     free(tlv_hello.iov_base);
-    if(!rc) {
+    if (!rc)
+    {
       debug_int(D_VOISIN, 1, "apply_hello_long -> rc", rc);
       return false;
     }
@@ -446,7 +476,7 @@ bool_t apply_tlv_neighbour(data_t *data, size_t *head_read)
     debug_hex(D_VOISIN, 0, "insert_neighbour", data->iov_base + *head_read, 18);
     lock(&g_neighbours);
     lock(&g_environs);
-    if (!contains_map(&ipport, g_neighbours.content))
+    if (!contains_map(&ipport, g_neighbours.content) && trust_neighbour((struct ip_port_t *)ipport.iov_base))
     {
       debug(D_VOISIN, 0, "apply_tlv_neighbour", "insert new environ");
       insert_map(&ipport, &ipport, g_environs.content);

@@ -92,6 +92,9 @@ static void initializer(void)
  */
 static void finisher(void)
 {
+    debug(D_MAIN, 0, "finisher", "finish");
+    if (DEBUG)
+        sleep(30);
     int rc = 1;
     leave_network();
     destroy_thread();
@@ -105,6 +108,8 @@ static void finisher(void)
     free_inondation();
     free_writer();
     close_sock();
+    if (DEBUG)
+        sleep(30);
     end_graph();
 }
 

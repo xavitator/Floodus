@@ -8,7 +8,7 @@
 
 #include "view.h"
 
-#define DEBUG 0
+#define DEBUG 1
 
 #define false 0
 #define true 1
