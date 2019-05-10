@@ -161,9 +161,9 @@ void launch_program()
         {
             char ch[] = "nombre de boucles restant : [0]";
             snprintf(ch, strlen(ch) + 1, "nombre de boucles restant : [%d]", MAX_NETWRK_LOOP - count);
-            
+
             set_in_red();
-            wprintw(get_panel(), "[intel] Try reach network %i\n", count);
+            wprintw(get_panel(), "[intel] Try reach network : tour restant %i\n", MAX_NETWRK_LOOP - count);
             restore();
 
             debug(D_CONTROL, 1, "launch_program -> problème de réseau", ch);
