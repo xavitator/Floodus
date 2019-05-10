@@ -24,6 +24,7 @@
 # dossier auxiliaire personnel
 tmp/
 .vscode/
+*.zip
 
 # executable
 floodus
