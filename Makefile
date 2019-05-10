@@ -1,4 +1,5 @@
 NAME = floodus
+ZIP_FILE = MARAIS_DURAND_$(NAME).zip
 SRCDIR = src/
 BIN = bin/
 DOCS = doc/
@@ -46,6 +47,7 @@ cleanall: clean cleandoc
 
 .PHONY: re
 re: cleanall $(NAME)
+	@rm -rf $(ZIP_FILE)
 
 .PHONY: doc
 doc: cleandoc
@@ -56,7 +58,7 @@ doc: cleandoc
 .PHONY: zip
 zip:
 	@printf "[\e[1;34mEn cours\e[0m] Début du zippage\n"
-	@zip -r MARAIS_DURAND_$(NAME).zip README Makefile $(SRCDIR) documentation $(INCL) MARAIS_DURAND_rapport.pdf
+	@zip -r $(ZIP_FILE) README.md Makefile $(SRCDIR) documentation $(INCL) MARAIS_DURAND_rapport.pdf
 	@printf "[\e[1;32mOK\e[0m] Zippage finie\n"
 
 .PHONY: coverage
