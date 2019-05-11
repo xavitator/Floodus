@@ -8,7 +8,11 @@
 
 #include "view.h"
 
+#ifndef D_FLAG
+#define DEBUG 0
+#else
 #define DEBUG 1
+#endif // D_FLAG
 
 #define false 0
 #define true 1
