@@ -310,6 +310,7 @@ static bool_t flood_goaway(message_t *msg)
  */
 bool_t flood_message(message_t *msg)
 {
+    struct timespec tc = {0};
     if (msg->count > COUNT_INOND)
     {
         flood_goaway(msg);
@@ -347,6 +348,11 @@ bool_t flood_message(message_t *msg)
     msg->count++;
     double two_pow_c = pow((double)2, (double)msg->count);
     int add_time = (int)((rand() % (int)two_pow_c) + two_pow_c);
+    rc = clock_gettime(CLOCK_MONOTONIC, &tc);
+    if (rc >= 0) {
+      msg->send_time = tc;
+    }
+
     msg->send_time.tv_sec += add_time;
     debug_int(D_INOND, 0, "flood_message -> envoi des datas, nombre d'envoi", rc);
     return true;
