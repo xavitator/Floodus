@@ -51,7 +51,6 @@ static void sig_int(int sig)
  */
 static void initializer(void)
 {
-    printf("test\n");
     int rc = init_sender();
     if (!rc)
     {
@@ -93,8 +92,10 @@ static void initializer(void)
 static void finisher(void)
 {
     debug(D_MAIN, 0, "finisher", "finish");
+#ifndef D_LOGFILE
     if (DEBUG)
         sleep(30);
+#endif
     int rc = 1;
     leave_network();
     destroy_thread();
@@ -108,8 +109,10 @@ static void finisher(void)
     free_inondation();
     free_writer();
     close_sock();
+#ifndef D_LOGFILE
     if (DEBUG)
         sleep(30);
+#endif
     end_graph();
 }
 
@@ -126,6 +129,9 @@ static void finisher(void)
  */
 int main(int argc, char *argv[])
 {
+    srand(time(NULL));
+    int id_file = rand();
+    log_load(id_file);
     init_graph();
     char *port = "1212";
     char *default_dest = "jch.irif.fr";
@@ -156,5 +162,6 @@ int main(int argc, char *argv[])
         launch_program();
     }
     finisher();
+    log_close(id_file);
     return 0;
 }

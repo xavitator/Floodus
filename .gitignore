@@ -65,3 +65,6 @@ dkms.conf
 # Documentation doxygen
 doc/
 bin/
+
+#log's files
+*.log

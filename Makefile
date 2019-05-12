@@ -26,7 +26,15 @@ $(NAME): $(OBJ)
 $(BIN)%.o: $(SRCDIR)%.c
 	@mkdir -p $(dir $@)
 	$(CC) -c $(FLAGS) -I $(INCL) -o $@ $< $(LDLIBS)
- 
+
+.PHONY: debug
+debug: FLAGS += -D D_FLAG
+debug: $(NAME)
+
+.PHONY: log
+log: FLAGS += -D D_FLAG -D D_LOGFILE
+log: $(NAME)
+
 .PHONY: clean
 clean:
 	@printf "[\e[1;34mEn cours\e[0m] Suppression des binaires\n"
