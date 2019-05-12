@@ -91,7 +91,18 @@ Enfin, il est possible de voir toute la documentation du programme en lançant l
 \begin{verbatim}
                 make doc
 \end{verbatim}
-Et ensuite, toujours avec votre navigateur préféré, vous ouvrez le fichier "doc/html/index.html".
+Et ensuite, toujours avec votre navigateur préféré, vous ouvrez le fichier "doc/html/index.html". \\
+
+Pour pouvoir débuguer, il est possible de compiler le programme avec les make suivants. Pour que les "logs" soient affichés dans l'interface graphique, il faut utiliser : 
+\begin{verbatim}
+    make debug
+\end{verbatim}
+Pour écrire les logs de debug dans le fichier \textit{debug\_floodus.log}, il faut lancer la commande :  
+\begin{verbatim}
+    make log
+\end{verbatim}
+
+
 
 %%%%%%%% fin de la section %%%%%%%%%%
 \newpage
@@ -211,7 +222,7 @@ Nous allons maintenant vous présenter les différentes extensions que nous avon
 
 \subsubsection{Interface graphique à l'aide de \textit{NCurses}}
 Pour permettre à l'utilisateur d'utiliser le protocole nous avons choisi de mettre en place une interface graphique qui permet de dialoguer en mode texte. Elle est composée d'un tampon d'écriture, dont la limite, d'abord fixée à 242, a été étendue avec l'apparition des TLV de taille 220. La deuxième partie de l'interface graphique est un cadre qui affiche les informations à l'utilisateur. Les messages de l'utilisateur sont affichés en bleu, de même que les informations fournies par le système. Ceux des autres pairs sont affichés en blanc. \\
-Dans le cas où le programme a été compilé avec le flag de DEBUG à 1, les messages pour débuguer sont aussi affichés dans cette zone. En outre, l'interface offre la possibilité d'effectuer un certain nombre de commandes pour l'utilisateur.
+En outre, l'interface offre la possibilité d'effectuer un certain nombre de commandes pour l'utilisateur.
 
 Il est possible d'obtenir des informations sur ses interfaces (ip, etc), son port et son nom en utilisant :
 \begin{verbatim}
