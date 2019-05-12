@@ -51,3 +51,12 @@ Enfin, il est possible de voir toute la documentation du programme en lançant l
                 make doc
 ```
 Et ensuite, toujours avec votre navigateur préféré, vous ouvrez le fichier `doc/html/index.html`.
+
+Pour pouvoir débuguer, il est possible de compiler le programme avec les make suivants. Pour que les "logs" soient affichés dans l'interface graphique, il faut utiliser : 
+```
+    make debug
+```
+Pour écrire les logs de debug dans le fichier \textit{debug\_floodus.log}, il faut lancer la commande :  
+```
+    make log
+```
